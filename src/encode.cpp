@@ -45,8 +45,8 @@ int main(int argc, char* argv[])
 		SubsetMols[k].reset(reinterpret_cast<ROMol*>(SmartsToMol(SubsetSMARTS[k])));
 	}
 
-	// Loop over the input SDF file.
-	for (SDMolSupplier sup(argv[1]); !sup.atEnd();)
+	// Loop over the input SDF file, setting sanitize=true, removeHs=false, strictParsing=true.
+	for (SDMolSupplier sup(argv[1], true, false, true); !sup.atEnd();)
 	{
 		// Obtain a pointer to the current molecule with heavy atoms only.
 		const unique_ptr<ROMol> mol_ptr(sup.next());
