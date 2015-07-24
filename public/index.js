@@ -3,7 +3,7 @@ $(function() {
 	// Initialize pager
 	var pager = $('#pager');
 	pager.pager('init', [ 'Description', 'Submitted', 'Status', 'Result' ], function(job) {
-		var status, result = '<a href="iview/?' + job._id + '"><img src="/iview/logo.png" alt="iview"></a>';
+		var status, result = '<a href="iview/?' + job._id + '"><img src="iview/logo.png" alt="iview"></a>';
 		if (!job.started) {
 			status = 'Queued for execution';
 		} else if (!job.done) {
@@ -44,7 +44,7 @@ $(function() {
 	};
 	tick();
 
-	// Load ligand locally
+	// Load query ligand locally
 	var ligand, format;
 	$('input[type="file"]').change(function() {
 		var file = this.files[0];
@@ -53,6 +53,7 @@ $(function() {
 		var reader = new FileReader();
 		reader.onload = function () {
 			ligand = reader.result;
+			format = file.name.substr((~-file.name.lastIndexOf('.') >>> 0) + 2).toLowerCase();
 		};
 		reader.readAsText(file);
 	});
@@ -73,7 +74,7 @@ $(function() {
 		};
 		var v = new validator(job);
 		if (v
-			.field('format').message('must be mol2, sdf, xyz, pdb, or pdbqt').in(['mol2', 'sdf', 'xyz', 'pdb', 'pdbqt']).copy()
+			.field('format').message('must be sdf').in(['sdf']).copy()
 			.field('description').message('must be provided, at most 20 characters').length(1, 20)
 			.field('email').message('must be valid').email()
 			.failed()) {
@@ -93,9 +94,9 @@ $(function() {
 			// If server side validation fails, show the tooltips
 			if (keys.length) {
 				keys.forEach(function(key) {
-					$('#' + (key === 'format' ? 'ligand' : key) + '_label').tooltip('show');
+					$('#' + key + '_label').tooltip('show');
 				});
-				$('#' + (keys[0] === 'format' ? 'ligand' : keys[0])).focus();
+				$('#' + keys[0]).focus();
 			} else {
 				$('html, body').animate({ scrollTop: pager.offset().top });
 			}
