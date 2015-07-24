@@ -11,18 +11,9 @@
 #include <chrono>
 #include <thread>
 #include <immintrin.h>
-#include <GraphMol/MolOps.h>
 #include <GraphMol/FileParsers/MolSupplier.h>
-#include <GraphMol/FileParsers/MolWriters.h>
 #include <GraphMol/SmilesParse/SmilesParse.h>
-#include <GraphMol/Descriptors/Lipinski.h>
-#include <GraphMol/DistGeomHelpers/Embedder.h>
-#include <GraphMol/ForceFieldHelpers/UFF/Builder.h>
 #include <GraphMol/Substruct/SubstructMatch.h>
-#include <GraphMol/FragCatalog/FragFPGenerator.h>
-#include <GraphMol/MolTransforms/MolTransforms.h>
-#include <Numerics/Alignment/AlignPoints.h>
-#include <ForceField/ForceField.h>
 #include <boost/filesystem/operations.hpp>
 #include <boost/filesystem/fstream.hpp>
 #include <boost/iostreams/device/file.hpp>
@@ -36,14 +27,7 @@
 using namespace std;
 using namespace std::chrono;
 using namespace RDKit;
-using namespace RDKit::MolOps;
-using namespace RDKit::Descriptors;
-using namespace RDKit::DGeomHelpers;
-using namespace RDKit::UFF;
-using namespace MolTransforms;
-using namespace RDNumeric::Alignments;
 using namespace RDGeom;
-using namespace ForceFields;
 using namespace boost::filesystem;
 using namespace boost::iostreams;
 using namespace boost::gregorian;
@@ -189,8 +173,6 @@ int main(int argc, char* argv[])
 	const size_t num_usrs = 2;
 	constexpr array<size_t, num_usrs> qn{{ 12, 60 }};
 	constexpr array<double, num_usrs> qv{{ 1.0 / qn[0], 1.0 / qn[1] }};
-	const size_t num_confs = 50;
-	const double rmsThresh = 2.0;
 	const size_t num_references = 4;
 	const size_t num_subsets = 5;
 	const array<string, num_subsets> SubsetSMARTS
@@ -207,7 +189,7 @@ int main(int argc, char* argv[])
 	array<unique_ptr<ROMol>, num_subsets> SubsetMols;
 	for (size_t k = 0; k < num_subsets; ++k)
 	{
-		SubsetMols[k].reset(SmartsToMol(SubsetSMARTS[k]));
+		SubsetMols[k].reset(reinterpret_cast<ROMol*>(SmartsToMol(SubsetSMARTS[k])));
 	}
 
 	// Initialize variables.
@@ -272,141 +254,19 @@ int main(int argc, char* argv[])
 		const auto _id = job["_id"].OID();
 		cout << local_time() << "Executing job " << _id.str() << endl;
 		const auto job_path = jobs_path / _id.str();
-		const auto smiles = job["smiles"].String();
 		const auto email = job["email"].String();
 
-		// Create output streams.
-		boost::filesystem::ofstream energy(job_path / "energy.txt");
-		SDWriter writer((job_path / "ligand.sdf").string());
-		boost::filesystem::ofstream nconfs(job_path / "nconfs.txt");
-		boost::filesystem::ofstream usrcat(job_path / "usrcat.f64");
-		energy.setf(ios::fixed, ios::floatfield);
-		energy << setprecision(4);
-
-		// Parse the user-supplied SMILES, where the SMILES column is 0 and the name column is -1.
-		SmilesMolSupplier sup;
-		sup.setData(smiles, "\t", 0, -1, false);
+		// Parse the user-supplied SDF file.
+		SDMolSupplier sup((jobs_path / "query.sdf").string());
 
 		// Obtain a pointer to the current molecule with heavy atoms only.
-		const unique_ptr<ROMol> smi_ptr(sup.next()); // Calling next() may print "ERROR: Could not sanitize molecule on line XXXX" to stderr.
-
-		// Add hydrogens to the molecule. To get good conformations, it's almost always a good idea to add hydrogens to the molecule first. http://rdkit.org/docs/GettingStartedInPython.html#writing-molecules
-		const unique_ptr<ROMol> mol_ptr(addHs(*smi_ptr));
+		const unique_ptr<ROMol> mol_ptr(sup.next()); // Calling next() may print "ERROR: Could not sanitize molecule on line XXXX" to stderr.
 
 		// Obtain a reference to the molecule to avoid writing *mol_ptr.
 		auto& mol = *mol_ptr;
 
-		// Calculate the number of rotatable bonds, with the implicit parameter useStrictDefinition = true to exclude amides, esters, etc.
-		// const auto nrot = calcNumRotatableBonds(mol);
-
-		// Calculate the number of conformers to generate. These values are suggested in JCIM, 52(5):1146-1158, 2012.
-		// const size_t num_confs = nrot <= 7 ? 50 : (nrot <= 12 ? 200 : 300);
-
-		// Generate conformers with no pruning by default. May set implicit parameters pruneRmsThresh = 0.5, ignoreSmoothingFailures = true
-		const auto confIds = EmbedMultipleConfs(mol, num_confs, 30, 89757); // Calling EmbedMultipleConfs() with ignoreSmoothingFailures = false may print "Could not triangle bounds smooth molecule" to stderr. Setting ignoreSmoothingFailures = true may result in invalid conformers.
-		const auto numConfs = confIds.size();
-		assert(numConfs <= num_confs);
-
-		// Check if conformers are generated.
-		if (!numConfs)
-		{
-			cerr << "No conformers were generated." << endl;
-			continue;
-		}
-
-		// Create a container to store the energy of each conformer.
-		vector<double> energies;
-		energies.reserve(numConfs);
-		for (const auto confId : confIds)
-		{
-			// Construct a Universal Force Field UFF, with the parameter vdwThresh = 100.0
-			unique_ptr<ForceField> ff(constructForceField(mol, 100.0, confId)); // Calling constructForceField() may print "UFFTYPER: Warning: hybridization set to SP3 for atom XX" to stderr.
-
-			// Initialize the UFF for minimization.
-			ff->initialize();
-
-			// Minimize the energy of the system by following gradients, with the implicit parameter maxIts = 200. A return value of 0 indicates convergence, while a return value of 1 indicates that the minimization did not converge in maxIts iterations, and more iterations may be required.
-			ff->minimize();
-
-			// Calculate the energy based on existing positions in the forcefield.
-			energies.push_back(ff->calcEnergy());
-		}
-
-		// Sort the conformer ID indexes by energy.
-		vector<size_t> scase(numConfs);
-		iota(scase.begin(), scase.end(), 0);
-		sort(scase.begin(), scase.end(), [&energies](const size_t val0, const size_t val1)
-		{
-			return energies[val0] < energies[val1];
-		});
-
 		// Get the number of points, excluding hydrogens.
-		const auto npt = smi_ptr->getNumAtoms();
-
-		// Calculate the threshold for SSR, where RMSD = sqrt(SSR / npt).
-		const auto ssrThresh = rmsThresh * rmsThresh * npt;
-
-		// Create a container to save the points of each conformer.
-		vector<Point3DConstPtrVect> points(numConfs);
-
-		// Create a container to save the index of ID of the output conformers.
-		vector<int> keep;
-		keep.reserve(numConfs);
-
-		// Declare a 4x4 transform matrix, which is initialized to an identity matrix transformation by construction.
-		Transform3D trans;
-
-		// Loop over each conformer, starting from the one with the lowest energy, and determine whether it should be kept.
-		for (const auto prbIdx : scase)
-		{
-			const auto prbCid = confIds[prbIdx];
-			auto& prbCnf = mol.getConformer(prbCid);
-
-			// Get the points for the current conformer.
-			auto& prbPoints = points[prbIdx];
-			prbPoints.resize(npt);
-			for (size_t i = 0; i < npt; ++i)
-			{
-				prbPoints[i] = &prbCnf.getAtomPos(i);
-			}
-
-			// Align the probe conformer to already-retained conformers to determine if the probe conformer should be kept. The loop is in reversed order so that should the probe conformer be kept, the lastly-returned transform matrix could be used to align the probe conformer to the conformer with the lowest energy.
-			bool to_keep = true;
-			for (auto refIdx = keep.crbegin(); refIdx != keep.crend(); ++refIdx)
-			{
-				// Get the points for the reference conformer.
-				const auto& refPoints = points[*refIdx];
-
-				// Discard the current conformer if it is conformationally close to any already-retained conformers.
-				if (AlignPoints(refPoints, prbPoints, trans) < ssrThresh)
-				{
-					to_keep = false;
-					break;
-				}
-			}
-
-			// Save the current conformer if it is distinct.
-			if (to_keep)
-			{
-				// Output the energy of the probe conformer.
-				energy << energies[prbIdx] << endl;
-
-				// Align the probe conformer to the conformer with the lowest energy. Such a transformation does not affect RMSD.
-				if (keep.size())
-				{
-					transformConformer(prbCnf, trans);
-				}
-
-				// Write the probe conformer in the aligned state.
-				writer.write(mol, prbCid);
-
-				// Save the probe conformer in the list of output conformers.
-				keep.push_back(prbIdx);
-			}
-		}
-
-		// Output the number of retained conformers.
-		nconfs << keep.size() << endl;
+		const auto npt = mol.getNumHeavyAtoms();
 
 		// Classify subset atoms.
 		array<vector<int>, num_subsets> subsets;
@@ -446,146 +306,144 @@ int main(int argc, char* argv[])
 
 		// Calculate the four reference points.
 		const auto n = subset0.size();
+		assert(n == npt);
 		const auto v = 1.0 / n;
 
-		// Loop over each conformer to calculate their USRCAT moment vector.
-		for (const auto confIdx : keep)
+		// Calculate USRCAT moment vector.
+		const auto& conf = mol.getConformer();
+
+		// Determine the reference points.
+		array<Point3D, num_references> references{};
+		auto& ctd = references[0];
+		auto& cst = references[1];
+		auto& fct = references[2];
+		auto& ftf = references[3];
+		for (const auto i : subset0)
 		{
-			const auto& conf = mol.getConformer(confIds[confIdx]);
+			const auto& a = conf.getAtomPos(i);
+			ctd += a;
+		}
+		ctd *= v;
+		double cst_dist = numeric_limits<double>::max();
+		double fct_dist = numeric_limits<double>::lowest();
+		double ftf_dist = numeric_limits<double>::lowest();
+		for (const auto i : subset0)
+		{
+			const auto& a = conf.getAtomPos(i);
+			const auto this_dist = dist2(a, ctd);
+			if (this_dist < cst_dist)
+			{
+				cst = a;
+				cst_dist = this_dist;
+			}
+			if (this_dist > fct_dist)
+			{
+				fct = a;
+				fct_dist = this_dist;
+			}
+		}
+		for (const auto i : subset0)
+		{
+			const auto& a = conf.getAtomPos(i);
+			const auto this_dist = dist2(a, fct);
+			if (this_dist > ftf_dist)
+			{
+				ftf = a;
+				ftf_dist = this_dist;
+			}
+		}
 
-			// Determine the reference points.
-			array<Point3D, num_references> references{};
-			auto& ctd = references[0];
-			auto& cst = references[1];
-			auto& fct = references[2];
-			auto& ftf = references[3];
-			for (const auto i : subset0)
+		// Precalculate the distances of heavy atoms to the reference points, given that subsets[1 to 4] are subsets of subsets[0].
+		array<vector<double>, num_references> dista;
+		for (size_t k = 0; k < num_references; ++k)
+		{
+			const auto& reference = references[k];
+			auto& dists = dista[k];
+			dists.resize(n);
+			for (size_t i = 0; i < n; ++i)
 			{
-				const auto& a = conf.getAtomPos(i);
-				ctd += a;
+				dists[subset0[i]] = sqrt(dist2(conf.getAtomPos(subset0[i]), reference));
 			}
-			ctd *= v;
-			double cst_dist = numeric_limits<double>::max();
-			double fct_dist = numeric_limits<double>::lowest();
-			double ftf_dist = numeric_limits<double>::lowest();
-			for (const auto i : subset0)
-			{
-				const auto& a = conf.getAtomPos(i);
-				const auto this_dist = dist2(a, ctd);
-				if (this_dist < cst_dist)
-				{
-					cst = a;
-					cst_dist = this_dist;
-				}
-				if (this_dist > fct_dist)
-				{
-					fct = a;
-					fct_dist = this_dist;
-				}
-			}
-			for (const auto i : subset0)
-			{
-				const auto& a = conf.getAtomPos(i);
-				const auto this_dist = dist2(a, fct);
-				if (this_dist > ftf_dist)
-				{
-					ftf = a;
-					ftf_dist = this_dist;
-				}
-			}
+		}
 
-			// Precalculate the distances of heavy atoms to the reference points, given that subsets[1 to 4] are subsets of subsets[0].
-			array<vector<double>, num_references> dista;
+		// Loop over pharmacophoric subsets and reference points.
+		auto q = qw[0];
+		size_t qo = 0;
+		for (const auto& subset : subsets)
+		{
+			const auto n = subset.size();
 			for (size_t k = 0; k < num_references; ++k)
 			{
-				const auto& reference = references[k];
-				auto& dists = dista[k];
-				dists.resize(n);
+				// Load distances from precalculated ones.
+				const auto& distp = dista[k];
+				vector<double> dists(n);
 				for (size_t i = 0; i < n; ++i)
 				{
-					dists[subset0[i]] = sqrt(dist2(conf.getAtomPos(subset0[i]), reference));
+					dists[i] = distp[subset[i]];
 				}
-			}
 
-			// Loop over pharmacophoric subsets and reference points.
-			auto q = qw[0];
-			size_t qo = 0;
-			for (const auto& subset : subsets)
-			{
-				const auto n = subset.size();
-				for (size_t k = 0; k < num_references; ++k)
+				// Compute moments.
+				array<double, 3> m{};
+				if (n > 2)
 				{
-					// Load distances from precalculated ones.
-					const auto& distp = dista[k];
-					vector<double> dists(n);
+					const auto v = 1.0 / n;
 					for (size_t i = 0; i < n; ++i)
 					{
-						dists[i] = distp[subset[i]];
+						const auto d = dists[i];
+						m[0] += d;
 					}
-
-					// Compute moments.
-					array<double, 3> m{};
-					if (n > 2)
+					m[0] *= v;
+					for (size_t i = 0; i < n; ++i)
 					{
-						const auto v = 1.0 / n;
-						for (size_t i = 0; i < n; ++i)
-						{
-							const auto d = dists[i];
-							m[0] += d;
-						}
-						m[0] *= v;
-						for (size_t i = 0; i < n; ++i)
-						{
-							const auto d = dists[i] - m[0];
-							m[1] += d * d;
-						}
-						m[1] = sqrt(m[1] * v);
-						for (size_t i = 0; i < n; ++i)
-						{
-							const auto d = dists[i] - m[0];
-							m[2] += d * d * d;
-						}
-						m[2] = cbrt(m[2] * v);
+						const auto d = dists[i] - m[0];
+						m[1] += d * d;
 					}
-					else if (n == 2)
+					m[1] = sqrt(m[1] * v);
+					for (size_t i = 0; i < n; ++i)
 					{
-						m[0] = 0.5 *     (dists[0] + dists[1]);
-						m[1] = 0.5 * fabs(dists[0] - dists[1]);
+						const auto d = dists[i] - m[0];
+						m[2] += d * d * d;
 					}
-					else if (n == 1)
-					{
-						m[0] = dists[0];
-					}
-					for (const auto e : m)
-					{
-						q[qo++] = e;
-					}
+					m[2] = cbrt(m[2] * v);
+				}
+				else if (n == 2)
+				{
+					m[0] = 0.5 *     (dists[0] + dists[1]);
+					m[1] = 0.5 * fabs(dists[0] - dists[1]);
+				}
+				else if (n == 1)
+				{
+					m[0] = dists[0];
+				}
+				for (const auto e : m)
+				{
+					q[qo++] = e;
 				}
 			}
-			assert(qo == qn.back());
+		}
+		assert(qo == qn.back());
 
-			// Compute USR and USRCAT scores.
-			for (size_t j = 0, k = 0; k < num_ligands; ++k)
+		// Compute USR and USRCAT scores.
+		for (size_t j = 0, k = 0; k < num_ligands; ++k)
+		{
+			for (const auto mconfs = mconfss[k]; j < mconfs; ++j)
 			{
-				for (const auto mconfs = mconfss[k]; j < mconfs; ++j)
+				const auto& l = features[j];
+				double s = 0;
+				#pragma unroll
+				for (size_t i = 0, u = 0; u < num_usrs; ++u)
 				{
-					const auto& l = features[j];
-					double s = 0;
 					#pragma unroll
-					for (size_t i = 0, u = 0; u < num_usrs; ++u)
+					for (const auto qnu = qn[u]; i < qnu; i += 4)
 					{
-						#pragma unroll
-						for (; i < qn[u]; i += 4)
-						{
-							const auto m256a = _mm256_andnot_pd(m256s, _mm256_sub_pd(_mm256_load_pd(&q[i]), _mm256_load_pd(&l[i])));
-							_mm256_stream_pd(a.data(), _mm256_hadd_pd(m256a, m256a));
-							s += a[0] + a[2];
-						}
-						if (s < scores[u][k])
-						{
-							scores[u][k] = s;
-							cnfids[u][k] = j;
-						}
+						const auto m256a = _mm256_andnot_pd(m256s, _mm256_sub_pd(_mm256_load_pd(&q[i]), _mm256_load_pd(&l[i])));
+						_mm256_stream_pd(a.data(), _mm256_hadd_pd(m256a, m256a));
+						s += a[0] + a[2];
+					}
+					if (s < scores[u][k])
+					{
+						scores[u][k] = s;
+						cnfids[u][k] = j;
 					}
 				}
 			}

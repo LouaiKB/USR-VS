@@ -6,7 +6,7 @@ bin/encode: obj/encode.o
 	${CC} -o $@ $^ -L${RDKIT_ROOT}/lib -lGraphMol -lFileParsers -lSmilesParse -lSubstructMatch -lRDGeneral
 
 bin/usr: obj/main.o
-	${CC} -o $@ $^ -pthread -L${RDKIT_ROOT}/lib -lGraphMol -lFileParsers -lSmilesParse -lDescriptors -lDistGeomHelpers -lForceFieldHelpers -lForceField -lRDGeneral -lMolTransforms -lAlignment -lSubstructMatch -L${BOOST_ROOT}/lib -lboost_system -lboost_thread -lboost_filesystem -lboost_iostreams -lboost_date_time -L${POCO_ROOT}/lib/Linux/x86_64 -lPocoFoundation -lPocoNet -L${MONGODBCXXDRIVER_ROOT}/sharedclient -lmongoclient
+	${CC} -o $@ $^ -pthread -L${RDKIT_ROOT}/lib -lGraphMol -lFileParsers -lSmilesParse -lSubstructMatch -lRDGeneral -L${BOOST_ROOT}/lib -lboost_system -lboost_thread -lboost_filesystem -lboost_iostreams -lboost_date_time -L${POCO_ROOT}/lib/Linux/x86_64 -lPocoFoundation -lPocoNet -L${MONGODBCXXDRIVER_ROOT}/sharedclient -lmongoclient
 
 obj/encode.o: src/encode.cpp
 	${CC} -o $@ $< -c -std=c++11 -O2 -Wall -I${RDKIT_ROOT}/Code
