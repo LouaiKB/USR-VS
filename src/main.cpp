@@ -168,7 +168,7 @@ int main(int argc, char* argv[])
 
 	// Initialize constants.
 	cout << local_time() << "Initializing" << endl;
-	const auto collection = "istar.usr";
+	const auto collection = "istar.usr2";
 	const auto epoch = date(1970, 1, 1);
 	const size_t num_usrs = 2;
 	constexpr array<size_t, num_usrs> qn{{ 12, 60 }};
@@ -213,7 +213,7 @@ int main(int argc, char* argv[])
 
 	// Read ligand header file.
 	stream_array<size_t> ligands("16_ligand.sdf");
-	assert(ligands.size() == num_ligands);
+	assert(ligands.size() == num_conformers);
 
 	array<vector<double>, 2> scores
 	{{
@@ -237,7 +237,7 @@ int main(int argc, char* argv[])
 		// Fetch an incompleted job in a first-come-first-served manner.
 		if (!sleeping) cout << local_time() << "Fetching an incompleted job" << endl;
 		BSONObj info;
-		conn.runCommand("istar", BSON("findandmodify" << "usr" << "query" << BSON("done" << BSON("$exists" << false) << "started" << BSON("$exists" << false)) << "sort" << BSON("submitted" << 1) << "update" << BSON("$set" << BSON("started" << Date_t(duration_cast<std::chrono::milliseconds>(system_clock::now().time_since_epoch()).count())))), info); // conn.findAndModify() is available since MongoDB C++ Driver legacy-1.0.0
+		conn.runCommand("istar", BSON("findandmodify" << "usr2" << "query" << BSON("done" << BSON("$exists" << false) << "started" << BSON("$exists" << false)) << "sort" << BSON("submitted" << 1) << "update" << BSON("$set" << BSON("started" << Date_t(duration_cast<std::chrono::milliseconds>(system_clock::now().time_since_epoch()).count())))), info); // conn.findAndModify() is available since MongoDB C++ Driver legacy-1.0.0
 		const auto value = info["value"];
 		if (value.isNull())
 		{
@@ -257,7 +257,7 @@ int main(int argc, char* argv[])
 		const auto email = job["email"].String();
 
 		// Parse the user-supplied SDF file.
-		SDMolSupplier sup((jobs_path / "query.sdf").string());
+		SDMolSupplier sup((job_path / "ligand.sdf").string());
 
 		// Obtain a pointer to the current molecule with heavy atoms only.
 		const unique_ptr<ROMol> mol_ptr(sup.next()); // Calling next() may print "ERROR: Could not sanitize molecule on line XXXX" to stderr.
