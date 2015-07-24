@@ -43,7 +43,7 @@
         <div class="col-md-12">
           <p>The input to usr is onefold:</p>
           <ul>
-            <li>A query ligand in SMILES format. Totally 23,129,049 ligands collected from the <a href="http://zinc.docking.org/subsets/all-clean">All Clean</a> subset of <a href="http://zinc.docking.org">ZINC</a> are to be screened.</li>
+            <li>A query ligand in SDF format. Totally 23,129,049 ligands collected from the <a href="http://zinc.docking.org/subsets/all-clean">All Clean</a> subset of <a href="http://zinc.docking.org">ZINC</a> are to be screened.</li>
           </ul>
         </div>
       </div>
@@ -51,7 +51,7 @@
         <div class="col-md-12">
           <p>The output from usr is twofold:</p>
           <ul>
-            <li><img src="/excel.png" alt="log.csv.gz">log.csv.gz: ZINC ID, USR score and USRCAT score of the top 1000 ligands geometrically similar to the query ligand.</li>
+            <li><img src="/excel.png" alt="log.csv.gz">log.csv.gz: ZINC ID, USR score and USRCAT score of the top 10000 ligands geometrically similar to the query ligand.</li>
             <li><img src="/molecule.png" alt="ligands.sdf.gz">ligands.sdf.gz: structures of the top 1000 ligands geometrically similar to the query ligand.</li>
           </ul>
         </div>
@@ -59,7 +59,7 @@
       <div class="row" role="form">
         <div class="col-md-6">
           <div class="form-group">
-            <label for="ligand"><a title="must conform to SMILES format" id="ligand_label">Ligand in SMILES format</a></label> <input type="file" id="ligand">
+            <label for="ligand"><a title="must conform to SDF format" id="ligand_label">Ligand in SDF format</a></label> <input type="file" id="ligand">
           </div>
         </div>
       </div>
