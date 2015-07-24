@@ -6,7 +6,6 @@
 #include <GraphMol/FileParsers/MolSupplier.h>
 #include <GraphMol/SmilesParse/SmilesParse.h>
 #include <GraphMol/Substruct/SubstructMatch.h>
-#include <Geometry/point.h>
 using namespace std;
 using namespace RDKit;
 using namespace RDGeom;
