@@ -193,9 +193,8 @@ int main(int argc, char* argv[])
 	}
 
 	// Initialize variables.
-	array<array<double, qn.back()>, 1> qw;
-	array<array<double, 4>, 1> aw;
-	auto a = aw.front();
+	alignas(32) array<double, qn.back()> q;
+	alignas(32) array<double, 4> a;
 
 	// Read ZINC ID file.
 	const string_array<size_t> zincids("16_zincid.txt");
@@ -367,7 +366,6 @@ int main(int argc, char* argv[])
 		}
 
 		// Loop over pharmacophoric subsets and reference points.
-		auto q = qw[0];
 		size_t qo = 0;
 		for (const auto& subset : subsets)
 		{
