@@ -1,0 +1,179 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="author" content="Hongjian Li">
+  <meta name="description" content="iview: an interactive WebGL visualizer for protein-ligand complex">
+  <title>iview: an interactive WebGL visualizer for protein-ligand complex</title>
+  <link rel="stylesheet" href="/bootstrap.min.css">
+  <link rel="stylesheet" href="/bootstrap-theme.min.css">
+  <link rel="stylesheet" href="/index.css">
+  <link rel="shortcut icon" href="/favicon.ico">
+  <link rel="apple-touch-icon-precomposed" sizes="144x144" href="/apple-touch-icon-144-precomposed.png">
+  <link rel="apple-touch-icon-precomposed" sizes="114x114" href="/apple-touch-icon-114-precomposed.png">
+  <link rel="apple-touch-icon-precomposed" sizes="72x72" href="/apple-touch-icon-72-precomposed.png">
+  <link rel="apple-touch-icon-precomposed" href="/apple-touch-icon-57-precomposed.png">
+</head>
+<body>
+  <a class="sr-only" href="#content">Skip navigation</a>
+  <a href="//github.com/HongjianLi/istar" class="ribbon"></a>
+  <header class="navbar navbar-inverse navbar-static-top" role="banner">
+    <div class="container">
+      <div class="navbar-header">
+        <button type="button" class="navbar-toggle" data-toggle="collapse" data-target=".navbar-collapse">
+          <span class="icon-bar"></span>
+          <span class="icon-bar"></span>
+          <span class="icon-bar"></span>
+        </button>
+      </div>
+      <nav class="collapse navbar-collapse" role="navigation">
+        <ul class="nav navbar-nav">
+          <li>
+            <a href="/"><img src="/logo.png" alt="istar logo">istar: software as a service</a>
+          </li>
+          <li>
+            <a href="/idock"><img src="/idock/logo.png" alt="idock logo">idock: protein-ligand docking</a>
+          </li>
+          <li>
+            <a href="/usr"><img src="/usr/logo.png" alt="idock logo">usr: ultrafast shape recognition</a>
+          </li>
+          <li class="active">
+            <a href="/iview"><img src="/iview/logo.png" alt="iview logo">iview: interactive WebGL visualizer</a>
+          </li>
+          <li>
+            <a href="/igrep"><img src="/igrep/logo.png" alt="igrep logo">igrep: DNA sequence matching</a>
+          </li>
+          <li>
+            <a href="/icuda"><img src="/icuda/logo.png" alt="icuda logo">icuda: introduction to CUDA</a>
+          </li>
+        </ul>
+      </nav>
+    </div>
+  </header>
+  <div class="jumbotron" id="content" role="main">
+    <div class="container">
+      <h1><img src="/iview/logo.png" alt="logo" class="logo">iview</h1>
+      <p>an interactive WebGL visualizer for protein-ligand complex</p>
+    </div>
+  </div>
+  <div class="container">
+    <div>
+      <div class="row">
+        <div class="col-md-12">
+          <canvas>Your browser does not support WebGL.</canvas>
+        </div>
+      </div>
+      <div class="row">
+        <div class="col-md-12">
+          <div class="form-group">
+            <label>Top <span id="nligands"></span> ligands</label>
+            <div>
+              <div class="btn-group btn-group-sm" data-toggle="buttons" style="overflow-x: scroll;white-space: nowrap;" id="ids"></div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="row" id="data">
+        <div class="col-md-3">
+          <p>Downloads</p>
+          <ul id="downloads">
+            <li><a><img src="/excel.png" alt="log.csv.gz">log.csv.gz</a></li>
+            <li><a><img src="/molecule.png" alt="ligands.sdf.gz">ligands.sdf.gz</a></li>
+          </ul>
+          <p>Results</p>
+          <ul>
+            <li>ZINC ID: <a><span id="id"></span></a></li>
+            <li>USR score: <span id="usr_score"></span></li>
+            <li>USRCAT score: <span id="usrcat_score"></span></li>
+          </ul>
+        </div>
+        <div class="col-md-3">
+          <p>10 molecular properties</p>
+          <ul>
+            <li>Molecular weight (g/mol): <span id="mwt"></span></li>
+            <li>Partition coefficient xlogP: <span id="lgp"></span></li>
+            <li>Rotatable bonds: <span id="nrb"></span></li>
+            <li>Hydrogen bond donors: <span id="hbd"></span></li>
+            <li>Hydrogen bond acceptors: <span id="hba"></span></li>
+            <li>Net charge: <span id="chg"></span></li>
+            <li>Apolar desolvation (kcal/mol): <span id="ads"></span></li>
+            <li>Polar desolvation (kcal/mol): <span id="pds"></span></li>
+            <li>Polar surface area tPSA (&Aring;<sup>2</sup>): <span id="psa"></span></li>
+            <li>SMILES: <span id="smiles"></span></li>
+          </ul>
+        </div>
+        <div class="col-md-3">
+          <p><span id="nsuppliers"></span> suppliers and annotations</p>
+          <ul id="suppliers">
+          </ul>
+        </div>
+      </div>
+      <div class="row">
+        <div class="col-md-3">
+          <div class="form-group">
+            <label>Display ligand as</label>
+            <div>
+              <div class="btn-group btn-group-sm btn-group-justified" data-toggle="buttons" id="ligand">
+                <label class="btn btn-primary">
+                  <input type="radio">line
+                </label>
+                <label class="btn btn-primary active">
+                  <input type="radio">stick
+                </label>
+                <label class="btn btn-primary">
+                  <input type="radio">ball & stick
+                </label>
+                <label class="btn btn-primary">
+                  <input type="radio">sphere
+                </label>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="row">
+        <div class="col-md-4">
+          <p>iview is based on the following components</p>
+          <ul>
+            <li>3D molecular viewer <a href="https://github.com/biochem-fan/GLmol">GLmol</a> by biochem_fan</li>
+            <li>JavaScript 3D library <a href="http://threejs.org">three.js</a> by mrdoob</li>
+            <li>Surface construction <a href="http://zhanglab.ccmb.med.umich.edu/EDTSurf">EDTSurf</a> by Dong Xu and Yang Zhang</li>
+            <li><a href="http://webglmol.sourceforge.jp/surface.html">JavaScript port of EDTSurf</a> by biochem_fan</li>
+            <li>zlib, deflate, gzip and pkzip implementation <a href="https://github.com/imaya/zlib.js">zlib.js</a> by imaya</li>
+          </ul>
+        </div>
+        <div class="col-md-4">
+          <p>iview supports the following keyings</p>
+          <ul>
+            <li>Default: rotate</li>
+            <li>Ctrl: translate</li>
+            <li>Shift: zoom in/out</li>
+            <li>Ctrl + shift: slab</li>
+          </ul>
+        </div>
+        <div class="col-md-4">
+        <p>iview supports the following functions</p>
+          <ul>
+            <li><button class="btn btn-primary btn-sm" id="exportCanvas"><span class="glyphicon glyphicon-picture"></span> Export canvas to png</button></li>
+          </ul>
+        </div>
+      </div>
+      <div class="row">
+        <div class="col-md-12">
+          <p>Hongjian Li, Kwong-Sak Leung, Takanori Nakane and Man-Hon Wong. iview: an interactive WebGL visualizer for protein-ligand complex. <em>BMC Bioinformatics</em>, 15(1):56, 2014. <a href="http://dx.doi.org/10.1186/1471-2105-15-56">DOI: 10.1186/1471-2105-15-56</a></p>
+        </div>
+      </div>
+    </div>
+  </div>
+  <footer role="contentinfo">
+    <div class="container">
+      <p><a href="http://www.cuhk.edu.hk"><img src="/cuhk.jpg" alt="CUHK logo"></a>&copy; 2012-2015 Chinese University of Hong Kong. Platform designed by <a href="http://www.cse.cuhk.edu.hk/~hjli">Hongjian Li</a>. Code licensed under <a href="http://www.apache.org/licenses/LICENSE-2.0">Apache License 2.0</a>. Documentation licensed under <a href="http://creativecommons.org/licenses/by/3.0">CC BY 3.0</a>.<a href="http://validator.w3.org/check?uri=referer"><img src="/HTML5_Badge_512.png" alt="HTML5 logo"></a></p>
+    </div>
+  </footer>
+  <script src="//code.jquery.com/jquery-2.1.4.min.js"></script>
+  <script src="/bootstrap.min.js"></script>
+  <script src="/iview/three.min.js"></script>
+  <script src="index.js"></script>
+</body>
+</html>

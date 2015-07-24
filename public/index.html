@@ -1,0 +1,166 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="author" content="Hongjian Li">
+  <meta name="description" content="usr: ultrafast shape recognition for ligand-based virtual screening">
+  <title>usr: ultrafast shape recognition for ligand-based virtual screening</title>
+  <link rel="stylesheet" href="/bootstrap.min.css">
+  <link rel="stylesheet" href="/bootstrap-theme.min.css">
+  <link rel="stylesheet" href="/jquery-ui.min.css">
+  <link rel="stylesheet" href="/index.css">
+  <link rel="shortcut icon" href="/favicon.ico">
+  <link rel="apple-touch-icon-precomposed" sizes="144x144" href="/apple-touch-icon-144-precomposed.png">
+  <link rel="apple-touch-icon-precomposed" sizes="114x114" href="/apple-touch-icon-114-precomposed.png">
+  <link rel="apple-touch-icon-precomposed" sizes="72x72" href="/apple-touch-icon-72-precomposed.png">
+  <link rel="apple-touch-icon-precomposed" href="/apple-touch-icon-57-precomposed.png">
+</head>
+<body>
+  <a class="sr-only" href="#content">Skip navigation</a>
+  <a href="//github.com/HongjianLi/usr" class="ribbon"></a>
+  <div class="jumbotron" id="content" role="main">
+    <div class="container">
+      <h1><img src="logo.png" alt="logo" class="logo">usr & usrcat</h1>
+      <p>ultrafast shape recognition with/without CREDO atom types for ligand-based virtual screening</p>
+    </div>
+  </div>
+  <div class="container">
+    <section>
+      <div class="page-header">
+        <h2>Jobs</h2>
+      </div>
+      <div class="row">
+        <div class="col-md-12" id="pager">
+        </div>
+      </div>
+    </section>
+    <section>
+      <div class="page-header">
+        <h2>New job</h2>
+      </div>
+      <div class="row">
+        <div class="col-md-12">
+          <p>The input to usr is onefold:</p>
+          <ul>
+            <li>A query ligand in SMILES format. Totally 23,129,049 ligands collected from the <a href="http://zinc.docking.org/subsets/all-clean">All Clean</a> subset of <a href="http://zinc.docking.org">ZINC</a> are to be screened.</li>
+          </ul>
+        </div>
+      </div>
+      <div class="row">
+        <div class="col-md-12">
+          <p>The output from usr is twofold:</p>
+          <ul>
+            <li><img src="/excel.png" alt="log.csv.gz">log.csv.gz: ZINC ID, USR score and USRCAT score of the top 1000 ligands geometrically similar to the query ligand.</li>
+            <li><img src="/molecule.png" alt="ligands.sdf.gz">ligands.sdf.gz: structures of the top 1000 ligands geometrically similar to the query ligand.</li>
+          </ul>
+        </div>
+      </div>
+      <div class="row" role="form">
+        <div class="col-md-6">
+          <div class="form-group">
+            <label for="ligand"><a title="must conform to SMILES format" id="ligand_label">Ligand in SMILES format</a></label> <input type="file" id="ligand">
+          </div>
+        </div>
+      </div>
+      <div class="row" role="form">
+        <div class="col-md-3">
+          <div class="form-group">
+            <label for="description"><a title="at most 20 characters" id="description_label">Briefly describe your job</a></label>
+            <div class="input-group">
+              <span class="input-group-addon"><span class="glyphicon glyphicon-book"></span></span>
+              <input type="text" class="form-control" id="description" placeholder="TMC278">
+            </div>
+          </div>
+        </div>
+        <div class="col-md-3">
+          <div class="form-group">
+            <label for="email"><a title="compulsory" id="email_label">Email to receive completion notification</a></label>
+            <div class="input-group">
+              <span class="input-group-addon"><span class="glyphicon glyphicon-envelope"></span></span>
+              <input type="email" class="form-control" id="email" placeholder="Jacky@cuhk.edu.hk">
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="row">
+        <div class="col-md-1">
+          <div class="form-group">
+            <button class="btn btn-primary" id="submit"><span class="glyphicon glyphicon-cloud-upload"></span> Submit</button>
+          </div>
+        </div>
+      </div>
+    </section>
+    <section>
+      <div class="page-header">
+        <h2>Tutorials</h2>
+      </div>
+      <div class="row">
+        <div class="col-md-12">
+          <div class="ui-accordion">
+            <h3>How to submit a new job</h3>
+            <div>
+		      <p>Open your query ligand locally in the WebGL canvas. The supported file formats are:</p>
+		      <ul>
+		        <li>MOL2. Your mol2 file must contain <code>@&lt;TRIPOS&gt;ATOM</code> and <code>@&lt;TRIPOS&gt;BOND</code> records. Here is <a href="sample.mol2">a sample file</a>.</li>
+		        <li>SDF. Your sdf file must contain atoms and bonds. Here is <a href="sample.sdf">a sample file</a>.</li>
+		        <li>XYZ. Your xyz file must contain atoms. Bonds will be recovered automatically. Here is <a href="sample.xyz">a sample file</a>.</li>
+		        <li>PDB. Your pdb file must contain <code>HETATM</code> and <code>CONECT</code> records. Here is <a href="sample.pdb">a sample file</a>.</li>
+		        <li>PDBQT. Your pdbqt file must contain <code>ATOM</code> records. Bonds will be recovered automatically. Here is <a href="sample.pdbqt">a sample file</a>.</li>
+		      </ul>
+		      <p>The provided ligand file must contain exactly one query ligand.</p>
+              <p>Briefly describe your job. The job description is defaulted to your query ligand filename.</p>
+              <p>Fill in your email to receive notification upon job completion. Fill in any anonymous email should you not want to receive notification.</p>
+              <p>Submit your job.</p>
+              <p>Check your job status in the topmost table.</p>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+    <section>
+      <div class="page-header">
+        <h2>ZINC ligands</h2>
+      </div>
+      <div class="row">
+        <div class="col-md-12">
+          <p>23,129,049 ligands are collected from versions 2012-04-26, 2013-01-10 and 2013-12-18 of the <a href="http://zinc.docking.org/subsets/all-clean">All Clean</a> subset of <a href="http://zinc.docking.org">ZINC</a>. 93,903,333 low-energy conformers are generated by <a href="http://rdkit.org">RDKit</a>. We thank Professor John J. Irwin, the developer and maintainer of ZINC, for granting us permission to use ZINC with three conditions:</p>
+          <ul>
+            <li>We shall provide links to http://zinc.docking.org/substance/zincid for top hits so that users can seek for the most current purchasing information at ZINC's official web site.</li>
+            <li>We shall limit the number of top hits for download to 1000 ligands from a single job.</li>
+            <li>We shall update our ligands when ZINC data is updated so that users can benefit from the most current ligand data.</li>
+          </ul>
+        </div>
+      </div>
+    </section>
+    <section>
+      <div class="page-header">
+        <h2>Citations</h2>
+      </div>
+      <div class="row">
+        <div class="col-md-12">
+          <h4>Citation for USR</h4>
+          <p>Pedro J. Ballester and W. Graham Richards. Ultrafast shape recognition to search compound databases for similar molecular shapes. <em>Journal of Computational Chemistry</em>, 28(10):1711-1723, 2007. <a href="http://dx.doi.org/10.1002/jcc.20681">DOI: 10.1002/jcc.20681</a></p>
+          <h4>Citation for USRCAT</h4>
+          <p>Adrian M Schreyer and Tom Blundell. USRCAT: real-time ultrafast shape recognition with pharmacophoric constraints. <em>Journal of Cheminformatics</em>, 4(1):27, 2012. <a href="http://dx.doi.org/10.1186/1758-2946-4-27">DOI: 10.1186/1758-2946-4-27</a></p>
+        </div>
+      </div>
+    </section>
+  </div>
+  <footer role="contentinfo">
+    <div class="container">
+      <p><a href="http://www.cuhk.edu.hk"><img src="/cuhk.jpg" alt="CUHK logo"></a>&copy; 2012-2015 Chinese University of Hong Kong. Platform designed by <a href="http://www.cse.cuhk.edu.hk/~hjli">Hongjian Li</a>. Code licensed under <a href="http://www.apache.org/licenses/LICENSE-2.0">Apache License 2.0</a>. Documentation licensed under <a href="http://creativecommons.org/licenses/by/3.0">CC BY 3.0</a>.<a href="http://validator.w3.org/check?uri=referer"><img src="/HTML5_Badge_512.png" alt="HTML5 logo"></a></p>
+    </div>
+  </footer>
+  <script src="//code.jquery.com/jquery-2.1.4.min.js"></script>
+  <script src="/bootstrap.min.js"></script>
+  <script src="/jquery-ui.min.js"></script>
+  <script src="/jquery-dateFormat.min.js"></script>
+  <script src="/jquery.pager.js"></script>
+  <script src="/jquery.lazyload.min.js"></script>
+  <script src="/iview/three.min.js"></script>
+  <script src="/istar.js"></script>
+  <script src="/validator.js"></script>
+  <script src="index.js"></script>
+</body>
+</html>
