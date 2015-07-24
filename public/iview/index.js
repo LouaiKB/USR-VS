@@ -850,7 +850,7 @@ void main()\n\
 		var r = covalentRadii[atom1.elem] + covalentRadii[atom2.elem];
 		return atom1.coord.distanceToSquared(atom2.coord) < 1.3 * r * r;
 	};
-	var path = '/usr/jobs/' + location.search.substr(1) + '/';
+	var path = '/jobs/' + location.search.substr(1) + '/';
 	$('#downloads a').each(function () {
 		var t = $(this);
 		t.attr('href', path + t.text());
