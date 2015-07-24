@@ -83,7 +83,6 @@ if (cluster.isMaster) {
 				if (v
 					.field('email').message('must be valid').email().copy()
 					.field('description').message('must be provided, at most 20 characters').length(1, 20).xss().copy()
-					.field('format').message('must be mol2, sdf, xyz, pdb, or pdbqt').in(['mol2', 'sdf', 'xyz', 'pdb', 'pdbqt']).copy()
 					.field('ligand').message('must be provided and must not exceed 100KB').length(1, 102400)
 					.failed()) {
 					res.json(v.err);
@@ -91,10 +90,10 @@ if (cluster.isMaster) {
 				}
 				v.res.submitted = new Date();
 				v.res._id = new mongodb.ObjectID();
-				var dir = 'public/jobs/' + v.res._id;
+				var dir = process.cwd() + '/public/jobs/' + v.res._id;
 				fs.mkdir(dir, function (err) {
 					if (err) throw err;
-					fs.writeFile(dir + '/ligand.' + v.res.format, req.body['ligand'], function(err) {
+					fs.writeFile(dir + '/ligand.sdf', req.body['ligand'], function(err) {
 						if (err) throw err;
 						usr.insert(v.res, { w: 0 });
 						res.json({});
