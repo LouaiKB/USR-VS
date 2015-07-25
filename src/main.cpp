@@ -255,8 +255,8 @@ int main(int argc, char* argv[])
 		const auto job_path = jobs_path / _id.str();
 		const auto email = job["email"].String();
 
-		// Parse the user-supplied SDF file.
-		SDMolSupplier sup((job_path / "ligand.sdf").string());
+		// Parse the user-supplied SDF file, setting sanitize=true, removeHs=false, strictParsing=true.
+		SDMolSupplier sup((job_path / "ligand.sdf").string(), true, false, true);
 
 		// Obtain a pointer to the current molecule with heavy atoms only.
 		const unique_ptr<ROMol> mol_ptr(sup.next()); // Calling next() may print "ERROR: Could not sanitize molecule on line XXXX" to stderr.
