@@ -255,18 +255,16 @@ int main(int argc, char* argv[])
 		const auto email = job["email"].String();
 
 		// Parse the user-supplied SDF file, setting sanitize=true, removeHs=false, strictParsing=true.
+		cout << local_time() << "Parsing the query SDF file" << endl;
 		SDMolSupplier sup((job_path / "query.sdf").string(), true, false, true);
-
-		// Obtain a pointer to the current molecule with heavy atoms only.
 		const unique_ptr<ROMol> mol_ptr(sup.next()); // Calling next() may print "ERROR: Could not sanitize molecule on line XXXX" to stderr.
-
-		// Obtain a reference to the molecule to avoid writing *mol_ptr.
 		auto& mol = *mol_ptr;
 
 		// Get the number of points, excluding hydrogens.
 		const auto npt = mol.getNumHeavyAtoms();
 
 		// Classify subset atoms.
+		cout << local_time() << "Classifying atoms into subsets:";
 		array<vector<int>, num_subsets> subsets;
 		for (size_t k = 0; k < num_subsets; ++k)
 		{
@@ -278,7 +276,9 @@ int main(int argc, char* argv[])
 			{
 				subset.push_back(v.front().second);
 			}
+			cout << ' ' << subset.size();
 		}
+		cout << endl;
 		const auto& subset0 = subsets.front();
 
 		// Check user-provided ligand validity.
@@ -303,14 +303,11 @@ int main(int argc, char* argv[])
 		}
 
 		// Calculate the four reference points.
+		cout << local_time() << "Calculating reference points" << endl;
+		const auto& conf = mol.getConformer();
 		const auto n = subset0.size();
 		assert(n == npt);
 		const auto v = 1.0 / n;
-
-		// Obtain the current conformer.
-		const auto& conf = mol.getConformer();
-
-		// Determine the reference points.
 		array<Point3D, num_references> references{};
 		auto& ctd = references[0];
 		auto& cst = references[1];
@@ -352,6 +349,7 @@ int main(int argc, char* argv[])
 		}
 
 		// Precalculate the distances of heavy atoms to the reference points, given that subsets[1 to 4] are subsets of subsets[0].
+		cout << local_time() << "Calculating pairwise distances" << endl;
 		array<vector<double>, num_references> dista;
 		for (size_t k = 0; k < num_references; ++k)
 		{
@@ -365,6 +363,7 @@ int main(int argc, char* argv[])
 		}
 
 		// Loop over pharmacophoric subsets and reference points.
+		cout << local_time() << "Calculating USRCAT moments" << endl;
 		size_t qo = 0;
 		for (const auto& subset : subsets)
 		{
@@ -421,6 +420,7 @@ int main(int argc, char* argv[])
 		assert(qo == qn.back());
 
 		// Compute USR and USRCAT scores.
+		cout << local_time() << "Calculating USRCAT scores" << endl;
 		for (size_t j = 0, k = 0; k < num_ligands; ++k)
 		{
 			for (const auto mconfs = mconfss[k]; j < mconfs; ++j)
@@ -447,6 +447,7 @@ int main(int argc, char* argv[])
 		}
 
 		// Sort ligands by USRCAT score, if equal then by USR score, if equal then by ZINC ID.
+		cout << local_time() << "Sorting scores" << endl;
 		iota(scase.begin(), scase.end(), 0);
 		sort(scase.begin(), scase.end(), [&](const size_t val0, const size_t val1)
 		{
@@ -466,6 +467,7 @@ int main(int argc, char* argv[])
 		});
 
 		// Write results.
+		cout << local_time() << "Writing output files" << endl;
 		using namespace boost::iostreams;
 		filtering_ostream log_csv_gz;
 		log_csv_gz.push(gzip_compressor());
