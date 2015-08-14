@@ -857,7 +857,7 @@ void main()\n\
 	});
 	var ligand;
 	$.ajax({
-		url: path + 'ligands.sdf.gz',
+		url: path + 'hits.sdf.gz',
 		mimeType: 'application/octet-stream; charset=x-user-defined',
 	}).done(function (lsrcz) {
 		var gunzipWorker = new Worker('/gunzip.js');
@@ -918,7 +918,7 @@ void main()\n\
 				while (lines[offset++] !== "$$$$");
 				ligands.push(ligand);
 			}
-			$('#nligands').text(ligands.length);
+			$('#nhits').text(ligands.length);
 			var ids = $('#ids');
 			ids.html(ligands.map(function(ligand) {
 				return '<label class="btn btn-primary"><input type="radio">' + ligand.id + '</label>';

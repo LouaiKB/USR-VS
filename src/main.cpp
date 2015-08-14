@@ -308,7 +308,7 @@ int main(int argc, char* argv[])
 		assert(n == npt);
 		const auto v = 1.0 / n;
 
-		// Calculate USRCAT moment vector.
+		// Obtain the current conformer.
 		const auto& conf = mol.getConformer();
 
 		// Determine the reference points.
@@ -447,7 +447,7 @@ int main(int argc, char* argv[])
 			}
 		}
 
-		// Sort ligands by USRCAT score.
+		// Sort ligands by USRCAT score, if equal then by USR score, if equal then by ZINC ID.
 		iota(scase.begin(), scase.end(), 0);
 		sort(scase.begin(), scase.end(), [&](const size_t val0, const size_t val1)
 		{
@@ -472,9 +472,9 @@ int main(int argc, char* argv[])
 		log_csv_gz.push(file_sink((job_path / "log.csv.gz").string()));
 		log_csv_gz.setf(ios::fixed, ios::floatfield);
 		log_csv_gz << "ZINC ID,USR score,USRCAT score\n" << setprecision(8);
-		filtering_ostream ligands_sdf_gz;
-		ligands_sdf_gz.push(gzip_compressor());
-		ligands_sdf_gz.push(file_sink((job_path / "ligands.sdf.gz").string()));
+		filtering_ostream hits_sdf_gz;
+		hits_sdf_gz.push(gzip_compressor());
+		hits_sdf_gz.push(file_sink((job_path / "hits.sdf.gz").string()));
 		for (size_t t = 0; t < 10000; ++t)
 		{
 			const auto k = scase[t];
@@ -487,7 +487,7 @@ int main(int argc, char* argv[])
 			if (t >= 1000) continue;
 
 			const auto lig = ligands[cnfids[1][k]];
-			ligands_sdf_gz.write(lig.data(), lig.size());
+			hits_sdf_gz.write(lig.data(), lig.size());
 		}
 
 		// Update progress.
