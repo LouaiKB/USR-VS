@@ -45,15 +45,14 @@ $(function() {
 	tick();
 
 	// Load query ligand locally
-	var ligand, format;
+	var query;
 	$('input[type="file"]').change(function() {
 		var file = this.files[0];
 		if (file === undefined) return;
 		$('#description').val(file.name);
 		var reader = new FileReader();
 		reader.onload = function () {
-			ligand = reader.result;
-			format = file.name.substr((~-file.name.lastIndexOf('.') >>> 0) + 2).toLowerCase();
+			query = reader.result;
 		};
 		reader.readAsText(file);
 	});
@@ -74,18 +73,17 @@ $(function() {
 		};
 		var v = new validator(job);
 		if (v
-			.field('format').message('must be sdf').in(['sdf']).copy()
 			.field('description').message('must be provided, at most 20 characters').length(1, 20)
 			.field('email').message('must be valid').email()
 			.failed()) {
 			var keys = Object.keys(v.err);
 			keys.forEach(function(key) {
-				$('#' + (key === 'format' ? 'ligand' : key) + '_label').tooltip('show');
+				$('#' + key + '_label').tooltip('show');
 			});
-			$('#' + (keys[0] === 'format' ? 'ligand' : keys[0])).focus();
+			$('#' + keys[0]).focus();
 			return;
 		}
-		job.ligand = ligand;
+		job.query = query;
 		// Disable the submit button for a while
 		submit.prop('disabled', true);
 		// Post a new job with server side validation

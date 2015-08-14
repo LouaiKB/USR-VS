@@ -83,7 +83,7 @@ if (cluster.isMaster) {
 				if (v
 					.field('email').message('must be valid').email().copy()
 					.field('description').message('must be provided, at most 20 characters').length(1, 20).xss().copy()
-					.field('ligand').message('must be provided and must not exceed 100KB').length(1, 102400)
+					.field('query').message('must be provided and must not exceed 100KB').length(1, 102400)
 					.failed()) {
 					res.json(v.err);
 					return;
@@ -93,7 +93,7 @@ if (cluster.isMaster) {
 				var dir = process.cwd() + '/public/jobs/' + v.res._id;
 				fs.mkdir(dir, function (err) {
 					if (err) throw err;
-					fs.writeFile(dir + '/ligand.sdf', req.body['ligand'], function(err) {
+					fs.writeFile(dir + '/query.sdf', req.body['query'], function(err) {
 						if (err) throw err;
 						usr.insert(v.res, { w: 0 });
 						res.json({});
