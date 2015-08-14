@@ -90,7 +90,7 @@ if (cluster.isMaster) {
 				}
 				v.res.submitted = new Date();
 				v.res._id = new mongodb.ObjectID();
-				var dir = process.cwd() + '/public/jobs/' + v.res._id;
+				var dir = __dirname + '/public/jobs/' + v.res._id;
 				fs.mkdir(dir, function (err) {
 					if (err) throw err;
 					fs.writeFile(dir + '/query.sdf', req.body['query'], function(err) {
