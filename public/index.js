@@ -67,12 +67,13 @@ $(function() {
 		$('.form-group a').tooltip('hide');
 		// Do client side validation
 		var job = {
+			query: query,
 			description: $('#description').val(),
 			email: $('#email').val(),
-			format: format,
 		};
 		var v = new validator(job);
 		if (v
+			.field('query').message('must be provided and must not exceed 100KB').length(1, 102400)
 			.field('description').message('must be provided, at most 20 characters').length(1, 20)
 			.field('email').message('must be valid').email()
 			.failed()) {
