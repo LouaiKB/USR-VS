@@ -29,7 +29,6 @@ using namespace std::chrono;
 using namespace RDKit;
 using namespace RDGeom;
 using namespace boost::filesystem;
-using namespace boost::iostreams;
 using namespace boost::gregorian;
 using namespace boost::posix_time;
 using namespace mongo;
@@ -467,6 +466,7 @@ int main(int argc, char* argv[])
 		});
 
 		// Write results.
+		using namespace boost::iostreams;
 		filtering_ostream log_csv_gz;
 		log_csv_gz.push(gzip_compressor());
 		log_csv_gz.push(file_sink((job_path / "log.csv.gz").string()));
