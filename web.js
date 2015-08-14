@@ -81,9 +81,9 @@ if (cluster.isMaster) {
 			}).post(function(req, res) {
 				var v = new validator(req.body);
 				if (v
-					.field('email').message('must be valid').email().copy()
 					.field('description').message('must be provided, at most 20 characters').length(1, 20).xss().copy()
 					.field('query').message('must be provided and must not exceed 100KB').length(1, 102400)
+					.field('email').message('must be valid').email().copy()
 					.failed()) {
 					res.json(v.err);
 					return;
