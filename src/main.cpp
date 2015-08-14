@@ -475,7 +475,7 @@ int main(int argc, char* argv[])
 		filtering_ostream hits_sdf_gz;
 		hits_sdf_gz.push(gzip_compressor());
 		hits_sdf_gz.push(file_sink((job_path / "hits.sdf.gz").string()));
-		for (size_t t = 0; t < 10000; ++t)
+		for (size_t t = 0; t < 100000; ++t)
 		{
 			const auto k = scase[t];
 			const auto zincid = zincids[k].substr(0, 8); // Take another substr() to get rid of the trailing newline.
