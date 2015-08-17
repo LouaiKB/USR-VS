@@ -864,8 +864,7 @@ void main()\n\
 		gunzipWorker.addEventListener('message', function (e) {
 			var ligands = [];
 			var lines = e.data.split('\n');
-			for (var offset = 0, l = lines.length - 1; offset < l;)
-			{
+			for (var offset = 0, l = lines.length - 1; offset < l;) {
 				var ligand = {
 					atoms: {},
 					refresh: function() {
