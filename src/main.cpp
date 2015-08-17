@@ -223,8 +223,6 @@ int main(int argc, char* argv[])
 		vector<size_t>(num_ligands),
 		vector<size_t>(num_ligands)
 	}};
-	const auto& u0scores = scores[0];
-	const auto& u1scores = scores[1];
 	vector<size_t> scase(num_ligands);
 
 	// Enter event loop.
@@ -448,6 +446,9 @@ int main(int argc, char* argv[])
 
 		// Sort ligands by USRCAT score, if equal then by USR score, if equal then by ZINC ID.
 		cout << local_time() << "Sorting scores" << endl;
+		const size_t usr = 1;
+		const auto& u0scores = scores[usr];
+		const auto& u1scores = scores[usr ^ 1];
 		iota(scase.begin(), scase.end(), 0);
 		sort(scase.begin(), scase.end(), [&](const size_t val0, const size_t val1)
 		{
