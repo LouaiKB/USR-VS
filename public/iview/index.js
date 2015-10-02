@@ -750,7 +750,7 @@ void main()\n\
 			}
 		}
 		ged.computeLineDistances();
-		return new THREE.Line(ged, new THREE.LineDashedMaterial({ linewidth: linewidth, color: defaultBondColor, dashSize: 0.25, gapSize: 0.125 }), THREE.LinePieces);
+		return new THREE.LineSegments(ged, new THREE.LineDashedMaterial({ linewidth: linewidth, color: defaultBondColor, dashSize: 0.25, gapSize: 0.125 }));
 	};
 	var createSphereRepresentation = function (atoms) {
 		var obj = new THREE.Object3D();
@@ -777,7 +777,7 @@ void main()\n\
 	var createLineRepresentation = function (atoms) {
 		var obj = new THREE.Object3D();
 		var geo = new THREE.Geometry();
-		obj.add(new THREE.Line(geo, new THREE.LineBasicMaterial({ linewidth: linewidth, vertexColors: true }), THREE.LinePieces));
+		obj.add(new THREE.LineSegments(geo, new THREE.LineBasicMaterial({ linewidth: linewidth, vertexColors: true })));
 		obj.add(createRepresentationSub(atoms, function (atom0) {
 			if (atom0.solvent) {
 				obj.add(createSphere(atom0, sphereRadius, false, 0.2));
