@@ -199,6 +199,20 @@ int main(int argc, char* argv[])
 	const string_array<size_t> zincids("16_zincid.txt");
 	const auto num_ligands = zincids.size();
 
+	// Read SMILES file.
+	const string_array<size_t> smileses("16_smiles.txt");
+	assert(smileses.size() == num_ligands);
+
+	// Read supplier file.
+	const string_array<size_t> suppliers("16_supplier.txt");
+	assert(suppliers.size() == num_ligands);
+
+	// Read property files of floating point types and integer types.
+	const auto zfproperties = read<array<float, 4>>("16_zfprop.f32");
+	assert(zfproperties.size() == num_ligands);
+	const auto ziproperties = read<array<int16_t, 5>>("16_ziprop.i16");
+	assert(ziproperties.size() == num_ligands);
+
 	// Read cumulative number of conformers file.
 	const auto mconfss = read<size_t>("16_mconfs.u64");
 	const auto num_conformers = mconfss.back();
@@ -446,25 +460,25 @@ int main(int argc, char* argv[])
 
 		// Sort ligands by USRCAT score, if equal then by USR score, if equal then by ZINC ID.
 		cout << local_time() << "Sorting scores" << endl;
-		const size_t usr = 1;
-		const auto& u0scores = scores[usr];
-		const auto& u1scores = scores[usr ^ 1];
+		const size_t usr = 1; // Determine the primary sorting score.
+		const auto& u0scores = scores[usr]; // Primary sorting score.
+		const auto& u1scores = scores[usr ^ 1]; // Secondary sorting score.
 		iota(scase.begin(), scase.end(), 0);
 		sort(scase.begin(), scase.end(), [&](const size_t val0, const size_t val1)
 		{
-			const auto u1score0 = u1scores[val0];
-			const auto u1score1 = u1scores[val1];
-			if (u1score0 == u1score1)
+			const auto u0score0 = u0scores[val0];
+			const auto u0score1 = u0scores[val1];
+			if (u0score0 == u0score1)
 			{
-				const auto u0score0 = u0scores[val0];
-				const auto u0score1 = u0scores[val1];
-				if (u0score0 == u0score1)
+				const auto u1score0 = u1scores[val0];
+				const auto u1score1 = u1scores[val1];
+				if (u1score0 == u1score1)
 				{
 					return zincids[val0] < zincids[val1];
 				}
-				return u0score0 < u0score1;
+				return u1score0 < u1score1;
 			}
-			return u1score0 < u1score1;
+			return u0score0 < u0score1;
 		});
 
 		// Write results.
@@ -474,20 +488,40 @@ int main(int argc, char* argv[])
 		log_csv_gz.push(gzip_compressor());
 		log_csv_gz.push(file_sink((job_path / "log.csv.gz").string()));
 		log_csv_gz.setf(ios::fixed, ios::floatfield);
-		log_csv_gz << "ZINC ID,USR score,USRCAT score\n" << setprecision(8);
+		log_csv_gz << "ZINC ID,USR score,USRCAT score,Molecular weight (g/mol),Partition coefficient xlogP,Apolar desolvation (kcal/mol),Polar desolvation (kcal/mol),Hydrogen bond donors,Hydrogen bond acceptors,Polar surface area tPSA (A^2),Net charge,Rotatable bonds,SMILES,Substance information,Suppliers and annotations\n";
 		filtering_ostream hits_sdf_gz;
 		hits_sdf_gz.push(gzip_compressor());
 		hits_sdf_gz.push(file_sink((job_path / "hits.sdf.gz").string()));
-		for (size_t t = 0; t < 1000000; ++t)
+		for (size_t t = 0; t < 1000; ++t)
 		{
 			const auto k = scase[t];
 			const auto zincid = zincids[k].substr(0, 8); // Take another substr() to get rid of the trailing newline.
 			const auto u0score = 1 / (1 + scores[0][k] * qv[0]);
 			const auto u1score = 1 / (1 + scores[1][k] * qv[1]);
-			log_csv_gz << zincid << ',' << u0score << ',' << u1score << '\n';
-
-			// Only write conformations of the top ligands to ligands.pdbqt.gz.
-			if (t >= 1000) continue;
+			const auto zfp = zfproperties[k];
+			const auto zip = ziproperties[k];
+			const auto smiles = smileses[k];    // A newline is already included in smileses[k].
+			const auto supplier = suppliers[k]; // A newline is already included in suppliers[k].
+			log_csv_gz
+				<< zincid
+				<< setprecision(8)
+				<< ',' << u0score
+				<< ',' << u1score
+				<< setprecision(3)
+				<< ',' << zfp[0]
+				<< ',' << zfp[1]
+				<< ',' << zfp[2]
+				<< ',' << zfp[3]
+				<< ',' << zip[0]
+				<< ',' << zip[1]
+				<< ',' << zip[2]
+				<< ',' << zip[3]
+				<< ',' << zip[4]
+				<< ',' << smiles.substr(0, smiles.length() - 1)
+				<< ",http://zinc.docking.org/substance/" << zincid
+				<< ',' << supplier.substr(0, supplier.length() - 1)
+				<< '\n'
+			;
 
 			const auto lig = ligands[cnfids[1][k]];
 			hits_sdf_gz.write(lig.data(), lig.size());

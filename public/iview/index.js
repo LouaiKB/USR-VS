@@ -829,10 +829,10 @@ void main()\n\
 			$this.text(ligand[$this.attr('id')]);
 		});
 		$('#id', data).parent().attr('href', '//zinc.docking.org/substance/' + ligand.id);
-/*		$('#suppliers', data).html(ligand.suppliers.map(function(supplier) {
+		$('#suppliers', data).html(ligand.suppliers.map(function(supplier) {
 			var link = catalogs[supplier];
 			return '<li><a' + (link === undefined || link.length === 0 ? '' : ' href="' + link + '"') + '>' + supplier + '</a></li>';
-		}).join(''));*/
+		}).join(''));
 	};
 	var render = function () {
 		var center = rot.position.z - camera.position.z;
@@ -859,7 +859,7 @@ void main()\n\
 	$.ajax({
 		url: path + 'hits.sdf.gz',
 		mimeType: 'application/octet-stream; charset=x-user-defined',
-	}).done(function (lsrcz) {
+	}).done(function (hits_sdf_gz) {
 		var gunzipWorker = new Worker('/gunzip.js');
 		gunzipWorker.addEventListener('message', function (e) {
 			var ligands = [];
@@ -917,50 +917,70 @@ void main()\n\
 				while (lines[offset++] !== "$$$$");
 				ligands.push(ligand);
 			}
-			$('#nhits').text(ligands.length);
-			var ids = $('#ids');
-			ids.html(ligands.map(function(ligand) {
-				return '<label class="btn btn-primary"><input type="radio">' + ligand.id + '</label>';
-			}).join(''));
-			$(':first', ids).addClass('active');
-			$('> .btn', ids).click(function(e) {
-				mdl.remove(ligand.representations.label);
-				mdl.remove(ligand.representations[ligand.active]);
-				ligands.forEach(function(l) {
-					if (l.id.toString() === $(e.target).text().trim()) {
-						ligand = l;
+			$.ajax({
+				url: path + 'log.csv.gz',
+				mimeType: 'application/octet-stream; charset=x-user-defined',
+			}).done(function (log_sdf_gz) {
+				var gunzipWorker = new Worker('/gunzip.js');
+				gunzipWorker.addEventListener('message', function (e) {
+					var logs = e.data.split('\n').slice(1);
+					var propNames = [ 'usr_score', 'usrcat_score', 'mwt', 'lgp', 'ads', 'pds', 'hbd', 'hba', 'psa', 'chg', 'nrb', 'smiles', 'suppliers' ];
+					$.each(ligands, function (i, ligand) {
+						var properties = logs[i].split(',');
+						if (ligand.id !== properties[0]) throw Error("Inequal ZINC IDs.");
+						$.each(propNames, function (j, propName) {
+							ligand[propName] = properties[1+j];
+						});
+						ligand.suppliers = ligand.suppliers.split(' | ').slice(1);
+						ligand.nsuppliers = ligand.suppliers.length;
+					});
+					$('#nhits').text(ligands.length);
+					var ids = $('#ids');
+					ids.html(ligands.map(function(ligand) {
+						return '<label class="btn btn-primary"><input type="radio">' + ligand.id + '</label>';
+					}).join(''));
+					$(':first', ids).addClass('active');
+					$('> .btn', ids).click(function(e) {
+						mdl.remove(ligand.representations.label);
+						mdl.remove(ligand.representations[ligand.active]);
+						ligands.forEach(function(l) {
+							if (l.id.toString() === $(e.target).text().trim()) {
+								ligand = l;
+							}
+						});
+						refreshLigand(ligand);
+						ligand.active = $('#ligand .active').text().trim();
+						ligand.refresh();
+						render();
+					});
+					refreshLigand(ligand = ligands[0]);
+					ligand.active = $('#ligand .active').text().trim();
+					ligand.refresh();
+					$('#ligand').click(function (e) {
+						mdl.remove(ligand.representations[ligand.active]);
+						ligand.active = $(e.target).text().trim();
+						ligand.refresh();
+						render();
+					});
+					var lmin = new THREE.Vector3( 9999, 9999, 9999);
+					var lmax = new THREE.Vector3(-9999,-9999,-9999);
+					atoms = ligand.atoms;
+					for (var i in atoms) {
+						var atom = atoms[i];
+						var coord = atom.coord;
+						lmin.min(coord);
+						lmax.max(coord);
 					}
+					var maxD = lmax.distanceTo(lmin) + 4;
+					sn = -maxD;
+					sf =  maxD;
+					rot.position.z = maxD * 0.35 / Math.tan(Math.PI / 180.0 * 10) - 140;
+					render();
 				});
-				refreshLigand(ligand);
-				ligand.active = $('#ligand .active').text().trim();
-				ligand.refresh();
-				render();
+				gunzipWorker.postMessage(log_sdf_gz);
 			});
-			refreshLigand(ligand = ligands[0]);
-			ligand.active = $('#ligand .active').text().trim();
-			ligand.refresh();
-			$('#ligand').click(function (e) {
-				mdl.remove(ligand.representations[ligand.active]);
-				ligand.active = $(e.target).text().trim();
-				ligand.refresh();
-				render();
-			});
-			var lmin = new THREE.Vector3( 9999, 9999, 9999);
-			var lmax = new THREE.Vector3(-9999,-9999,-9999);
-			atoms = ligand.atoms;
-			for (var i in atoms) {
-				var atom = atoms[i];
-				var coord = atom.coord;
-				lmin.min(coord);
-				lmax.max(coord);
-			}
-			var maxD = lmax.distanceTo(lmin) + 4;
-			sn = -maxD;
-			sf =  maxD;
-			rot.position.z = maxD * 0.35 / Math.tan(Math.PI / 180.0 * 10) - 140;
-			render();
 		});
-		gunzipWorker.postMessage(lsrcz);
+		gunzipWorker.postMessage(hits_sdf_gz);
 	});
 	var dg, wh, cx, cy, cq, cz, cp, cn, cf;
 	canvas.bind('contextmenu', function (e) {
