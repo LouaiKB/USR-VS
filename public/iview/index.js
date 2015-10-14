@@ -905,6 +905,7 @@ void main()\n\
 					atom.color = atomColors[atom.elem] || defaultAtomColor;
 					atoms[atom.serial] = atom;
 				}
+				ligand.nha = Object.keys(atoms).length;
 				for (var i = 1; i <= bondCount; ++i) {
 					var line = lines[++offset];
 					var atom0 = atoms[parseInt(line.substr(0, 3))];
