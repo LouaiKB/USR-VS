@@ -6,26 +6,31 @@
   <meta name="author" content="Hongjian Li">
   <meta name="description" content="iview: an interactive WebGL visualizer for protein-ligand complex">
   <title>iview: an interactive WebGL visualizer for protein-ligand complex</title>
-  <link rel="stylesheet" href="/bootstrap.min.css">
-  <link rel="stylesheet" href="/bootstrap-theme.min.css">
-  <link rel="stylesheet" href="/index.css">
-  <link rel="shortcut icon" href="/favicon.ico">
-  <link rel="apple-touch-icon-precomposed" sizes="144x144" href="/apple-touch-icon-144-precomposed.png">
-  <link rel="apple-touch-icon-precomposed" sizes="114x114" href="/apple-touch-icon-114-precomposed.png">
-  <link rel="apple-touch-icon-precomposed" sizes="72x72" href="/apple-touch-icon-72-precomposed.png">
-  <link rel="apple-touch-icon-precomposed" href="/apple-touch-icon-57-precomposed.png">
+  <link rel="stylesheet" href="../bootstrap.min.css">
+  <link rel="stylesheet" href="../bootstrap-theme.min.css">
+  <link rel="stylesheet" href="../index.css">
+  <link rel="shortcut icon" href="../favicon.ico">
+  <link rel="apple-touch-icon-precomposed" sizes="144x144" href="../apple-touch-icon-144-precomposed.png">
+  <link rel="apple-touch-icon-precomposed" sizes="114x114" href="../apple-touch-icon-114-precomposed.png">
+  <link rel="apple-touch-icon-precomposed" sizes="72x72" href="../apple-touch-icon-72-precomposed.png">
+  <link rel="apple-touch-icon-precomposed" href="../apple-touch-icon-57-precomposed.png">
 </head>
 <body>
   <a class="sr-only" href="#content">Skip navigation</a>
-  <a href="//github.com/HongjianLi/istar" class="ribbon"></a>
+  <a href="https://github.com/HongjianLi/istar" class="ribbon"></a>
   <div class="jumbotron" id="content" role="main">
     <div class="container">
-      <h1><img src="/iview/logo.png" alt="logo" class="logo">iview</h1>
+      <h1><img src="logo.png" alt="logo" class="logo">iview</h1>
       <p>an interactive WebGL visualizer for protein-ligand complex</p>
     </div>
   </div>
   <div class="container">
     <div>
+      <div class="row">
+        <div class="col-md-12">
+          <h2 id="resultNotReady" class="text-info text-center">Results for this job are not ready yet. Please come back later.</h2>
+        </div>
+      </div>
       <div class="row">
         <div class="col-md-12">
           <canvas>Your browser does not support WebGL.</canvas>
@@ -45,8 +50,8 @@
         <div class="col-md-3">
           <p>Downloads</p>
           <ul id="downloads">
-            <li><a><img src="/excel.png" alt="log.csv.gz">log.csv.gz</a></li>
-            <li><a><img src="/molecule.png" alt="hits.sdf.gz">hits.sdf.gz</a></li>
+            <li><a><img src="../excel.png" alt="log.csv.gz">log.csv.gz</a></li>
+            <li><a><img src="../molecule.png" alt="hits.sdf.gz">hits.sdf.gz</a></li>
           </ul>
           <p>Results</p>
           <ul>
@@ -136,11 +141,11 @@
   </div>
   <footer role="contentinfo">
     <div class="container">
-      <p><a href="http://www.cuhk.edu.hk"><img src="/cuhk.jpg" alt="CUHK logo"></a>&copy; 2012-2015 Chinese University of Hong Kong. Platform designed by <a href="http://www.cse.cuhk.edu.hk/~hjli">Hongjian Li</a>. Code licensed under <a href="http://www.apache.org/licenses/LICENSE-2.0">Apache License 2.0</a>. Documentation licensed under <a href="http://creativecommons.org/licenses/by/3.0">CC BY 3.0</a>.<a href="http://validator.w3.org/check?uri=referer"><img src="/HTML5_Badge_512.png" alt="HTML5 logo"></a></p>
+      <p><a href="http://www.cuhk.edu.hk"><img src="../cuhk.jpg" alt="CUHK logo"></a>&copy; 2012-2015 Chinese University of Hong Kong. Platform designed by <a href="http://www.cse.cuhk.edu.hk/~hjli">Hongjian Li</a>. Code licensed under <a href="http://www.apache.org/licenses/LICENSE-2.0">Apache License 2.0</a>. Documentation licensed under <a href="http://creativecommons.org/licenses/by/3.0">CC BY 3.0</a>.<a href="http://validator.w3.org/check?uri=referer"><img src="../HTML5_Badge_512.png" alt="HTML5 logo"></a></p>
     </div>
   </footer>
-  <script src="//code.jquery.com/jquery-2.1.4.min.js"></script>
-  <script src="/bootstrap.min.js"></script>
+  <script src="http://code.jquery.com/jquery-2.1.4.min.js"></script>
+  <script src="../bootstrap.min.js"></script>
   <script src="three.min.js"></script>
   <script src="index.js"></script>
 </body>

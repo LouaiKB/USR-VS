@@ -6,19 +6,19 @@
   <meta name="author" content="Hongjian Li">
   <meta name="description" content="usr: ultrafast shape recognition for ligand-based virtual screening">
   <title>usr: ultrafast shape recognition for ligand-based virtual screening</title>
-  <link rel="stylesheet" href="/bootstrap.min.css">
-  <link rel="stylesheet" href="/bootstrap-theme.min.css">
-  <link rel="stylesheet" href="/jquery-ui.min.css">
-  <link rel="stylesheet" href="/index.css">
-  <link rel="shortcut icon" href="/favicon.ico">
-  <link rel="apple-touch-icon-precomposed" sizes="144x144" href="/apple-touch-icon-144-precomposed.png">
-  <link rel="apple-touch-icon-precomposed" sizes="114x114" href="/apple-touch-icon-114-precomposed.png">
-  <link rel="apple-touch-icon-precomposed" sizes="72x72" href="/apple-touch-icon-72-precomposed.png">
-  <link rel="apple-touch-icon-precomposed" href="/apple-touch-icon-57-precomposed.png">
+  <link rel="stylesheet" href="bootstrap.min.css">
+  <link rel="stylesheet" href="bootstrap-theme.min.css">
+  <link rel="stylesheet" href="jquery-ui.min.css">
+  <link rel="stylesheet" href="index.css">
+  <link rel="shortcut icon" href="favicon.ico">
+  <link rel="apple-touch-icon-precomposed" sizes="144x144" href="apple-touch-icon-144-precomposed.png">
+  <link rel="apple-touch-icon-precomposed" sizes="114x114" href="apple-touch-icon-114-precomposed.png">
+  <link rel="apple-touch-icon-precomposed" sizes="72x72" href="apple-touch-icon-72-precomposed.png">
+  <link rel="apple-touch-icon-precomposed" href="apple-touch-icon-57-precomposed.png">
 </head>
 <body>
   <a class="sr-only" href="#content">Skip navigation</a>
-  <a href="//github.com/HongjianLi/usr" class="ribbon"></a>
+  <a href="https://github.com/HongjianLi/usr" class="ribbon"></a>
   <div class="jumbotron" id="content" role="main">
     <div class="container">
       <h1><img src="logo.png" alt="logo" class="logo">usr & usrcat</h1>
@@ -43,7 +43,7 @@
         <div class="col-md-12">
           <p>The input to usr is onefold:</p>
           <ul>
-            <li>A query molecule in SDF format. Totally 93,903,333 conformers of 23,129,049 molecules collected from the <a href="http://zinc.docking.org/subsets/all-clean">All Clean</a> subset of <a href="http://zinc.docking.org">ZINC</a> are to be screened.</li>
+            <li>Query molecules in SDF format. Totally 93,903,333 conformers of 23,129,049 molecules collected from the <a href="http://zinc.docking.org/subsets/all-clean">All Clean</a> subset of <a href="http://zinc.docking.org">ZINC</a> are to be screened.</li>
           </ul>
         </div>
       </div>
@@ -51,15 +51,15 @@
         <div class="col-md-12">
           <p>The output from usr is twofold:</p>
           <ul>
-            <li><img src="/excel.png" alt="log.csv.gz">log.csv.gz: ZINC ID, USR score and USRCAT score of the top 100,000 molecules geometrically similar to the query molecule.</li>
-            <li><img src="/molecule.png" alt="hits.sdf.gz">hits.sdf.gz: structures of the top 1000 molecules geometrically similar to the query molecule.</li>
+            <li><img src="excel.png" alt="log.csv.gz">log.csv.gz: ZINC ID, USR and USRCAT scores, molecular properties, link to substance information, and suppliers of the top 1000 hits geometrically and pharmacophorically similar to each of the query molecule.</li>
+            <li><img src="molecule.png" alt="hits.sdf.gz">hits.sdf.gz: structures of the top 1000 hits for each of the query molecule.</li>
           </ul>
         </div>
       </div>
       <div class="row" role="form">
         <div class="col-md-6">
           <div class="form-group">
-            <label for="query"><a title="must conform to SDF format" id="query_label">Query molecule in SDF format</a></label> <input type="file" id="query">
+            <label for="query"><a title="must conform to SDF format" id="query_label">Query molecules in SDF format</a></label> <input type="file" id="query">
           </div>
         </div>
       </div>
@@ -100,8 +100,7 @@
           <div class="ui-accordion">
             <h3>How to submit a new job</h3>
             <div>
-		      <p>Open your query molecule in SDF format locally in the WebGL canvas. Here is <a href="sample.sdf">a sample file</a>.</p>
-		      <p>The provided file must contain exactly one query molecule.</p>
+		      <p>Open your query molecules in SDF format locally in the WebGL canvas. Here is <a href="sample.sdf">a sample file</a>.</p>
               <p>Briefly describe your job. The job description is defaulted to your query filename.</p>
               <p>Fill in your email to receive notification upon job completion. Fill in any anonymous email should you not want to receive notification.</p>
               <p>Submit your job.</p>
@@ -147,17 +146,16 @@
   </div>
   <footer role="contentinfo">
     <div class="container">
-      <p><a href="http://www.cuhk.edu.hk"><img src="/cuhk.jpg" alt="CUHK logo"></a>&copy; 2012-2015 Chinese University of Hong Kong. Platform designed by <a href="http://www.cse.cuhk.edu.hk/~hjli">Hongjian Li</a>. Code licensed under <a href="http://www.apache.org/licenses/LICENSE-2.0">Apache License 2.0</a>. Documentation licensed under <a href="http://creativecommons.org/licenses/by/3.0">CC BY 3.0</a>.<a href="http://validator.w3.org/check?uri=referer"><img src="/HTML5_Badge_512.png" alt="HTML5 logo"></a></p>
+      <p><a href="http://www.cuhk.edu.hk"><img src="cuhk.jpg" alt="CUHK logo"></a>&copy; 2012-2015 Chinese University of Hong Kong. Platform designed by <a href="http://www.cse.cuhk.edu.hk/~hjli">Hongjian Li</a>. Code licensed under <a href="http://www.apache.org/licenses/LICENSE-2.0">Apache License 2.0</a>. Documentation licensed under <a href="http://creativecommons.org/licenses/by/3.0">CC BY 3.0</a>.<a href="http://validator.w3.org/check?uri=referer"><img src="HTML5_Badge_512.png" alt="HTML5 logo"></a></p>
     </div>
   </footer>
-  <script src="//code.jquery.com/jquery-2.1.4.min.js"></script>
-  <script src="/bootstrap.min.js"></script>
-  <script src="/jquery-ui.min.js"></script>
-  <script src="/jquery-dateFormat.min.js"></script>
-  <script src="/jquery.pager.js"></script>
-  <script src="/jquery.lazyload.min.js"></script>
-  <script src="/iview/three.min.js"></script>
-  <script src="/validator.js"></script>
+  <script src="http://code.jquery.com/jquery-2.1.4.min.js"></script>
+  <script src="bootstrap.min.js"></script>
+  <script src="jquery-ui.min.js"></script>
+  <script src="jquery-dateFormat.min.js"></script>
+  <script src="jquery.pager.js"></script>
+  <script src="jquery.lazyload.min.js"></script>
+  <script src="validator.js"></script>
   <script src="index.js"></script>
 </body>
 </html>
