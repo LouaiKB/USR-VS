@@ -183,6 +183,7 @@ int main(int argc, char* argv[])
 		"[N!H0v3,N!H0+v4,OH+0,SH+0,nH+0]", // donor
 	}};
 	const auto m256s = _mm256_set1_pd(-0.); // -0. = 1 << 63
+	const size_t usr = 1; // Specify the primary sorting score. 0: USR; 1: USRCAT.
 
 	// Wrap SMARTS strings to RWMol objects.
 	array<unique_ptr<ROMol>, num_subsets> SubsetMols;
@@ -190,10 +191,6 @@ int main(int argc, char* argv[])
 	{
 		SubsetMols[k].reset(reinterpret_cast<ROMol*>(SmartsToMol(SubsetSMARTS[k])));
 	}
-
-	// Initialize variables.
-	alignas(32) array<double, qn.back()> q;
-	alignas(32) array<double, 4> a;
 
 	// Read ZINC ID file.
 	const string_array<size_t> zincids("16_zincid.txt");
@@ -220,17 +217,29 @@ int main(int argc, char* argv[])
 	assert(num_conformers >= num_ligands);
 
 	// Read feature file.
+#ifdef PRELOAD_FEATURES
 	const auto features = read<array<double, qn.back()>>("16_usrcat.f64");
 	assert(features.size() == num_conformers);
+#else
+	std::ifstream usrcat_f64("16_usrcat.f64");
+	alignas(32) array<double, qn.back()> l;
+#endif
 
-	// Read ligand header file.
+	// Read ligand footer file and open ligand SDF file for seeking and reading.
 	stream_array<size_t> ligands("16_ligand.sdf");
 	assert(ligands.size() == num_conformers);
 
+	// Initialize variables.
+	array<vector<int>, num_subsets> subsets;
+	array<vector<double>, num_references> dista;
+	alignas(32) array<double, qn.back()> q;
+	alignas(32) array<double, 4> a;
+
+	// Initialize vectors to store compounds' USR and USRCAT scores and their corresponding conformer.
 	array<vector<double>, 2> scores
 	{{
-		vector<double>(num_ligands, numeric_limits<double>::max()),
-		vector<double>(num_ligands, numeric_limits<double>::max())
+		vector<double>(num_ligands),
+		vector<double>(num_ligands)
 	}};
 	array<vector<size_t>, 2> cnfids
 	{{
@@ -267,264 +276,282 @@ int main(int argc, char* argv[])
 		const auto email = job["email"].String();
 
 		// Parse the user-supplied SDF file, setting sanitize=true, removeHs=false, strictParsing=true.
-		cout << local_time() << "Parsing the query SDF file" << endl;
-		SDMolSupplier sup((job_path / "query.sdf").string(), true, false, true);
-		const unique_ptr<ROMol> mol_ptr(sup.next()); // Calling next() may print "ERROR: Could not sanitize molecule on line XXXX" to stderr.
-		auto& mol = *mol_ptr;
-
-		// Get the number of points, excluding hydrogens.
-		const auto npt = mol.getNumHeavyAtoms();
-
-		// Classify subset atoms.
-		cout << local_time() << "Classifying atoms into subsets:";
-		array<vector<int>, num_subsets> subsets;
-		for (size_t k = 0; k < num_subsets; ++k)
+		size_t query_number = 0;
+		for (SDMolSupplier sup((job_path / "query.sdf").string(), true, false, true); !sup.atEnd();) // sanitize, removeHs, strictParsing
 		{
-			auto& subset = subsets[k];
-			subset.reserve(npt);
-			vector<vector<pair<int, int>>> matchVect;
-			SubstructMatch(mol, *SubsetMols[k], matchVect);
-			for (const auto& v : matchVect)
+			cout << local_time() << "Parsing query molecule " << ++query_number << endl;
+			const unique_ptr<ROMol> mol_ptr(sup.next()); // Calling next() may print "ERROR: Could not sanitize molecule on line XXXX" to stderr.
+			auto& mol = *mol_ptr;
+
+			// Get the number of points, excluding hydrogens.
+			const auto num_points = mol.getNumHeavyAtoms();
+			cout << local_time() << "Found " << num_points << " heavy atoms" << endl;
+
+			// Classify subset atoms.
+			cout << local_time() << "Classifying atoms into subsets, whose sizes are:";
+			for (size_t k = 0; k < num_subsets; ++k)
 			{
-				subset.push_back(v.front().second);
+				vector<vector<pair<int, int>>> matchVect;
+				SubstructMatch(mol, *SubsetMols[k], matchVect);
+				const auto num_matches = matchVect.size();
+				auto& subset = subsets[k];
+				subset.resize(num_matches);
+				for (size_t i = 0; i < num_matches; ++i)
+				{
+					subset[i] = matchVect[i].front().second;
+				}
+				cout << ' ' << subset.size();
 			}
-			cout << ' ' << subset.size();
-		}
-		cout << endl;
-		const auto& subset0 = subsets.front();
+			cout << endl;
 
-		// Check user-provided ligand validity.
-		if (subset0.empty())
-		{
-			// Record job completion time stamp.
-			const auto millis_since_epoch = duration_cast<std::chrono::milliseconds>(system_clock::now().time_since_epoch()).count();
-			conn.update(collection, BSON("_id" << _id), BSON("$set" << BSON("done" << Date_t(millis_since_epoch))));
-
-			// Send error notification email.
-			cout << local_time() << "Sending an error notification email to " << email << endl;
-			MailMessage message;
-			message.setSender("usr <noreply@cse.cuhk.edu.hk>");
-			message.setSubject("Your usr job has failed");
-			message.setContent("Description: " + job["description"].String() + "\nSubmitted: " + to_simple_string(ptime(epoch, boost::posix_time::milliseconds(job["submitted"].Date().millis))) + " UTC\nFailed: " + to_simple_string(ptime(epoch, boost::posix_time::milliseconds(millis_since_epoch))) + " UTC\nReason: failed to parse the provided ligand.");
-			message.addRecipient(MailRecipient(MailRecipient::PRIMARY_RECIPIENT, email));
-			SMTPClientSession session("137.189.91.190");
-			session.login();
-			session.sendMessage(message);
-			session.close();
-			continue;
-		}
-
-		// Calculate the four reference points.
-		cout << local_time() << "Calculating reference points" << endl;
-		const auto& conf = mol.getConformer();
-		const auto n = subset0.size();
-		assert(n == npt);
-		const auto v = 1.0 / n;
-		array<Point3D, num_references> references{};
-		auto& ctd = references[0];
-		auto& cst = references[1];
-		auto& fct = references[2];
-		auto& ftf = references[3];
-		for (const auto i : subset0)
-		{
-			const auto& a = conf.getAtomPos(i);
-			ctd += a;
-		}
-		ctd *= v;
-		double cst_dist = numeric_limits<double>::max();
-		double fct_dist = numeric_limits<double>::lowest();
-		double ftf_dist = numeric_limits<double>::lowest();
-		for (const auto i : subset0)
-		{
-			const auto& a = conf.getAtomPos(i);
-			const auto this_dist = dist2(a, ctd);
-			if (this_dist < cst_dist)
+			// Check user-provided ligand validity.
+			const auto& subset0 = subsets.front();
+			if (subset0.empty())
 			{
-				cst = a;
-				cst_dist = this_dist;
-			}
-			if (this_dist > fct_dist)
-			{
-				fct = a;
-				fct_dist = this_dist;
-			}
-		}
-		for (const auto i : subset0)
-		{
-			const auto& a = conf.getAtomPos(i);
-			const auto this_dist = dist2(a, fct);
-			if (this_dist > ftf_dist)
-			{
-				ftf = a;
-				ftf_dist = this_dist;
-			}
-		}
+				// Record job completion time stamp.
+				const auto millis_since_epoch = duration_cast<std::chrono::milliseconds>(system_clock::now().time_since_epoch()).count();
+				conn.update(collection, BSON("_id" << _id), BSON("$set" << BSON("done" << Date_t(millis_since_epoch))));
 
-		// Precalculate the distances of heavy atoms to the reference points, given that subsets[1 to 4] are subsets of subsets[0].
-		cout << local_time() << "Calculating pairwise distances" << endl;
-		array<vector<double>, num_references> dista;
-		for (size_t k = 0; k < num_references; ++k)
-		{
-			const auto& reference = references[k];
-			auto& dists = dista[k];
-			dists.resize(n);
-			for (size_t i = 0; i < n; ++i)
-			{
-				dists[subset0[i]] = sqrt(dist2(conf.getAtomPos(subset0[i]), reference));
+				// Send error notification email.
+				cout << local_time() << "Sending an error notification email to " << email << endl;
+				MailMessage message;
+				message.setSender("usr <noreply@cse.cuhk.edu.hk>");
+				message.setSubject("Your usr job has failed");
+				message.setContent("Description: " + job["description"].String() + "\nSubmitted: " + to_simple_string(ptime(epoch, boost::posix_time::milliseconds(job["submitted"].Date().millis))) + " UTC\nFailed: " + to_simple_string(ptime(epoch, boost::posix_time::milliseconds(millis_since_epoch))) + " UTC\nReason: failed to parse the provided ligand.");
+				message.addRecipient(MailRecipient(MailRecipient::PRIMARY_RECIPIENT, email));
+				SMTPClientSession session("137.189.91.190");
+				session.login();
+				session.sendMessage(message);
+				session.close();
+				continue;
 			}
-		}
+			assert(subset0.size() == num_points);
 
-		// Loop over pharmacophoric subsets and reference points.
-		cout << local_time() << "Calculating USRCAT moments" << endl;
-		size_t qo = 0;
-		for (const auto& subset : subsets)
-		{
-			const auto n = subset.size();
+			// Calculate the four reference points.
+			cout << local_time() << "Calculating reference points" << endl;
+			const auto& conf = mol.getConformer();
+			const auto num_points_inv = 1.0 / num_points;
+			array<Point3D, num_references> references{};
+			auto& ctd = references[0];
+			auto& cst = references[1];
+			auto& fct = references[2];
+			auto& ftf = references[3];
+			for (const auto i : subset0)
+			{
+				const auto& a = conf.getAtomPos(i);
+				ctd += a;
+			}
+			ctd *= num_points_inv;
+			double cst_dist = numeric_limits<double>::max();
+			double fct_dist = numeric_limits<double>::lowest();
+			double ftf_dist = numeric_limits<double>::lowest();
+			for (const auto i : subset0)
+			{
+				const auto& a = conf.getAtomPos(i);
+				const auto this_dist = dist2(a, ctd);
+				if (this_dist < cst_dist)
+				{
+					cst = a;
+					cst_dist = this_dist;
+				}
+				if (this_dist > fct_dist)
+				{
+					fct = a;
+					fct_dist = this_dist;
+				}
+			}
+			for (const auto i : subset0)
+			{
+				const auto& a = conf.getAtomPos(i);
+				const auto this_dist = dist2(a, fct);
+				if (this_dist > ftf_dist)
+				{
+					ftf = a;
+					ftf_dist = this_dist;
+				}
+			}
+
+			// Precalculate the distances of heavy atoms to the reference points, given that subsets[1 to 4] are subsets of subsets[0].
+			cout << local_time() << "Calculating pairwise distances" << endl;
 			for (size_t k = 0; k < num_references; ++k)
 			{
-				// Load distances from precalculated ones.
-				const auto& distp = dista[k];
-				vector<double> dists(n);
-				for (size_t i = 0; i < n; ++i)
+				const auto& reference = references[k];
+				auto& distp = dista[k];
+				distp.resize(num_points);
+				for (size_t i = 0; i < num_points; ++i)
 				{
-					dists[i] = distp[subset[i]];
-				}
-
-				// Compute moments.
-				array<double, 3> m{};
-				if (n > 2)
-				{
-					const auto v = 1.0 / n;
-					for (size_t i = 0; i < n; ++i)
-					{
-						const auto d = dists[i];
-						m[0] += d;
-					}
-					m[0] *= v;
-					for (size_t i = 0; i < n; ++i)
-					{
-						const auto d = dists[i] - m[0];
-						m[1] += d * d;
-					}
-					m[1] = sqrt(m[1] * v);
-					for (size_t i = 0; i < n; ++i)
-					{
-						const auto d = dists[i] - m[0];
-						m[2] += d * d * d;
-					}
-					m[2] = cbrt(m[2] * v);
-				}
-				else if (n == 2)
-				{
-					m[0] = 0.5 *     (dists[0] + dists[1]);
-					m[1] = 0.5 * fabs(dists[0] - dists[1]);
-				}
-				else if (n == 1)
-				{
-					m[0] = dists[0];
-				}
-				for (const auto e : m)
-				{
-					q[qo++] = e;
+					distp[subset0[i]] = sqrt(dist2(conf.getAtomPos(subset0[i]), reference));
 				}
 			}
-		}
-		assert(qo == qn.back());
 
-		// Compute USR and USRCAT scores.
-		cout << local_time() << "Calculating USRCAT scores" << endl;
-		for (size_t j = 0, k = 0; k < num_ligands; ++k)
-		{
-			for (const auto mconfs = mconfss[k]; j < mconfs; ++j)
+			// Loop over pharmacophoric subsets and reference points.
+			cout << local_time() << "Calculating USRCAT moments" << endl;
+			size_t qo = 0;
+			for (const auto& subset : subsets)
 			{
-				const auto& l = features[j];
-				double s = 0;
-				#pragma unroll
-				for (size_t i = 0, u = 0; u < num_usrs; ++u)
+				const auto n = subset.size();
+				for (size_t k = 0; k < num_references; ++k)
 				{
+					// Load distances from precalculated ones.
+					const auto& distp = dista[k];
+					vector<double> dists(n);
+					for (size_t i = 0; i < n; ++i)
+					{
+						dists[i] = distp[subset[i]];
+					}
+
+					// Compute moments.
+					array<double, 3> m{};
+					if (n > 2)
+					{
+						const auto v = 1.0 / n;
+						for (size_t i = 0; i < n; ++i)
+						{
+							const auto d = dists[i];
+							m[0] += d;
+						}
+						m[0] *= v;
+						for (size_t i = 0; i < n; ++i)
+						{
+							const auto d = dists[i] - m[0];
+							m[1] += d * d;
+						}
+						m[1] = sqrt(m[1] * v);
+						for (size_t i = 0; i < n; ++i)
+						{
+							const auto d = dists[i] - m[0];
+							m[2] += d * d * d;
+						}
+						m[2] = cbrt(m[2] * v);
+					}
+					else if (n == 2)
+					{
+						m[0] = 0.5 *     (dists[0] + dists[1]);
+						m[1] = 0.5 * fabs(dists[0] - dists[1]);
+					}
+					else if (n == 1)
+					{
+						m[0] = dists[0];
+					}
+					for (const auto e : m)
+					{
+						q[qo++] = e;
+					}
+				}
+			}
+			assert(qo == qn.back());
+
+			// Compute USR and USRCAT scores.
+			cout << local_time() << "Calculating USRCAT scores" << endl;
+			for (auto& ss : scores)
+			{
+				ss.assign(ss.size(), numeric_limits<double>::max());
+			}
+#ifndef PRELOAD_FEATURES
+			usrcat_f64.seekg(0);
+#endif
+			for (size_t j = 0, k = 0; k < num_ligands; ++k)
+			{
+				for (const auto mconfs = mconfss[k]; j < mconfs; ++j)
+				{
+#ifdef PRELOAD_FEATURES
+					const auto& l = features[j];
+#else
+					assert(usrcat_f64.tellg() == sizeof(l) * j);
+					usrcat_f64.read(reinterpret_cast<char*>(l.data()), sizeof(l));
+#endif
+					double s = 0;
 					#pragma unroll
-					for (const auto qnu = qn[u]; i < qnu; i += 4)
+					for (size_t i = 0, u = 0; u < num_usrs; ++u)
 					{
-						const auto m256a = _mm256_andnot_pd(m256s, _mm256_sub_pd(_mm256_load_pd(&q[i]), _mm256_load_pd(&l[i])));
-						_mm256_stream_pd(a.data(), _mm256_hadd_pd(m256a, m256a));
-						s += a[0] + a[2];
-					}
-					if (s < scores[u][k])
-					{
-						scores[u][k] = s;
-						cnfids[u][k] = j;
+						#pragma unroll
+						for (const auto qnu = qn[u]; i < qnu; i += 4)
+						{
+							const auto m256a = _mm256_andnot_pd(m256s, _mm256_sub_pd(_mm256_load_pd(&q[i]), _mm256_load_pd(&l[i])));
+							_mm256_stream_pd(a.data(), _mm256_hadd_pd(m256a, m256a));
+							s += a[0] + a[2];
+						}
+						if (s < scores[u][k])
+						{
+							scores[u][k] = s;
+							cnfids[u][k] = j;
+						}
 					}
 				}
 			}
-		}
+#ifndef PRELOAD_FEATURES
+			assert(usrcat_f64.tellg() == sizeof(l) * num_conformers);
+#endif
 
-		// Sort ligands by USRCAT score, if equal then by USR score, if equal then by ZINC ID.
-		cout << local_time() << "Sorting scores" << endl;
-		const size_t usr = 1; // Determine the primary sorting score.
-		const auto& u0scores = scores[usr]; // Primary sorting score.
-		const auto& u1scores = scores[usr ^ 1]; // Secondary sorting score.
-		iota(scase.begin(), scase.end(), 0);
-		sort(scase.begin(), scase.end(), [&](const size_t val0, const size_t val1)
-		{
-			const auto u0score0 = u0scores[val0];
-			const auto u0score1 = u0scores[val1];
-			if (u0score0 == u0score1)
+			// Sort ligands by USRCAT score, if equal then by USR score, if equal then by ZINC ID.
+			cout << local_time() << "Sorting scores" << endl;
+			const auto& u0scores = scores[usr]; // Primary sorting score.
+			const auto& u1scores = scores[usr ^ 1]; // Secondary sorting score.
+			iota(scase.begin(), scase.end(), 0);
+			sort(scase.begin(), scase.end(), [&](const size_t val0, const size_t val1)
 			{
-				const auto u1score0 = u1scores[val0];
-				const auto u1score1 = u1scores[val1];
-				if (u1score0 == u1score1)
+				const auto u0score0 = u0scores[val0];
+				const auto u0score1 = u0scores[val1];
+				if (u0score0 == u0score1)
 				{
-					return zincids[val0] < zincids[val1];
+					const auto u1score0 = u1scores[val0];
+					const auto u1score1 = u1scores[val1];
+					if (u1score0 == u1score1)
+					{
+						return zincids[val0] < zincids[val1];
+					}
+					return u1score0 < u1score1;
 				}
-				return u1score0 < u1score1;
+				return u0score0 < u0score1;
+			});
+
+			// Create output directory and write output files.
+			cout << local_time() << "Creating output directory" << endl;
+			const auto output_dir = job_path / to_string(query_number);
+			create_directory(output_dir);
+			cout << local_time() << "Writing output files" << endl;
+			using namespace boost::iostreams;
+			filtering_ostream log_csv_gz;
+			log_csv_gz.push(gzip_compressor());
+			log_csv_gz.push(file_sink((output_dir / "log.csv.gz").string()));
+			log_csv_gz.setf(ios::fixed, ios::floatfield);
+			log_csv_gz << "ZINC ID,USR score,USRCAT score,Molecular weight (g/mol),Partition coefficient xlogP,Apolar desolvation (kcal/mol),Polar desolvation (kcal/mol),Hydrogen bond donors,Hydrogen bond acceptors,Polar surface area tPSA (A^2),Net charge,Rotatable bonds,SMILES,Substance information,Suppliers and annotations\n";
+			filtering_ostream hits_sdf_gz;
+			hits_sdf_gz.push(gzip_compressor());
+			hits_sdf_gz.push(file_sink((output_dir / "hits.sdf.gz").string()));
+			for (size_t t = 0; t < 1000; ++t)
+			{
+				const auto k = scase[t];
+				const auto zincid = zincids[k].substr(0, 8); // Take another substr() to get rid of the trailing newline.
+				const auto u0score = 1 / (1 + scores[0][k] * qv[0]);
+				const auto u1score = 1 / (1 + scores[1][k] * qv[1]);
+				const auto zfp = zfproperties[k];
+				const auto zip = ziproperties[k];
+				const auto smiles = smileses[k];    // A newline is already included in smileses[k].
+				const auto supplier = suppliers[k]; // A newline is already included in suppliers[k].
+				log_csv_gz
+					<< zincid
+					<< setprecision(8)
+					<< ',' << u0score
+					<< ',' << u1score
+					<< setprecision(3)
+					<< ',' << zfp[0]
+					<< ',' << zfp[1]
+					<< ',' << zfp[2]
+					<< ',' << zfp[3]
+					<< ',' << zip[0]
+					<< ',' << zip[1]
+					<< ',' << zip[2]
+					<< ',' << zip[3]
+					<< ',' << zip[4]
+					<< ',' << smiles.substr(0, smiles.length() - 1)     // Get rid of the trailing newline.
+					<< ",http://zinc.docking.org/substance/" << zincid
+					<< ',' << supplier.substr(0, supplier.length() - 1) // Get rid of the trailing newline.
+					<< '\n'
+				;
+				const auto lig = ligands[cnfids[usr][k]];
+				hits_sdf_gz.write(lig.data(), lig.size());
 			}
-			return u0score0 < u0score1;
-		});
-
-		// Write results.
-		cout << local_time() << "Writing output files" << endl;
-		using namespace boost::iostreams;
-		filtering_ostream log_csv_gz;
-		log_csv_gz.push(gzip_compressor());
-		log_csv_gz.push(file_sink((job_path / "log.csv.gz").string()));
-		log_csv_gz.setf(ios::fixed, ios::floatfield);
-		log_csv_gz << "ZINC ID,USR score,USRCAT score,Molecular weight (g/mol),Partition coefficient xlogP,Apolar desolvation (kcal/mol),Polar desolvation (kcal/mol),Hydrogen bond donors,Hydrogen bond acceptors,Polar surface area tPSA (A^2),Net charge,Rotatable bonds,SMILES,Substance information,Suppliers and annotations\n";
-		filtering_ostream hits_sdf_gz;
-		hits_sdf_gz.push(gzip_compressor());
-		hits_sdf_gz.push(file_sink((job_path / "hits.sdf.gz").string()));
-		for (size_t t = 0; t < 1000; ++t)
-		{
-			const auto k = scase[t];
-			const auto zincid = zincids[k].substr(0, 8); // Take another substr() to get rid of the trailing newline.
-			const auto u0score = 1 / (1 + scores[0][k] * qv[0]);
-			const auto u1score = 1 / (1 + scores[1][k] * qv[1]);
-			const auto zfp = zfproperties[k];
-			const auto zip = ziproperties[k];
-			const auto smiles = smileses[k];    // A newline is already included in smileses[k].
-			const auto supplier = suppliers[k]; // A newline is already included in suppliers[k].
-			log_csv_gz
-				<< zincid
-				<< setprecision(8)
-				<< ',' << u0score
-				<< ',' << u1score
-				<< setprecision(3)
-				<< ',' << zfp[0]
-				<< ',' << zfp[1]
-				<< ',' << zfp[2]
-				<< ',' << zfp[3]
-				<< ',' << zip[0]
-				<< ',' << zip[1]
-				<< ',' << zip[2]
-				<< ',' << zip[3]
-				<< ',' << zip[4]
-				<< ',' << smiles.substr(0, smiles.length() - 1)
-				<< ",http://zinc.docking.org/substance/" << zincid
-				<< ',' << supplier.substr(0, supplier.length() - 1)
-				<< '\n'
-			;
-
-			const auto lig = ligands[cnfids[1][k]];
-			hits_sdf_gz.write(lig.data(), lig.size());
 		}
 
 		// Update progress.
