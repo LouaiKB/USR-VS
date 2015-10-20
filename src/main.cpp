@@ -484,16 +484,18 @@ int main(int argc, char* argv[])
 							#pragma unroll
 							for (size_t i = 0, u = 0; u < num_usrs; ++u)
 							{
+								auto& scoreuk = scores[u][k];
 								#pragma unroll
 								for (const auto qnu = qn[u]; i < qnu; i += 4)
 								{
 									const auto m256a = _mm256_andnot_pd(m256s, _mm256_sub_pd(_mm256_load_pd(&q[i]), _mm256_load_pd(&l[i])));
 									_mm256_stream_pd(a.data(), _mm256_hadd_pd(m256a, m256a));
 									s += a[0] + a[2];
+									if (u == 1 && s >= scoreuk) break;
 								}
-								if (s < scores[u][k])
+								if (s < scoreuk)
 								{
-									scores[u][k] = s;
+									scoreuk = s;
 									cnfids[u][k] = j;
 								}
 							}
