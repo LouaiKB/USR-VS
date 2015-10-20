@@ -248,10 +248,14 @@ int main(int argc, char* argv[])
 	vector<size_t> scase(num_ligands);
 
 	// Initialize an io service pool and create worker threads for later use.
-	const size_t num_threads = 24 /* thread::hardware_concurrency() */;
+	const size_t num_threads = thread::hardware_concurrency();
 	cout << local_time() << "Creating an io service pool of " << num_threads << " worker threads" << endl;
 	io_service_pool io(num_threads);
 	safe_counter<size_t> cnt;
+
+	// Initialize the number of chunks and the number of molecules per chunk.
+	const auto num_chunks = num_threads << 6;
+	const auto chunk_size = 1 + (num_ligands - 1) / num_chunks;
 
 	// Enter event loop.
 	cout << local_time() << "Entering event loop" << endl;
@@ -454,41 +458,44 @@ int main(int argc, char* argv[])
 			{
 				ss.assign(ss.size(), numeric_limits<double>::max());
 			}
-			cnt.init(num_ligands);
-			for (size_t k = 0; k < num_ligands; ++k)
+			cnt.init(num_chunks);
+			for (size_t l = 0; l < num_chunks; ++l)
 			{
-				io.post([&,k]()
+				io.post([&,l]()
 				{
-					size_t j = k ? mconfss[k - 1] : 0;
-					alignas(32) array<double, 4> a;
-#ifndef PRELOAD_FEATURES
-					alignas(32) array<double, qn.back()> l;
-					std::ifstream usrcat_f64("16_usrcat.f64");
-					usrcat_f64.seekg(sizeof(l) * j);
-#endif
-					for (const auto mconfs = mconfss[k]; j < mconfs; ++j)
+					for (size_t k = chunk_size * l, chunk_end = min<size_t>(k + chunk_size, num_ligands); k < chunk_end; ++k)
 					{
-#ifdef PRELOAD_FEATURES
-						const auto& l = features[j];
-#else
-						assert(usrcat_f64.tellg() == sizeof(l) * j);
-						usrcat_f64.read(reinterpret_cast<char*>(l.data()), sizeof(l));
+						size_t j = k ? mconfss[k - 1] : 0;
+						alignas(32) array<double, 4> a;
+#ifndef PRELOAD_FEATURES
+						alignas(32) array<double, qn.back()> l;
+						std::ifstream usrcat_f64("16_usrcat.f64");
+						usrcat_f64.seekg(sizeof(l) * j);
 #endif
-						double s = 0;
-						#pragma unroll
-						for (size_t i = 0, u = 0; u < num_usrs; ++u)
+						for (const auto mconfs = mconfss[k]; j < mconfs; ++j)
 						{
+#ifdef PRELOAD_FEATURES
+							const auto& l = features[j];
+#else
+							assert(usrcat_f64.tellg() == sizeof(l) * j);
+							usrcat_f64.read(reinterpret_cast<char*>(l.data()), sizeof(l));
+#endif
+							double s = 0;
 							#pragma unroll
-							for (const auto qnu = qn[u]; i < qnu; i += 4)
+							for (size_t i = 0, u = 0; u < num_usrs; ++u)
 							{
-								const auto m256a = _mm256_andnot_pd(m256s, _mm256_sub_pd(_mm256_load_pd(&q[i]), _mm256_load_pd(&l[i])));
-								_mm256_stream_pd(a.data(), _mm256_hadd_pd(m256a, m256a));
-								s += a[0] + a[2];
-							}
-							if (s < scores[u][k])
-							{
-								scores[u][k] = s;
-								cnfids[u][k] = j;
+								#pragma unroll
+								for (const auto qnu = qn[u]; i < qnu; i += 4)
+								{
+									const auto m256a = _mm256_andnot_pd(m256s, _mm256_sub_pd(_mm256_load_pd(&q[i]), _mm256_load_pd(&l[i])));
+									_mm256_stream_pd(a.data(), _mm256_hadd_pd(m256a, m256a));
+									s += a[0] + a[2];
+								}
+								if (s < scores[u][k])
+								{
+									scores[u][k] = s;
+									cnfids[u][k] = j;
+								}
 							}
 						}
 					}
