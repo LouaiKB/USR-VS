@@ -21,9 +21,6 @@
 #include <boost/iostreams/filter/gzip.hpp>
 #include <boost/date_time/posix_time/posix_time.hpp>
 #include <mongo/client/dbclient.h>
-#include <Poco/Net/MailMessage.h>
-#include <Poco/Net/MailRecipient.h>
-#include <Poco/Net/SMTPClientSession.h>
 #include "io_service_pool.hpp"
 #include "safe_counter.hpp"
 using namespace std;
@@ -35,7 +32,6 @@ using namespace boost::gregorian;
 using namespace boost::posix_time;
 using namespace mongo;
 using namespace bson;
-using namespace Poco::Net;
 
 inline static string local_time()
 {
@@ -170,7 +166,6 @@ int main(int argc, char* argv[])
 	// Initialize constants.
 	cout << local_time() << "Initializing" << endl;
 	const auto collection = "istar.usr2";
-	const auto epoch = date(1970, 1, 1);
 	const size_t num_usrs = 2;
 	constexpr array<size_t, num_usrs> qn{{ 12, 60 }};
 	constexpr array<double, num_usrs> qv{{ 1.0 / qn[0], 1.0 / qn[1] }};
@@ -282,7 +277,6 @@ int main(int argc, char* argv[])
 		const auto _id = job["_id"].OID();
 		cout << local_time() << "Executing job " << _id.str() << endl;
 		const auto job_path = jobs_path / _id.str();
-		const auto email = job["email"].String();
 
 		// Parse the user-supplied SDF file, setting sanitize=true, removeHs=false, strictParsing=true.
 		size_t query_number = 0;
@@ -318,20 +312,9 @@ int main(int argc, char* argv[])
 			if (subset0.empty())
 			{
 				// Record job completion time stamp.
+				// TODO: set an error code in the database.
 				const auto millis_since_epoch = duration_cast<std::chrono::milliseconds>(system_clock::now().time_since_epoch()).count();
 				conn.update(collection, BSON("_id" << _id), BSON("$set" << BSON("done" << Date_t(millis_since_epoch))));
-
-				// Send error notification email.
-				cout << local_time() << "Sending an error notification email to " << email << endl;
-				MailMessage message;
-				message.setSender("usr <noreply@cse.cuhk.edu.hk>");
-				message.setSubject("Your usr job has failed");
-				message.setContent("Description: " + job["description"].String() + "\nSubmitted: " + to_simple_string(ptime(epoch, boost::posix_time::milliseconds(job["submitted"].Date().millis))) + " UTC\nFailed: " + to_simple_string(ptime(epoch, boost::posix_time::milliseconds(millis_since_epoch))) + " UTC\nReason: failed to parse the provided ligand.");
-				message.addRecipient(MailRecipient(MailRecipient::PRIMARY_RECIPIENT, email));
-				SMTPClientSession session("137.189.91.190");
-				session.login();
-				session.sendMessage(message);
-				session.close();
 				continue;
 			}
 			assert(subset0.size() == num_points);
@@ -581,17 +564,5 @@ int main(int argc, char* argv[])
 		cout << local_time() << "Setting done time" << endl;
 		const auto millis_since_epoch = duration_cast<std::chrono::milliseconds>(system_clock::now().time_since_epoch()).count();
 		conn.update(collection, BSON("_id" << _id), BSON("$set" << BSON("done" << Date_t(millis_since_epoch))));
-
-		// Send completion notification email.
-		cout << local_time() << "Sending a completion notification email to " << email << endl;
-		MailMessage message;
-		message.setSender("istar <noreply@cse.cuhk.edu.hk>");
-		message.setSubject("Your usr job has completed");
-		message.setContent("Description: " + job["description"].String() + "\nSubmitted: " + to_simple_string(ptime(epoch, boost::posix_time::milliseconds(job["submitted"].Date().millis))) + " UTC\nCompleted: " + to_simple_string(ptime(epoch, boost::posix_time::milliseconds(millis_since_epoch))) + " UTC\nResult: http://istar.cse.cuhk.edu.hk/usr/iview/?" + _id.str());
-		message.addRecipient(MailRecipient(MailRecipient::PRIMARY_RECIPIENT, email));
-		SMTPClientSession session("137.189.91.190");
-		session.login();
-		session.sendMessage(message);
-		session.close();
 	}
 }
