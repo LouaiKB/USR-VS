@@ -24,6 +24,8 @@
 #include <Poco/Net/MailMessage.h>
 #include <Poco/Net/MailRecipient.h>
 #include <Poco/Net/SMTPClientSession.h>
+#include "io_service_pool.hpp"
+#include "safe_counter.hpp"
 using namespace std;
 using namespace std::chrono;
 using namespace RDKit;
@@ -220,9 +222,6 @@ int main(int argc, char* argv[])
 #ifdef PRELOAD_FEATURES
 	const auto features = read<array<double, qn.back()>>("16_usrcat.f64");
 	assert(features.size() == num_conformers);
-#else
-	std::ifstream usrcat_f64("16_usrcat.f64");
-	alignas(32) array<double, qn.back()> l;
 #endif
 
 	// Read ligand footer file and open ligand SDF file for seeking and reading.
@@ -231,9 +230,9 @@ int main(int argc, char* argv[])
 
 	// Initialize variables.
 	array<vector<int>, num_subsets> subsets;
+	array<Point3D, num_references> references;
 	array<vector<double>, num_references> dista;
 	alignas(32) array<double, qn.back()> q;
-	alignas(32) array<double, 4> a;
 
 	// Initialize vectors to store compounds' USR and USRCAT scores and their corresponding conformer.
 	array<vector<double>, 2> scores
@@ -247,6 +246,12 @@ int main(int argc, char* argv[])
 		vector<size_t>(num_ligands)
 	}};
 	vector<size_t> scase(num_ligands);
+
+	// Initialize an io service pool and create worker threads for later use.
+	const size_t num_threads = 24 /* thread::hardware_concurrency() */;
+	cout << local_time() << "Creating an io service pool of " << num_threads << " worker threads" << endl;
+	io_service_pool io(num_threads);
+	safe_counter<size_t> cnt;
 
 	// Enter event loop.
 	cout << local_time() << "Entering event loop" << endl;
@@ -330,8 +335,10 @@ int main(int argc, char* argv[])
 			// Calculate the four reference points.
 			cout << local_time() << "Calculating reference points" << endl;
 			const auto& conf = mol.getConformer();
-			const auto num_points_inv = 1.0 / num_points;
-			array<Point3D, num_references> references{};
+			for (auto& ref : references)
+			{
+				ref.x = ref.y = ref.z = 0;
+			}
 			auto& ctd = references[0];
 			auto& cst = references[1];
 			auto& fct = references[2];
@@ -341,7 +348,7 @@ int main(int argc, char* argv[])
 				const auto& a = conf.getAtomPos(i);
 				ctd += a;
 			}
-			ctd *= num_points_inv;
+			ctd /= num_points;
 			double cst_dist = numeric_limits<double>::max();
 			double fct_dist = numeric_limits<double>::lowest();
 			double ftf_dist = numeric_limits<double>::lowest();
@@ -447,41 +454,48 @@ int main(int argc, char* argv[])
 			{
 				ss.assign(ss.size(), numeric_limits<double>::max());
 			}
-#ifndef PRELOAD_FEATURES
-			usrcat_f64.seekg(0);
-#endif
-			for (size_t j = 0, k = 0; k < num_ligands; ++k)
+			cnt.init(num_ligands);
+			for (size_t k = 0; k < num_ligands; ++k)
 			{
-				for (const auto mconfs = mconfss[k]; j < mconfs; ++j)
+				io.post([&,k]()
 				{
-#ifdef PRELOAD_FEATURES
-					const auto& l = features[j];
-#else
-					assert(usrcat_f64.tellg() == sizeof(l) * j);
-					usrcat_f64.read(reinterpret_cast<char*>(l.data()), sizeof(l));
+					size_t j = k ? mconfss[k - 1] : 0;
+					alignas(32) array<double, 4> a;
+#ifndef PRELOAD_FEATURES
+					alignas(32) array<double, qn.back()> l;
+					std::ifstream usrcat_f64("16_usrcat.f64");
+					usrcat_f64.seekg(sizeof(l) * j);
 #endif
-					double s = 0;
-					#pragma unroll
-					for (size_t i = 0, u = 0; u < num_usrs; ++u)
+					for (const auto mconfs = mconfss[k]; j < mconfs; ++j)
 					{
+#ifdef PRELOAD_FEATURES
+						const auto& l = features[j];
+#else
+						assert(usrcat_f64.tellg() == sizeof(l) * j);
+						usrcat_f64.read(reinterpret_cast<char*>(l.data()), sizeof(l));
+#endif
+						double s = 0;
 						#pragma unroll
-						for (const auto qnu = qn[u]; i < qnu; i += 4)
+						for (size_t i = 0, u = 0; u < num_usrs; ++u)
 						{
-							const auto m256a = _mm256_andnot_pd(m256s, _mm256_sub_pd(_mm256_load_pd(&q[i]), _mm256_load_pd(&l[i])));
-							_mm256_stream_pd(a.data(), _mm256_hadd_pd(m256a, m256a));
-							s += a[0] + a[2];
-						}
-						if (s < scores[u][k])
-						{
-							scores[u][k] = s;
-							cnfids[u][k] = j;
+							#pragma unroll
+							for (const auto qnu = qn[u]; i < qnu; i += 4)
+							{
+								const auto m256a = _mm256_andnot_pd(m256s, _mm256_sub_pd(_mm256_load_pd(&q[i]), _mm256_load_pd(&l[i])));
+								_mm256_stream_pd(a.data(), _mm256_hadd_pd(m256a, m256a));
+								s += a[0] + a[2];
+							}
+							if (s < scores[u][k])
+							{
+								scores[u][k] = s;
+								cnfids[u][k] = j;
+							}
 						}
 					}
-				}
+					cnt.increment();
+				});
 			}
-#ifndef PRELOAD_FEATURES
-			assert(usrcat_f64.tellg() == sizeof(l) * num_conformers);
-#endif
+			cnt.wait();
 
 			// Sort ligands by USRCAT score, if equal then by USR score, if equal then by ZINC ID.
 			cout << local_time() << "Sorting scores" << endl;
