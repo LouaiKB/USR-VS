@@ -41,10 +41,9 @@ inline static string local_time()
 template <typename T>
 inline vector<T> read(const path src)
 {
-	cout << local_time() << "Reading " << src;
 	boost::filesystem::ifstream ifs(src, ios::binary | ios::ate);
 	const size_t num_bytes = ifs.tellg();
-	cout << ", " << num_bytes << " bytes" << endl;
+	cout << local_time() << "Reading " << src << " of " << num_bytes << " bytes" << endl;
 	vector<T> buf;
 	buf.resize(num_bytes / sizeof(T));
 	ifs.seekg(0);
@@ -59,10 +58,9 @@ public:
 	explicit header_array(path src)
 	{
 		src.replace_extension(".ftr");
-		cout << local_time() << "Reading " << src;
 		boost::filesystem::ifstream ifs(src, ios::binary | ios::ate);
 		const size_t num_bytes = ifs.tellg();
-		cout << ", " << num_bytes << " bytes" << endl;
+		cout << local_time() << "Reading " << src << " of " << num_bytes << " bytes" << endl;
 		hdr.resize(1 + num_bytes / sizeof(size_type));
 		hdr.front() = 0;
 		ifs.seekg(0);
@@ -84,10 +82,9 @@ class string_array : public header_array<size_type>
 public:
 	explicit string_array(const path src) : header_array<size_type>(src)
 	{
-		cout << local_time() << "Reading " << src;
 		boost::filesystem::ifstream ifs(src, ios::binary | ios::ate);
 		const size_t num_bytes = ifs.tellg();
-		cout << ", " << num_bytes << " bytes" << endl;
+		cout << local_time() << "Reading " << src << " of " << num_bytes << " bytes" << endl;
 		buf.resize(num_bytes);
 		ifs.seekg(0);
 		ifs.read(const_cast<char*>(buf.data()), num_bytes);
