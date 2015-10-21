@@ -485,7 +485,7 @@ int main(int argc, char* argv[])
 			}
 			cnt.wait();
 
-			// Sort ligands by USRCAT score, if equal then by USR score, if equal then by ZINC ID.
+			// Sort ligands by the primary score, if equal then by the secondary score, if equal then by ZINC ID.
 			cout << local_time() << "Sorting " << scase.size() << " scores" << endl;
 			iota(scase.begin(), scase.end(), 0);
 			sort(scase.begin(), scase.end(), [&](const size_t val0, const size_t val1)
@@ -560,3 +560,4 @@ int main(int argc, char* argv[])
 		conn.update(collection, BSON("_id" << _id), BSON("$set" << BSON("done" << Date_t(millis_since_epoch))));
 	}
 }
+
