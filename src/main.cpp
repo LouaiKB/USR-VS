@@ -175,6 +175,7 @@ int main(int argc, char* argv[])
 		"[$([O,S;H1;v2]-[!$(*=[O,N,P,S])]),$([O,S;H0;v2]),$([O,S;-]),$([N&v3;H1,H2]-[!$(*=[O,N,P,S])]),$([N;v3;H0]),$([n,o,s;+0]),F]", // acceptor
 		"[N!H0v3,N!H0+v4,OH+0,SH+0,nH+0]", // donor
 	}};
+	const size_t num_hits = 1000;
 
 	// Wrap SMARTS strings to RWMol objects.
 	array<unique_ptr<ROMol>, num_subsets> SubsetMols;
@@ -186,6 +187,7 @@ int main(int argc, char* argv[])
 	// Read ZINC ID file.
 	const string_array<size_t> zincids("16_zincid.txt");
 	const auto num_ligands = zincids.size();
+	cout << local_time() << "Found " << num_ligands << " database molecules" << endl;
 
 	// Read SMILES file.
 	const string_array<size_t> smileses("16_smiles.txt");
@@ -206,6 +208,7 @@ int main(int argc, char* argv[])
 	const auto num_conformers = mconfss.back();
 	assert(mconfss.size() == num_ligands);
 	assert(num_conformers >= num_ligands);
+	cout << local_time() << "Found " << num_conformers << " database conformers" << endl;
 
 	// Read feature file.
 #ifdef PRELOAD_FEATURES
@@ -226,15 +229,14 @@ int main(int argc, char* argv[])
 	// Initialize vectors to store compounds' USR and USRCAT scores and their corresponding conformer.
 	array<vector<double>, 2> scores
 	{{
-		vector<double>(num_ligands),
-		vector<double>(num_ligands)
+		vector<double>(num_ligands), // USR score
+		vector<double>(num_ligands)  // USRCAT score
 	}};
 	array<vector<size_t>, 2> cnfids
 	{{
-		vector<size_t>(num_ligands),
-		vector<size_t>(num_ligands)
+		vector<size_t>(num_ligands), // ID of conformer of the best USR score
+		vector<size_t>(num_ligands)  // ID of conformer of the best USRCAT score
 	}};
-	vector<size_t> scase(num_ligands);
 
 	// Initialize an io service pool and create worker threads for later use.
 	const size_t num_threads = thread::hardware_concurrency();
@@ -243,8 +245,13 @@ int main(int argc, char* argv[])
 	safe_counter<size_t> cnt;
 
 	// Initialize the number of chunks and the number of molecules per chunk.
-	const auto num_chunks = num_threads << 6;
+	const auto num_chunks = num_threads << 4;
 	const auto chunk_size = 1 + (num_ligands - 1) / num_chunks;
+	assert(chunk_size * num_chunks >= num_ligands);
+	assert(chunk_size >= num_hits);
+	cout << local_time() << "Using " << num_chunks << " chunks and a chunk size of " << chunk_size << endl;
+	vector<size_t> scase(num_ligands);
+	vector<size_t> zcase(num_hits * (num_chunks - 1) + min(num_hits, num_ligands - chunk_size * (num_chunks - 1))); // The last chunk might have fewer than num_hits records.
 
 	// Enter event loop.
 	cout << local_time() << "Entering event loop" << endl;
@@ -275,7 +282,7 @@ int main(int argc, char* argv[])
 		const auto usr = 1; // Specify the primary sorting score. 0: USR; 1: USRCAT.
 		const auto& u0scores = scores[usr];   // Primary sorting score.
 		const auto& u1scores = scores[usr^1]; // Secondary sorting score.
-		const auto compare = [&](const size_t val0, const size_t val1)
+		const auto compare = [&](const size_t val0, const size_t val1) // Sort by the primary score, if equal then by the secondary score, if equal then by ZINC ID.
 		{
 			const auto u0score0 = u0scores[val0];
 			const auto u0score1 = u0scores[val1];
@@ -305,7 +312,7 @@ int main(int argc, char* argv[])
 			cout << local_time() << "Found " << num_points << " heavy atoms" << endl;
 
 			// Classify subset atoms.
-			cout << local_time() << "Classifying atoms into subsets, whose sizes are:";
+			cout << local_time() << "Classifying atoms into subsets" << endl;
 			for (size_t k = 0; k < num_subsets; ++k)
 			{
 				vector<vector<pair<int, int>>> matchVect;
@@ -317,14 +324,14 @@ int main(int argc, char* argv[])
 				{
 					subset[i] = matchVect[i].front().second;
 				}
-				cout << ' ' << subset.size();
+				cout << local_time() << "Found " << num_matches << " atoms for subset " << k << endl;
 			}
-			cout << endl;
 
 			// Check user-provided ligand validity.
 			const auto& subset0 = subsets.front();
 			if (subset0.empty())
 			{
+				cerr << "Subset 0 is empty" << endl;
 				// Record job completion time stamp.
 				// TODO: set an error code in the database.
 				const auto millis_since_epoch = duration_cast<std::chrono::milliseconds>(system_clock::now().time_since_epoch()).count();
@@ -334,7 +341,7 @@ int main(int argc, char* argv[])
 			assert(subset0.size() == num_points);
 
 			// Calculate the four reference points.
-			cout << local_time() << "Calculating reference points" << endl;
+			cout << local_time() << "Calculating " << num_references << " reference points" << endl;
 			const auto& conf = mol.getConformer();
 			for (auto& ref : references)
 			{
@@ -380,7 +387,7 @@ int main(int argc, char* argv[])
 			}
 
 			// Precalculate the distances of heavy atoms to the reference points, given that subsets[1 to 4] are subsets of subsets[0].
-			cout << local_time() << "Calculating pairwise distances" << endl;
+			cout << local_time() << "Calculating " << num_points * num_references << " pairwise distances" << endl;
 			for (size_t k = 0; k < num_references; ++k)
 			{
 				const auto& reference = references[k];
@@ -393,7 +400,7 @@ int main(int argc, char* argv[])
 			}
 
 			// Loop over pharmacophoric subsets and reference points.
-			cout << local_time() << "Calculating USRCAT moments" << endl;
+			cout << local_time() << "Calculating " << 3 * num_references * num_subsets << " moments of USRCAT feature" << endl;
 			size_t qo = 0;
 			for (const auto& subset : subsets)
 			{
@@ -450,17 +457,21 @@ int main(int argc, char* argv[])
 			assert(qo == qn.back());
 
 			// Compute USR and USRCAT scores.
-			cout << local_time() << "Calculating USR and USRCAT scores in parallel" << endl;
+			cout << local_time() << "Calculating " << num_ligands << " USR and USRCAT scores" << endl;
 			for (auto& ss : scores)
 			{
 				ss.assign(ss.size(), numeric_limits<double>::max());
 			}
+			iota(scase.begin(), scase.end(), 0);
 			cnt.init(num_chunks);
 			for (size_t l = 0; l < num_chunks; ++l)
 			{
 				io.post([&,l]()
 				{
-					for (size_t k = chunk_size * l, chunk_end = min<size_t>(k + chunk_size, num_ligands); k < chunk_end; ++k)
+					// Calculate the USR and USRCAT scores of molecules of the current chunk.
+					const auto chunk_beg = chunk_size * l;
+					const auto chunk_end = min(chunk_beg + chunk_size, num_ligands);
+					for (size_t k = chunk_beg; k < chunk_end; ++k)
 					{
 						size_t j = k ? mconfss[k - 1] : 0;
 #ifndef PRELOAD_FEATURES
@@ -495,15 +506,20 @@ int main(int argc, char* argv[])
 							}
 						}
 					}
+
+					// Sort the scores of molecules of the current chunk.
+					sort(scase.begin() + chunk_beg, scase.begin() + chunk_end, compare);
+
+					// Copy the indexes of top hits of the current chunk to a global vector for final sorting.
+					copy_n(scase.begin() + chunk_beg, min(num_hits, chunk_end - chunk_beg), zcase.begin() + num_hits * l);
+
 					cnt.increment();
 				});
 			}
 			cnt.wait();
 
-			// Sort ligands by the primary score, if equal then by the secondary score, if equal then by ZINC ID.
-			cout << local_time() << "Sorting " << scase.size() << " scores" << endl;
-			iota(scase.begin(), scase.end(), 0);
-			sort(scase.begin(), scase.end(), compare);
+			cout << local_time() << "Sorting " << zcase.size() << " scores" << endl;
+			sort(zcase.begin(), zcase.end(), compare);
 
 			// Create output directory and write output files.
 			cout << local_time() << "Creating output directory" << endl;
@@ -519,9 +535,9 @@ int main(int argc, char* argv[])
 			filtering_ostream hits_sdf_gz;
 			hits_sdf_gz.push(gzip_compressor());
 			hits_sdf_gz.push(file_sink((output_dir / "hits.sdf.gz").string()));
-			for (size_t t = 0; t < 1000; ++t)
+			for (size_t t = 0; t < num_hits; ++t)
 			{
-				const auto k = scase[t];
+				const auto k = zcase[t];
 				const auto zincid = zincids[k].substr(0, 8); // Take another substr() to get rid of the trailing newline.
 				const auto u0score = 1 / (1 + scores[0][k] * qv[0]);
 				const auto u1score = 1 / (1 + scores[1][k] * qv[1]);
