@@ -42,10 +42,10 @@ template <typename T>
 inline vector<T> read(const path src)
 {
 	cout << local_time() << "Reading " << src;
-	vector<T> buf;
 	boost::filesystem::ifstream ifs(src, ios::binary | ios::ate);
 	const size_t num_bytes = ifs.tellg();
 	cout << ", " << num_bytes << " bytes" << endl;
+	vector<T> buf;
 	buf.resize(num_bytes / sizeof(T));
 	ifs.seekg(0);
 	ifs.read(reinterpret_cast<char*>(buf.data()), num_bytes);
