@@ -10,6 +10,7 @@
 #include <cassert>
 #include <chrono>
 #include <thread>
+#include <mutex>
 #include <GraphMol/FileParsers/MolSupplier.h>
 #include <GraphMol/SmilesParse/SmilesParse.h>
 #include <GraphMol/Substruct/SubstructMatch.h>
@@ -114,13 +115,17 @@ public:
 		const auto len = this->hdr[index + 1] - pos;
 		string buf;
 		buf.resize(len);
-		ifs.seekg(pos);
-		ifs.read(const_cast<char*>(buf.data()), len);
+		{
+			lock_guard<std::mutex> guard(m);
+			ifs.seekg(pos);
+			ifs.read(const_cast<char*>(buf.data()), len);
+		}
 		return buf;
 	}
 
 protected:
 	boost::filesystem::ifstream ifs;
+	std::mutex m;
 };
 
 template<typename T>
@@ -232,17 +237,13 @@ int main(int argc, char* argv[])
 		vector<double>(num_ligands), // USR score
 		vector<double>(num_ligands)  // USRCAT score
 	}};
-	array<vector<size_t>, 2> cnfids
-	{{
-		vector<size_t>(num_ligands), // ID of conformer of the best USR score
-		vector<size_t>(num_ligands)  // ID of conformer of the best USRCAT score
-	}};
+	vector<size_t> cnfids(num_ligands); // ID of conformer of the best score
 
 	// Initialize an io service pool and create worker threads for later use.
 	const size_t num_threads = thread::hardware_concurrency();
 	cout << local_time() << "Creating an io service pool of " << num_threads << " worker threads" << endl;
 	io_service_pool io(num_threads);
-	safe_counter<size_t> cnt;
+	safe_counter<size_t> cnt, cnl;
 
 	// Initialize the number of chunks and the number of molecules per chunk.
 	const auto num_chunks = num_threads << 4;
@@ -252,6 +253,15 @@ int main(int argc, char* argv[])
 	cout << local_time() << "Using " << num_chunks << " chunks and a chunk size of " << chunk_size << endl;
 	vector<size_t> scase(num_ligands);
 	vector<size_t> zcase(num_hits * (num_chunks - 1) + min(num_hits, num_ligands - chunk_size * (num_chunks - 1))); // The last chunk might have fewer than num_hits records.
+
+	// Initialize variables for saving a copy of the results to be written to files asynchronously.
+	vector<size_t> lcase(num_hits);  // Used to save a copy of the indexes of top hits.
+	array<vector<double>, 2> lscores // Used to save a copy of the scores of top hits.
+	{{
+		vector<double>(num_hits), // USR score
+		vector<double>(num_hits)  // USRCAT score
+	}};
+	vector<size_t> lcnfids(num_hits); // Used to save a copy of the IDs of top hits.
 
 	// Enter event loop.
 	cout << local_time() << "Entering event loop" << endl;
@@ -299,11 +309,16 @@ int main(int argc, char* argv[])
 			return u0score0 < u0score1;
 		};
 
-		// Parse the user-supplied SDF file, setting sanitize=true, removeHs=false, strictParsing=true.
-		size_t query_number = 0;
-		for (SDMolSupplier sup((job_path / "query.sdf").string(), true, false, true); !sup.atEnd();) // sanitize, removeHs, strictParsing
+		// Parse the user-supplied SDF file.
+		cout << local_time() << "Reading query file" << endl;
+		SDMolSupplier sup((job_path / "query.sdf").string(), true, false, true); // sanitize, removeHs, strictParsing
+		const auto num_queries = sup.length();
+		assert(sup.atEnd());
+		cout << local_time() << "Found " << num_queries << " query molecules" << endl;
+		cnl.init(num_queries);
+		for (unsigned int query_number = 0; query_number < num_queries; ++query_number)
 		{
-			cout << local_time() << "Parsing query molecule " << ++query_number << endl;
+			cout << local_time() << "Processing query molecule " << query_number << endl;
 			const unique_ptr<ROMol> mol_ptr(sup.next()); // Calling next() may print "ERROR: Could not sanitize molecule on line XXXX" to stderr.
 			auto& mol = *mol_ptr;
 
@@ -501,7 +516,7 @@ int main(int argc, char* argv[])
 								if (s < scoreuk)
 								{
 									scoreuk = s;
-									cnfids[u][k] = j;
+									if (u == usr) cnfids[k] = j;
 								}
 							}
 						}
@@ -518,57 +533,74 @@ int main(int argc, char* argv[])
 			}
 			cnt.wait();
 
-			cout << local_time() << "Sorting " << zcase.size() << " scores" << endl;
+			// Sort the top hits from chunks.
+			cout << local_time() << "Sorting " << zcase.size() << " hits" << endl;
 			sort(zcase.begin(), zcase.end(), compare);
 
-			// Create output directory and write output files.
-			cout << local_time() << "Creating output directory" << endl;
-			const auto output_dir = job_path / to_string(query_number);
-			create_directory(output_dir);
-			cout << local_time() << "Writing output files" << endl;
-			using namespace boost::iostreams;
-			filtering_ostream log_csv_gz;
-			log_csv_gz.push(gzip_compressor());
-			log_csv_gz.push(file_sink((output_dir / "log.csv.gz").string()));
-			log_csv_gz.setf(ios::fixed, ios::floatfield);
-			log_csv_gz << "ZINC ID,USR score,USRCAT score,Molecular weight (g/mol),Partition coefficient xlogP,Apolar desolvation (kcal/mol),Polar desolvation (kcal/mol),Hydrogen bond donors,Hydrogen bond acceptors,Polar surface area tPSA (A^2),Net charge,Rotatable bonds,SMILES,Substance information,Suppliers and annotations\n";
-			filtering_ostream hits_sdf_gz;
-			hits_sdf_gz.push(gzip_compressor());
-			hits_sdf_gz.push(file_sink((output_dir / "hits.sdf.gz").string()));
-			for (size_t t = 0; t < num_hits; ++t)
+			// Create output directory and write output files asynchronously.
+			cout << local_time() << "Saving a copy of " << num_hits << " hits to be written to files" << endl;
+			copy_n(zcase.begin(), num_hits, lcase.begin());
+			for (size_t l = 0; l < num_hits; ++l)
 			{
-				const auto k = zcase[t];
-				const auto zincid = zincids[k].substr(0, 8); // Take another substr() to get rid of the trailing newline.
-				const auto u0score = 1 / (1 + scores[0][k] * qv[0]);
-				const auto u1score = 1 / (1 + scores[1][k] * qv[1]);
-				const auto zfp = zfproperties[k];
-				const auto zip = ziproperties[k];
-				const auto smiles = smileses[k];    // A newline is already included in smileses[k].
-				const auto supplier = suppliers[k]; // A newline is already included in suppliers[k].
-				log_csv_gz
-					<< zincid
-					<< setprecision(8)
-					<< ',' << u0score
-					<< ',' << u1score
-					<< setprecision(3)
-					<< ',' << zfp[0]
-					<< ',' << zfp[1]
-					<< ',' << zfp[2]
-					<< ',' << zfp[3]
-					<< ',' << zip[0]
-					<< ',' << zip[1]
-					<< ',' << zip[2]
-					<< ',' << zip[3]
-					<< ',' << zip[4]
-					<< ',' << smiles.substr(0, smiles.length() - 1)     // Get rid of the trailing newline.
-					<< ",http://zinc.docking.org/substance/" << zincid
-					<< ',' << supplier.substr(0, supplier.length() - 1) // Get rid of the trailing newline.
-					<< '\n'
-				;
-				const auto lig = ligands[cnfids[usr][k]];
-				hits_sdf_gz.write(lig.data(), lig.size());
+				const auto k = lcase[l];
+				#pragma unroll
+				for (size_t u = 0; u < num_usrs; ++u)
+				{
+					lscores[u][l] = scores[u][k];
+				}
+				lcnfids[l] = cnfids[k];
 			}
+			io.post([&, query_number, lcase, lscores, lcnfids]()
+			{
+				const auto output_dir = job_path / to_string(query_number);
+				create_directory(output_dir);
+				using namespace boost::iostreams;
+				filtering_ostream log_csv_gz;
+				log_csv_gz.push(gzip_compressor());
+				log_csv_gz.push(file_sink((output_dir / "log.csv.gz").string()));
+				log_csv_gz.setf(ios::fixed, ios::floatfield);
+				log_csv_gz << "ZINC ID,USR score,USRCAT score,Molecular weight (g/mol),Partition coefficient xlogP,Apolar desolvation (kcal/mol),Polar desolvation (kcal/mol),Hydrogen bond donors,Hydrogen bond acceptors,Polar surface area tPSA (A^2),Net charge,Rotatable bonds,SMILES,Substance information,Suppliers and annotations\n";
+				filtering_ostream hits_sdf_gz;
+				hits_sdf_gz.push(gzip_compressor());
+				hits_sdf_gz.push(file_sink((output_dir / "hits.sdf.gz").string()));
+				for (size_t l = 0; l < num_hits; ++l)
+				{
+					const auto k = lcase[l];
+					const auto zincid = zincids[k].substr(0, 8); // Take another substr() to get rid of the trailing newline.
+					const auto u0score = 1 / (1 + lscores[0][l] * qv[0]);
+					const auto u1score = 1 / (1 + lscores[1][l] * qv[1]);
+					const auto zfp = zfproperties[k];
+					const auto zip = ziproperties[k];
+					const auto smiles = smileses[k];    // A newline is already included in smileses[k].
+					const auto supplier = suppliers[k]; // A newline is already included in suppliers[k].
+					log_csv_gz
+						<< zincid
+						<< setprecision(8)
+						<< ',' << u0score
+						<< ',' << u1score
+						<< setprecision(3)
+						<< ',' << zfp[0]
+						<< ',' << zfp[1]
+						<< ',' << zfp[2]
+						<< ',' << zfp[3]
+						<< ',' << zip[0]
+						<< ',' << zip[1]
+						<< ',' << zip[2]
+						<< ',' << zip[3]
+						<< ',' << zip[4]
+						<< ',' << smiles.substr(0, smiles.length() - 1)     // Get rid of the trailing newline.
+						<< ",http://zinc.docking.org/substance/" << zincid
+						<< ',' << supplier.substr(0, supplier.length() - 1) // Get rid of the trailing newline.
+						<< '\n'
+					;
+					const auto lig = ligands[lcnfids[l]];
+					hits_sdf_gz.write(lig.data(), lig.size());
+				}
+				cnl.increment();
+			});
 		}
+		cout << local_time() << "Waiting for output files being written" << endl;
+		cnl.wait();
 
 		// Update progress.
 		cout << local_time() << "Setting done time" << endl;
