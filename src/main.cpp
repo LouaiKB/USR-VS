@@ -275,6 +275,22 @@ int main(int argc, char* argv[])
 		const auto usr = 1; // Specify the primary sorting score. 0: USR; 1: USRCAT.
 		const auto& u0scores = scores[usr];   // Primary sorting score.
 		const auto& u1scores = scores[usr^1]; // Secondary sorting score.
+		const auto compare = [&](const size_t val0, const size_t val1)
+		{
+			const auto u0score0 = u0scores[val0];
+			const auto u0score1 = u0scores[val1];
+			if (u0score0 == u0score1)
+			{
+				const auto u1score0 = u1scores[val0];
+				const auto u1score1 = u1scores[val1];
+				if (u1score0 == u1score1)
+				{
+					return zincids[val0] < zincids[val1];
+				}
+				return u1score0 < u1score1;
+			}
+			return u0score0 < u0score1;
+		};
 
 		// Parse the user-supplied SDF file, setting sanitize=true, removeHs=false, strictParsing=true.
 		size_t query_number = 0;
@@ -434,7 +450,7 @@ int main(int argc, char* argv[])
 			assert(qo == qn.back());
 
 			// Compute USR and USRCAT scores.
-			cout << local_time() << "Calculating USR and USRCAT scores" << endl;
+			cout << local_time() << "Calculating USR and USRCAT scores in parallel" << endl;
 			for (auto& ss : scores)
 			{
 				ss.assign(ss.size(), numeric_limits<double>::max());
@@ -447,7 +463,6 @@ int main(int argc, char* argv[])
 					for (size_t k = chunk_size * l, chunk_end = min<size_t>(k + chunk_size, num_ligands); k < chunk_end; ++k)
 					{
 						size_t j = k ? mconfss[k - 1] : 0;
-						alignas(32) array<double, 4> a;
 #ifndef PRELOAD_FEATURES
 						alignas(32) array<double, qn.back()> l;
 						std::ifstream usrcat_f64("16_usrcat.f64");
@@ -488,22 +503,7 @@ int main(int argc, char* argv[])
 			// Sort ligands by the primary score, if equal then by the secondary score, if equal then by ZINC ID.
 			cout << local_time() << "Sorting " << scase.size() << " scores" << endl;
 			iota(scase.begin(), scase.end(), 0);
-			sort(scase.begin(), scase.end(), [&](const size_t val0, const size_t val1)
-			{
-				const auto u0score0 = u0scores[val0];
-				const auto u0score1 = u0scores[val1];
-				if (u0score0 == u0score1)
-				{
-					const auto u1score0 = u1scores[val0];
-					const auto u1score1 = u1scores[val1];
-					if (u1score0 == u1score1)
-					{
-						return zincids[val0] < zincids[val1];
-					}
-					return u1score0 < u1score1;
-				}
-				return u0score0 < u0score1;
-			});
+			sort(scase.begin(), scase.end(), compare);
 
 			// Create output directory and write output files.
 			cout << local_time() << "Creating output directory" << endl;
