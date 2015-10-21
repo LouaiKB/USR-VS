@@ -10,7 +10,6 @@
 #include <cassert>
 #include <chrono>
 #include <thread>
-#include <immintrin.h>
 #include <GraphMol/FileParsers/MolSupplier.h>
 #include <GraphMol/SmilesParse/SmilesParse.h>
 #include <GraphMol/Substruct/SubstructMatch.h>
@@ -176,8 +175,6 @@ int main(int argc, char* argv[])
 		"[$([O,S;H1;v2]-[!$(*=[O,N,P,S])]),$([O,S;H0;v2]),$([O,S;-]),$([N&v3;H1,H2]-[!$(*=[O,N,P,S])]),$([N;v3;H0]),$([n,o,s;+0]),F]", // acceptor
 		"[N!H0v3,N!H0+v4,OH+0,SH+0,nH+0]", // donor
 	}};
-	const auto m256s = _mm256_set1_pd(-0.); // -0. = 1 << 63
-	const size_t usr = 1; // Specify the primary sorting score. 0: USR; 1: USRCAT.
 
 	// Wrap SMARTS strings to RWMol objects.
 	array<unique_ptr<ROMol>, num_subsets> SubsetMols;
@@ -274,6 +271,10 @@ int main(int argc, char* argv[])
 		const auto _id = job["_id"].OID();
 		cout << local_time() << "Executing job " << _id.str() << endl;
 		const auto job_path = jobs_path / _id.str();
+//		const auto usr = job["usr"].Int();
+		const auto usr = 1; // Specify the primary sorting score. 0: USR; 1: USRCAT.
+		const auto& u0scores = scores[usr];   // Primary sorting score.
+		const auto& u1scores = scores[usr^1]; // Secondary sorting score.
 
 		// Parse the user-supplied SDF file, setting sanitize=true, removeHs=false, strictParsing=true.
 		size_t query_number = 0;
@@ -466,11 +467,9 @@ int main(int argc, char* argv[])
 							{
 								auto& scoreuk = scores[u][k];
 								#pragma unroll
-								for (const auto qnu = qn[u]; i < qnu; i += 4)
+								for (const auto qnu = qn[u]; i < qnu; ++i)
 								{
-									const auto m256a = _mm256_andnot_pd(m256s, _mm256_sub_pd(_mm256_load_pd(&q[i]), _mm256_load_pd(&l[i])));
-									_mm256_stream_pd(a.data(), _mm256_hadd_pd(m256a, m256a));
-									s += a[0] + a[2];
+									s += abs(q[i] - l[i]);
 									if (u == 1 && s >= scoreuk) break;
 								}
 								if (s < scoreuk)
@@ -488,8 +487,6 @@ int main(int argc, char* argv[])
 
 			// Sort ligands by USRCAT score, if equal then by USR score, if equal then by ZINC ID.
 			cout << local_time() << "Sorting scores" << endl;
-			const auto& u0scores = scores[usr]; // Primary sorting score.
-			const auto& u1scores = scores[usr ^ 1]; // Secondary sorting score.
 			iota(scase.begin(), scase.end(), 0);
 			sort(scase.begin(), scase.end(), [&](const size_t val0, const size_t val1)
 			{

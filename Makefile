@@ -12,10 +12,11 @@ obj/encode.o: src/encode.cpp
 	${CC} -o $@ $< -c -std=c++14 -O2 -Wall -I${BOOST_ROOT} -I${RDKIT_ROOT}/include/rdkit
 
 obj/main.o: src/main.cpp
-	${CC} -o $@ $< -c -std=c++14 -O2 -mavx -Wall -Wno-unused-local-typedef -Wno-deprecated-declarations -Wno-deprecated-register -I${BOOST_ROOT} -I${RDKIT_ROOT}/include/rdkit -I${MONGODBCXXDRIVER_ROOT}/src -D PRELOAD_FEATURES
+	${CC} -o $@ $< -c -std=c++14 -O2 -Wall -Wno-unused-local-typedef -Wno-deprecated-declarations -Wno-deprecated-register -I${BOOST_ROOT} -I${RDKIT_ROOT}/include/rdkit -I${MONGODBCXXDRIVER_ROOT}/src -D PRELOAD_FEATURES
 
 obj/%.o: src/%.cpp
 	${CC} -o $@ $< -c -std=c++14 -O2 -Wall -I${BOOST_ROOT}
 
 clean:
 	rm -f bin/* obj/*
+
