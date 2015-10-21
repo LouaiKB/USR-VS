@@ -434,7 +434,7 @@ int main(int argc, char* argv[])
 			assert(qo == qn.back());
 
 			// Compute USR and USRCAT scores.
-			cout << local_time() << "Calculating USRCAT scores" << endl;
+			cout << local_time() << "Calculating USR and USRCAT scores" << endl;
 			for (auto& ss : scores)
 			{
 				ss.assign(ss.size(), numeric_limits<double>::max());
@@ -486,7 +486,7 @@ int main(int argc, char* argv[])
 			cnt.wait();
 
 			// Sort ligands by USRCAT score, if equal then by USR score, if equal then by ZINC ID.
-			cout << local_time() << "Sorting scores" << endl;
+			cout << local_time() << "Sorting " << scase.size() << " scores" << endl;
 			iota(scase.begin(), scase.end(), 0);
 			sort(scase.begin(), scase.end(), [&](const size_t val0, const size_t val1)
 			{
