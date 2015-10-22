@@ -32,9 +32,14 @@ using namespace boost::posix_time;
 using namespace mongo;
 using namespace bson;
 
-inline static string local_time()
+inline static auto local_time()
 {
 	return to_simple_string(microsec_clock::local_time()) + " ";
+}
+
+inline static auto milliseconds_since_epoch()
+{
+	return Date_t(duration_cast<chrono::milliseconds>(system_clock::now().time_since_epoch()).count());
 }
 
 template <typename T>
@@ -256,7 +261,7 @@ int main(int argc, char* argv[])
 		// Fetch an incompleted job in a first-come-first-served manner.
 		if (!sleeping) cout << local_time() << "Fetching an incompleted job" << endl;
 		BSONObj info;
-		conn.runCommand("istar", BSON("findandmodify" << "usr2" << "query" << BSON("done" << BSON("$exists" << false) << "started" << BSON("$exists" << false)) << "sort" << BSON("submitted" << 1) << "update" << BSON("$set" << BSON("started" << Date_t(duration_cast<std::chrono::milliseconds>(system_clock::now().time_since_epoch()).count())))), info); // conn.findAndModify() is available since MongoDB C++ Driver legacy-1.0.0
+		conn.runCommand("istar", BSON("findandmodify" << "usr2" << "query" << BSON("started" << BSON("$exists" << false)) << "sort" << BSON("submitted" << 1) << "update" << BSON("$set" << BSON("started" << milliseconds_since_epoch()))), info); // conn.findAndModify() is available since MongoDB C++ Driver legacy-1.0.0
 		const auto value = info["value"];
 		if (value.isNull())
 		{
@@ -294,12 +299,22 @@ int main(int argc, char* argv[])
 			return u0score0 < u0score1;
 		};
 
-		// Parse the user-supplied SDF file.
+		// Read the user-supplied SDF file.
 		cout << local_time() << "Reading query file" << endl;
 		SDMolSupplier sup((job_path / "query.sdf").string(), true, false, true); // sanitize, removeHs, strictParsing
 		const auto num_queries = sup.length();
-		assert(sup.atEnd());
 		cout << local_time() << "Found " << num_queries << " query molecules" << endl;
+
+		// Check the validity of the user-supplied SDF file.
+		if (!num_queries || !sup.atEnd())
+		{
+			const auto error = "Failed to parse the query file";
+			cout << local_time() << error << endl;
+			conn.update(collection, BSON("_id" << _id), BSON("$set" << BSON("completed" << milliseconds_since_epoch() << "error" << error)));
+			continue;
+		}
+
+		// Process each of the query molecules sequentially.
 		for (unsigned int query_number = 0; query_number < num_queries; ++query_number)
 		{
 			cout << local_time() << "Processing query molecule " << query_number << endl;
@@ -308,9 +323,10 @@ int main(int argc, char* argv[])
 
 			// Get the number of points, excluding hydrogens.
 			const auto num_points = mol.getNumHeavyAtoms();
+			assert(num_points);
 			cout << local_time() << "Found " << num_points << " heavy atoms" << endl;
 
-			// Classify subset atoms.
+			// Classify atoms to pharmacophoric subsets.
 			cout << local_time() << "Classifying atoms into subsets" << endl;
 			for (size_t k = 0; k < num_subsets; ++k)
 			{
@@ -325,18 +341,7 @@ int main(int argc, char* argv[])
 				}
 				cout << local_time() << "Found " << num_matches << " atoms for subset " << k << endl;
 			}
-
-			// Check user-provided ligand validity.
 			const auto& subset0 = subsets.front();
-			if (subset0.empty())
-			{
-				cerr << "Subset 0 is empty" << endl;
-				// Record job completion time stamp.
-				// TODO: set an error code in the database.
-				const auto millis_since_epoch = duration_cast<std::chrono::milliseconds>(system_clock::now().time_since_epoch()).count();
-				conn.update(collection, BSON("_id" << _id), BSON("$set" << BSON("done" << Date_t(millis_since_epoch))));
-				continue;
-			}
 			assert(subset0.size() == num_points);
 
 			// Calculate the four reference points.
@@ -559,10 +564,9 @@ int main(int argc, char* argv[])
 			}
 		}
 
-		// Update progress.
-		cout << local_time() << "Setting done time" << endl;
-		const auto millis_since_epoch = duration_cast<std::chrono::milliseconds>(system_clock::now().time_since_epoch()).count();
-		conn.update(collection, BSON("_id" << _id), BSON("$set" << BSON("done" << Date_t(millis_since_epoch))));
+		// Update job status.
+		cout << local_time() << "Setting completed time" << endl;
+		conn.update(collection, BSON("_id" << _id), BSON("$set" << BSON("completed" << milliseconds_since_epoch())));
 	}
 }
 
