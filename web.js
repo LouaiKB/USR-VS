@@ -1,11 +1,9 @@
 #!/usr/bin/env node
-var fs = require('fs'),
-	cluster = require('cluster');
+var cluster = require('cluster');
 if (cluster.isMaster) {
-	// Fork worker processes with cluster
-	var numCPUs = require('os').cpus().length;
-	console.log('Forking %d worker processes', numCPUs);
-	for (var i = 0; i < numCPUs; i++) {
+	var numWorkerProcesses = 4;
+	console.log('Forking %d worker processes', numWorkerProcesses);
+	for (var i = 0; i < numWorkerProcesses; i++) {
 		cluster.fork();
 	}
 	cluster.on('death', function(worker) {
@@ -13,81 +11,53 @@ if (cluster.isMaster) {
 		cluster.fork();
 	});
 } else {
-	// Connect to MongoDB
 	var mongodb = require('mongodb');
 	new mongodb.MongoClient.connect('mongodb://' + process.argv[2] + '/istar', function(err, db) {
 		if (err) throw err;
 		db.authenticate(process.argv[3], process.argv[4], function(err, authenticated) {
 			if (err) throw err;
 			var usr = db.collection('usr2');
-			// Configure express server
 			var express = require('express');
 			var bodyParser = require('body-parser');
-			var favicon = require('serve-favicon');
 			var errorHandler = require('errorhandler');
 			var app = express();
 			app.use(bodyParser.urlencoded({ limit: '100kb', extended: false }));
 			app.use(errorHandler({ dumpExceptions: true, showStack: true }));
-			var env = process.env.NODE_ENV || 'development';
-			if (env == 'development') {
-				app.use(express.static(__dirname + '/public'));
-				app.use(favicon(__dirname + '/public/favicon.ico'));
-			} else if (env == 'production') {
-				var oneDay = 1000 * 60 * 60 * 24;
-				var oneYear = oneDay * 365.25;
-				app.use(express.static(__dirname + '/public', { maxAge: oneDay }));
-				app.use(favicon(__dirname + '/public/favicon.ico', { maxAge: oneYear }));
-			};
-			// Define helper variables and functions
+			app.use(express.static(__dirname + '/public'));
 			var validator = require('./public/validator');
-			app.route('/jobs').get(function(req, res) {
+			var fs = require('fs');
+			app.route('/job').get(function(req, res) {
 				var v = new validator(req.query);
 				if (v
-					.field('skip').message('must be a non-negative integer').int(0).min(0).copy()
-					.field('count').message('must be a non-negative integer').int(0).min(0).copy()
-					.failed() || v
-					.range('skip', 'count')
+					.field('id').message('must be a valid job ID').objectid().copy()
 					.failed()) {
 					res.json(v.err);
 					return;
 				};
-				usr.count(function(err, count) {
+				usr.find({_id: new mongodb.ObjectID(v.res.id)}, {
+					fields: {
+						'_id': 0,
+						'filename': 1,
+						'submitted': 1,
+						'started': 1,
+						'completed': 1,
+						'error': 1,
+					},
+				}).limit(1).next(function(err, doc) {
 					if (err) throw err;
-					if (v
-						.field('count').message('must be no greater than ' + count).max(count)
-						.failed()) {
-						res.json(v.err);
-						return;
-					}
-					usr.find({}, {
-						fields: v.res.count == count ? {
-							'_id': 0,
-							'started': 1,
-							'done': 1,
-						} : {
-							'description': 1,
-							'submitted': 1,
-							'started': 1,
-							'done': 1,
-						},
-						sort: {'submitted': 1},
-						skip: v.res.skip,
-						limit: count - v.res.skip
-					}).toArray(function(err, docs) {
-						if (err) throw err;
-						res.json(docs);
-					});
+					res.json(doc);
 				});
 			}).post(function(req, res) {
 				var v = new validator(req.body);
 				if (v
-					.field('description').message('must be provided, at most 20 characters').length(1, 20).xss().copy()
-					.field('query').message('must be provided and must not exceed 100KB').length(1, 102400)
-					.field('email').message('must be valid').email().copy()
+					.field('filename').message('must be provided, at most 20 characters').length(1, 20).xss().copy()
+					.field('query').message('must be provided, at most 100KB').length(1, 102400)
+					.field('usr').message('must be 0 or 1').int(0).min(0).max(1).copy()
 					.failed()) {
 					res.json(v.err);
 					return;
 				}
+				v.res.version = 1;
 				v.res.submitted = new Date();
 				v.res._id = new mongodb.ObjectID();
 				var dir = __dirname + '/public/jobs/' + v.res._id;
@@ -96,11 +66,10 @@ if (cluster.isMaster) {
 					fs.writeFile(dir + '/query.sdf', req.body['query'], function(err) {
 						if (err) throw err;
 						usr.insert(v.res, { w: 0 });
-						res.json({});
+						res.json(v.res._id);
 					});
 				});
 			});
-			// Start listening
 			var http_port = 4000;
 			app.listen(http_port);
 			console.log('Worker %d listening on HTTP port %d in %s mode', process.pid, http_port, app.settings.env);
