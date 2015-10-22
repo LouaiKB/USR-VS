@@ -163,6 +163,7 @@ int main(int argc, char* argv[])
 	cout << local_time() << "Initializing" << endl;
 	const auto collection = "istar.usr2";
 	const size_t num_usrs = 2;
+	const array<string, 2> usr_names{{ "USR", "USRCAT" }};
 	constexpr array<size_t, num_usrs> qn{{ 12, 60 }};
 	constexpr array<double, num_usrs> qv{{ 1.0 / qn[0], 1.0 / qn[1] }};
 	const size_t num_references = 4;
@@ -272,8 +273,8 @@ int main(int argc, char* argv[])
 		const auto _id = job["_id"].OID();
 		cout << local_time() << "Executing job " << _id.str() << endl;
 		const auto job_path = jobs_path / _id.str();
-//		const auto usr = job["usr"].Int();
-		const auto usr = 1; // Specify the primary sorting score. 0: USR; 1: USRCAT.
+		const size_t usr = job["usr"].Int(); // Specify the primary sorting score. 0: USR; 1: USRCAT.
+		assert(usr == 0 || usr == 1);
 		const auto& u0scores = scores[usr];   // Primary sorting score.
 		const auto& u1scores = scores[usr^1]; // Secondary sorting score.
 		const auto compare = [&](const size_t val0, const size_t val1) // Sort by the primary score, if equal then by the secondary score, if equal then by ZINC ID.
@@ -507,7 +508,7 @@ int main(int argc, char* argv[])
 			cnt.wait();
 
 			// Sort the top hits from chunks.
-			cout << local_time() << "Sorting " << zcase.size() << " hits" << endl;
+			cout << local_time() << "Sorting " << zcase.size() << " hits by " << usr_names[usr] << " score" << endl;
 			sort(zcase.begin(), zcase.end(), compare);
 
 			// Create output directory and write output files.
