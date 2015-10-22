@@ -211,10 +211,8 @@ int main(int argc, char* argv[])
 	cout << local_time() << "Found " << num_conformers << " database conformers" << endl;
 
 	// Read feature file.
-#ifdef PRELOAD_FEATURES
 	const auto features = read<array<double, qn.back()>>("16_usrcat.f64");
 	assert(features.size() == num_conformers);
-#endif
 
 	// Read ligand footer file and open ligand SDF file for seeking and reading.
 	stream_array<size_t> ligands("16_ligand.sdf");
@@ -474,19 +472,9 @@ int main(int argc, char* argv[])
 					for (size_t k = chunk_beg; k < chunk_end; ++k)
 					{
 						size_t j = k ? mconfss[k - 1] : 0;
-#ifndef PRELOAD_FEATURES
-						alignas(32) array<double, qn.back()> l;
-						std::ifstream usrcat_f64("16_usrcat.f64");
-						usrcat_f64.seekg(sizeof(l) * j);
-#endif
 						for (const auto mconfs = mconfss[k]; j < mconfs; ++j)
 						{
-#ifdef PRELOAD_FEATURES
 							const auto& l = features[j];
-#else
-							assert(usrcat_f64.tellg() == sizeof(l) * j);
-							usrcat_f64.read(reinterpret_cast<char*>(l.data()), sizeof(l));
-#endif
 							double s = 0;
 							#pragma unroll
 							for (size_t i = 0, u = 0; u < num_usrs; ++u)
