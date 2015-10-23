@@ -62,6 +62,34 @@
  */
 
 $(function () {
+
+	// Get the latest job status
+	var status = $('#status');
+	var jobid = location.search.substr(1);
+	var tick = function() {
+		$.get('../job', { id: jobid }, function(job) {
+			['submitted', 'started', 'completed'].forEach(function (key) {
+				if (job[key] === undefined) return;
+				job[key] = $.format.date(new Date(job[key]), 'yyyy/MM/dd HH:mm:ss');
+			});
+			job.info = job.completed ? (job.error ? job.error : 'Completed ' + job.nqueries + ' queries') : (job.started ? 'Execution in progress <img src="loading.gif" style="width: 16px; height: 16px;">' : 'Queued for execution');
+			$('span', status).each(function(d) {
+				var t = $(this);
+				var c = job[t.attr('id')];
+				if (t.html() !== c) {
+					t.html(c).hide().fadeIn('slow');
+				}
+			});
+			$('#filename', status).parent().attr('href', '../jobs/' + jobid + '/query.sdf');
+			if (!job.completed) {
+				setTimeout(tick, 1000);
+				return;
+			}
+			if (job.error) return;
+		});
+	};
+	tick();
+
 	var vdwRadii = { // Hu, S.Z.; Zhou, Z.H.; Tsai, K.R. Acta Phys.-Chim. Sin., 2003, 19:1073.
 		 H: 1.08,
 		HE: 1.34,
@@ -828,7 +856,7 @@ void main()\n\
 			var $this = $(this);
 			$this.text(ligand[$this.attr('id')]);
 		});
-		$('#id', data).parent().attr('href', '//zinc.docking.org/substance/' + ligand.id);
+		$('#id', data).parent().attr('href', '//zinc.docking.org/substance/' + ligand.zid);
 		$('#suppliers', data).html(ligand.suppliers.map(function(supplier) {
 			var link = catalogs[supplier];
 			return '<li><a' + (link === undefined || link.length === 0 ? '' : ' href="' + link + '"') + '>' + supplier + '</a></li>';
@@ -850,7 +878,7 @@ void main()\n\
 		var r = covalentRadii[atom1.elem] + covalentRadii[atom2.elem];
 		return atom1.coord.distanceToSquared(atom2.coord) < 1.3 * r * r;
 	};
-	var path = '/jobs/' + location.search.substr(1) + '/';
+	var path = '../jobs/' + jobid + '/0/';
 	$('#downloads a').each(function () {
 		var t = $(this);
 		t.attr('href', path + t.text());
@@ -860,7 +888,7 @@ void main()\n\
 		url: path + 'hits.sdf.gz',
 		mimeType: 'application/octet-stream; charset=x-user-defined',
 	}).done(function (hits_sdf_gz) {
-		var gunzipWorker = new Worker('/gunzip.js');
+		var gunzipWorker = new Worker('gunzip.js');
 		gunzipWorker.addEventListener('message', function (e) {
 			var ligands = [];
 			var lines = e.data.split('\n');
@@ -888,7 +916,7 @@ void main()\n\
 						}
 						mdl.add(r);
 					},
-					id: lines[offset],
+					zid: lines[offset],
 				}, atoms = ligand.atoms;
 				offset += 3;
 				var atomCount = parseInt(lines[offset].substr(0, 3));
@@ -922,13 +950,13 @@ void main()\n\
 				url: path + 'log.csv.gz',
 				mimeType: 'application/octet-stream; charset=x-user-defined',
 			}).done(function (log_sdf_gz) {
-				var gunzipWorker = new Worker('/gunzip.js');
+				var gunzipWorker = new Worker('gunzip.js');
 				gunzipWorker.addEventListener('message', function (e) {
 					var logs = e.data.split('\n').slice(1);
-					var propNames = [ 'usr_score', 'usrcat_score', 'mwt', 'lgp', 'ads', 'pds', 'hbd', 'hba', 'psa', 'chg', 'nrb', 'smiles', 'suppliers' ];
+					var propNames = [ 'usr_score', 'usrcat_score', 'mwt', 'lgp', 'ads', 'pds', 'hbd', 'hba', 'psa', 'chg', 'nrb', 'smiles', 'link', 'suppliers' ];
 					$.each(ligands, function (i, ligand) {
 						var properties = logs[i].split(',');
-						if (ligand.id !== properties[0]) throw Error("Inequal ZINC IDs.");
+						if (ligand.zid !== properties[0]) throw Error("Inequal ZINC IDs.");
 						$.each(propNames, function (j, propName) {
 							ligand[propName] = properties[1+j];
 						});
@@ -938,14 +966,14 @@ void main()\n\
 					$('#nhits').text(ligands.length);
 					var ids = $('#ids');
 					ids.html(ligands.map(function(ligand) {
-						return '<label class="btn btn-primary"><input type="radio">' + ligand.id + '</label>';
+						return '<label class="btn btn-primary"><input type="radio">' + ligand.zid + '</label>';
 					}).join(''));
 					$(':first', ids).addClass('active');
 					$('> .btn', ids).click(function(e) {
 						mdl.remove(ligand.representations.label);
 						mdl.remove(ligand.representations[ligand.active]);
 						ligands.forEach(function(l) {
-							if (l.id.toString() === $(e.target).text().trim()) {
+							if (l.zid.toString() === $(e.target).text().trim()) {
 								ligand = l;
 							}
 						});

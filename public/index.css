@@ -59,6 +59,11 @@ canvas {
   float: none;
 }
 
+.btn-group-x {
+  overflow-x: scroll;
+  white-space: nowrap;
+}
+
 footer {
   padding-top: 10px;
   margin: 10px 0;

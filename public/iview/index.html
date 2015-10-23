@@ -4,31 +4,47 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <meta name="author" content="Hongjian Li">
-  <meta name="description" content="iview: an interactive WebGL visualizer for protein-ligand complex">
-  <title>iview: an interactive WebGL visualizer for protein-ligand complex</title>
+  <meta name="description" content="iview: an interactive WebGL visualizer">
+  <title>iview: an interactive WebGL visualizer</title>
   <link rel="stylesheet" href="../bootstrap.min.css">
   <link rel="stylesheet" href="../bootstrap-theme.min.css">
   <link rel="stylesheet" href="../index.css">
-  <link rel="shortcut icon" href="../favicon.ico">
-  <link rel="apple-touch-icon-precomposed" sizes="144x144" href="../apple-touch-icon-144-precomposed.png">
-  <link rel="apple-touch-icon-precomposed" sizes="114x114" href="../apple-touch-icon-114-precomposed.png">
-  <link rel="apple-touch-icon-precomposed" sizes="72x72" href="../apple-touch-icon-72-precomposed.png">
-  <link rel="apple-touch-icon-precomposed" href="../apple-touch-icon-57-precomposed.png">
 </head>
 <body>
   <a class="sr-only" href="#content">Skip navigation</a>
-  <a href="https://github.com/HongjianLi/istar" class="ribbon"></a>
+  <a href="https://github.com/HongjianLi/usr" class="ribbon"></a>
   <div class="jumbotron" id="content" role="main">
     <div class="container">
       <h1><img src="logo.png" alt="logo" class="logo">iview</h1>
-      <p>an interactive WebGL visualizer for protein-ligand complex</p>
+      <p>an interactive WebGL visualizer</p>
     </div>
   </div>
   <div class="container">
     <div>
-      <div class="row">
+      <div class="row" id="status">
         <div class="col-md-12">
-          <h2 id="resultNotReady" class="text-info text-center">Results for this job are not ready yet. Please come back later.</h2>
+          <div class="table-responsive">
+            <table class="table">
+              <thead>
+                <tr>
+                  <th>Query file</th>
+                  <th>Submitted</th>
+                  <th>Started</th>
+                  <th>Completed</th>
+                  <th>Status</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td><a><span id="filename"></span></a></td>
+                  <td><span id="submitted"></span></td>
+                  <td><span id="started"></span></td>
+                  <td><span id="completed"></span></td>
+                  <td><span id="info"></span></td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
         </div>
       </div>
       <div class="row">
@@ -39,9 +55,19 @@
       <div class="row">
         <div class="col-md-12">
           <div class="form-group">
+            <label><span id="nqueries"></span> query molecules</label>
+            <div>
+              <div class="btn-group btn-group-sm" data-toggle="buttons" id="qids"></div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="row">
+        <div class="col-md-12">
+          <div class="form-group">
             <label>Top <span id="nhits"></span> hits</label>
             <div>
-              <div class="btn-group btn-group-sm" data-toggle="buttons" style="overflow-x: scroll;white-space: nowrap;" id="ids"></div>
+              <div class="btn-group btn-group-sm btn-group-x" data-toggle="buttons" id="ids"></div>
             </div>
           </div>
         </div>
@@ -55,7 +81,7 @@
           </ul>
           <p>Results</p>
           <ul>
-            <li>ZINC ID: <a><span id="id"></span></a></li>
+            <li>ZINC ID: <a><span id="zid"></span></a></li>
             <li>USR score: <span id="usr_score"></span></li>
             <li>USRCAT score: <span id="usrcat_score"></span></li>
           </ul>
@@ -141,11 +167,12 @@
   </div>
   <footer role="contentinfo">
     <div class="container">
-      <p><a href="http://www.cuhk.edu.hk"><img src="../cuhk.jpg" alt="CUHK logo"></a>&copy; 2012-2015 Chinese University of Hong Kong. Platform designed by <a href="http://www.cse.cuhk.edu.hk/~hjli">Hongjian Li</a>. Code licensed under <a href="http://www.apache.org/licenses/LICENSE-2.0">Apache License 2.0</a>. Documentation licensed under <a href="http://creativecommons.org/licenses/by/3.0">CC BY 3.0</a>.<a href="http://validator.w3.org/check?uri=referer"><img src="../HTML5_Badge_512.png" alt="HTML5 logo"></a></p>
+      <p>Copyright 2015 <a href="http://www.cse.cuhk.edu.hk/~hjli">Hongjian Li</a>. Code licensed under <a href="http://www.apache.org/licenses/LICENSE-2.0">Apache License 2.0</a>. Documentation licensed under <a href="http://creativecommons.org/licenses/by/3.0">CC BY 3.0</a>. Web pages conform to <a href="http://validator.w3.org/check?uri=referer">HTML5</a>.</p>
     </div>
   </footer>
   <script src="http://code.jquery.com/jquery-2.1.4.min.js"></script>
   <script src="../bootstrap.min.js"></script>
+  <script src="jquery-dateFormat.min.js"></script>
   <script src="three.min.js"></script>
   <script src="index.js"></script>
 </body>
