@@ -566,7 +566,7 @@ int main(int argc, char* argv[])
 
 		// Update job status.
 		cout << local_time() << "Setting completed time" << endl;
-		conn.update(collection, BSON("_id" << _id), BSON("$set" << BSON("completed" << milliseconds_since_epoch())));
+		conn.update(collection, BSON("_id" << _id), BSON("$set" << BSON("completed" << milliseconds_since_epoch() << "nqueries" << num_queries)));
 	}
 }
 

@@ -41,6 +41,7 @@ if (cluster.isMaster) {
 						'submitted': 1,
 						'started': 1,
 						'completed': 1,
+						'nqueries': 1,
 						'error': 1,
 					},
 				}).limit(1).next(function(err, doc) {
