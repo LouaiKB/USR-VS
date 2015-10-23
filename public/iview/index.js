@@ -835,7 +835,7 @@ void main()\n\
 			var refreshLigand = function(ligand) {
 				if (ligand.representations === undefined) {
 					ligand.representations = {
-						label: createLabelRepresentation(ligand.atoms),
+						label: createLabelRepresentation({}),
 					};
 				}
 				mdl.add(ligand.representations.label);
@@ -868,7 +868,19 @@ void main()\n\
 				var r = covalentRadii[atom1.elem] + covalentRadii[atom2.elem];
 				return atom1.coord.distanceToSquared(atom2.coord) < 1.3 * r * r;
 			};
-			var path = '../jobs/' + jobid + '/0/';
+
+			$('#nqueries').text(job.nqueries);
+			var qids = $('#qids'), queryid = 0;
+			qids.html(Array.apply(0, Array(job.nqueries)).map(function (value, index) {
+				return '<label class="btn btn-success"><input type="radio">' + index + '</label>';
+			}).join(''));
+			$(':first', qids).addClass('active');
+			$('> .btn', qids).click(function(e) {
+				var target = $(e.target).text();
+				if (target == queryid) return;
+				queryid = target;
+			});
+			var path = '../jobs/' + jobid + '/' + queryid + '/';
 			$('#downloads a').each(function () {
 				var t = $(this);
 				t.attr('href', path + t.text());
