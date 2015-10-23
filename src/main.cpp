@@ -268,7 +268,7 @@ int main(int argc, char* argv[])
 			// No incompleted jobs. Sleep for a while.
 			if (!sleeping) cout << local_time() << "Sleeping" << endl;
 			sleeping = true;
-			this_thread::sleep_for(chrono::seconds(10));
+			this_thread::sleep_for(chrono::seconds(2));
 			continue;
 		}
 		sleeping = false;
