@@ -1,5 +1,5 @@
 /*!
- * iview is an interactive WebGL visualizer for protein-ligand complex. iview is based on GLmol, three.js, zlib.js and jQuery.
+ * iview is an interactive WebGL visualizer for protein-ligand complex. iview is based on GLmol, three.js and jQuery.
  * http://github.com/HongjianLi/istar
  * Copyright (c) 2012-2014 Chinese University of Hong Kong
  * License: Apache License 2.0
@@ -32,11 +32,6 @@
  * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
  * THE SOFTWARE.
- *
- * zlib.js
- * https://github.com/imaya/zlib.js
- * Copyright (c) 2012 imaya
- * License: MIT License
  *
  * jQuery
  * http://jquery.org
@@ -885,131 +880,121 @@ void main()\n\
 	});
 	var ligand;
 	$.ajax({
-		url: path + 'hits.sdf.gz',
-		mimeType: 'application/octet-stream; charset=x-user-defined',
-	}).done(function (hits_sdf_gz) {
-		var gunzipWorker = new Worker('gunzip.js');
-		gunzipWorker.addEventListener('message', function (e) {
-			var ligands = [];
-			var lines = e.data.split('\n');
-			for (var offset = 0, l = lines.length - 1; offset < l;) {
-				var ligand = {
-					atoms: {},
-					refresh: function() {
-						var r = ligand.representations[ligand.active];
-						if (r === undefined) {
-							switch (ligand.active) {
-								case 'line':
-									r = createLineRepresentation(ligand.atoms);
-									break;
-								case 'stick':
-									r = createStickRepresentation(ligand.atoms, cylinderRadius, cylinderRadius);
-									break;
-								case 'ball & stick':
-									r = createStickRepresentation(ligand.atoms, cylinderRadius, cylinderRadius * 0.5);
-									break;
-								case 'sphere':
-									r = createSphereRepresentation(ligand.atoms);
-									break;
-							}
-							ligand.representations[ligand.active] = r;
+		url: path + 'hits.sdf',
+	}).done(function (hits_sdf) {
+		var ligands = [];
+		var lines = hits_sdf.split('\n');
+		for (var offset = 0, l = lines.length - 1; offset < l;) {
+			var ligand = {
+				atoms: {},
+				refresh: function() {
+					var r = ligand.representations[ligand.active];
+					if (r === undefined) {
+						switch (ligand.active) {
+							case 'line':
+								r = createLineRepresentation(ligand.atoms);
+								break;
+							case 'stick':
+								r = createStickRepresentation(ligand.atoms, cylinderRadius, cylinderRadius);
+								break;
+							case 'ball & stick':
+								r = createStickRepresentation(ligand.atoms, cylinderRadius, cylinderRadius * 0.5);
+								break;
+							case 'sphere':
+								r = createSphereRepresentation(ligand.atoms);
+								break;
 						}
-						mdl.add(r);
-					},
-					zid: lines[offset],
-				}, atoms = ligand.atoms;
-				offset += 3;
-				var atomCount = parseInt(lines[offset].substr(0, 3));
-				var bondCount = parseInt(lines[offset].substr(3, 3));
-				for (var i = 1; i <= atomCount; ++i) {
-					var line = lines[++offset];
-					var atom = {
-						serial: i,
-						coord: new THREE.Vector3(parseFloat(line.substr( 0, 10)), parseFloat(line.substr(10, 10)), parseFloat(line.substr(20, 10))),
-						elem: line.substr(31, 2).replace(/ /g, '').toUpperCase(),
-						bonds: [],
-					};
-					if (atom.elem === 'H') continue;
-					atom.color = atomColors[atom.elem] || defaultAtomColor;
-					atoms[atom.serial] = atom;
-				}
-				ligand.nha = Object.keys(atoms).length;
-				for (var i = 1; i <= bondCount; ++i) {
-					var line = lines[++offset];
-					var atom0 = atoms[parseInt(line.substr(0, 3))];
-					if (atom0 === undefined) continue;
-					var atom1 = atoms[parseInt(line.substr(3, 3))];
-					if (atom1 === undefined) continue;
-					atom0.bonds.push(atom1);
-					atom1.bonds.push(atom0);
-				}
-				while (lines[offset++] !== "$$$$");
-				ligands.push(ligand);
-			}
-			$.ajax({
-				url: path + 'log.csv.gz',
-				mimeType: 'application/octet-stream; charset=x-user-defined',
-			}).done(function (log_sdf_gz) {
-				var gunzipWorker = new Worker('gunzip.js');
-				gunzipWorker.addEventListener('message', function (e) {
-					var logs = e.data.split('\n').slice(1);
-					var propNames = [ 'usr_score', 'usrcat_score', 'mwt', 'lgp', 'ads', 'pds', 'hbd', 'hba', 'psa', 'chg', 'nrb', 'smiles', 'link', 'suppliers' ];
-					$.each(ligands, function (i, ligand) {
-						var properties = logs[i].split(',');
-						if (ligand.zid !== properties[0]) throw Error("Inequal ZINC IDs.");
-						$.each(propNames, function (j, propName) {
-							ligand[propName] = properties[1+j];
-						});
-						ligand.suppliers = ligand.suppliers.split(' | ').slice(1);
-						ligand.nsuppliers = ligand.suppliers.length;
-					});
-					$('#nhits').text(ligands.length);
-					var ids = $('#ids');
-					ids.html(ligands.map(function(ligand) {
-						return '<label class="btn btn-primary"><input type="radio">' + ligand.zid + '</label>';
-					}).join(''));
-					$(':first', ids).addClass('active');
-					$('> .btn', ids).click(function(e) {
-						mdl.remove(ligand.representations.label);
-						mdl.remove(ligand.representations[ligand.active]);
-						ligands.forEach(function(l) {
-							if (l.zid.toString() === $(e.target).text().trim()) {
-								ligand = l;
-							}
-						});
-						refreshLigand(ligand);
-						ligand.active = $('#ligand .active').text().trim();
-						ligand.refresh();
-						render();
-					});
-					refreshLigand(ligand = ligands[0]);
-					ligand.active = $('#ligand .active').text().trim();
-					ligand.refresh();
-					$('#ligand').click(function (e) {
-						mdl.remove(ligand.representations[ligand.active]);
-						ligand.active = $(e.target).text().trim();
-						ligand.refresh();
-						render();
-					});
-					var lmin = new THREE.Vector3( 9999, 9999, 9999);
-					var lmax = new THREE.Vector3(-9999,-9999,-9999);
-					atoms = ligand.atoms;
-					for (var i in atoms) {
-						var atom = atoms[i];
-						var coord = atom.coord;
-						lmin.min(coord);
-						lmax.max(coord);
+						ligand.representations[ligand.active] = r;
 					}
-					var maxD = lmax.distanceTo(lmin) + 4;
-					sn = -maxD;
-					sf =  maxD;
-					rot.position.z = maxD * 0.35 / Math.tan(Math.PI / 180.0 * 10) - 140;
-					render();
+					mdl.add(r);
+				},
+				zid: lines[offset],
+			}, atoms = ligand.atoms;
+			offset += 3;
+			var atomCount = parseInt(lines[offset].substr(0, 3));
+			var bondCount = parseInt(lines[offset].substr(3, 3));
+			for (var i = 1; i <= atomCount; ++i) {
+				var line = lines[++offset];
+				var atom = {
+					serial: i,
+					coord: new THREE.Vector3(parseFloat(line.substr( 0, 10)), parseFloat(line.substr(10, 10)), parseFloat(line.substr(20, 10))),
+					elem: line.substr(31, 2).replace(/ /g, '').toUpperCase(),
+					bonds: [],
+				};
+				if (atom.elem === 'H') continue;
+				atom.color = atomColors[atom.elem] || defaultAtomColor;
+				atoms[atom.serial] = atom;
+			}
+			ligand.nha = Object.keys(atoms).length;
+			for (var i = 1; i <= bondCount; ++i) {
+				var line = lines[++offset];
+				var atom0 = atoms[parseInt(line.substr(0, 3))];
+				if (atom0 === undefined) continue;
+				var atom1 = atoms[parseInt(line.substr(3, 3))];
+				if (atom1 === undefined) continue;
+				atom0.bonds.push(atom1);
+				atom1.bonds.push(atom0);
+			}
+			while (lines[offset++] !== "$$$$");
+			ligands.push(ligand);
+		}
+		$.ajax({
+			url: path + 'log.csv',
+		}).done(function (log_csv) {
+			var logs = log_csv.split('\n').slice(1);
+			var propNames = [ 'usr_score', 'usrcat_score', 'mwt', 'lgp', 'ads', 'pds', 'hbd', 'hba', 'psa', 'chg', 'nrb', 'smiles', 'suppliers' ];
+			$.each(ligands, function (i, ligand) {
+				var properties = logs[i].split(',');
+				if (ligand.zid !== properties[0]) throw Error("Inequal ZINC IDs.");
+				$.each(propNames, function (j, propName) {
+					ligand[propName] = properties[1+j];
 				});
-				gunzipWorker.postMessage(log_sdf_gz);
+				ligand.suppliers = ligand.suppliers.split(' | ').slice(1);
+				ligand.nsuppliers = ligand.suppliers.length;
 			});
+			$('#nhits').text(ligands.length);
+			var ids = $('#ids');
+			ids.html(ligands.map(function(ligand) {
+				return '<label class="btn btn-primary"><input type="radio">' + ligand.zid + '</label>';
+			}).join(''));
+			$(':first', ids).addClass('active');
+			$('> .btn', ids).click(function(e) {
+				mdl.remove(ligand.representations.label);
+				mdl.remove(ligand.representations[ligand.active]);
+				ligands.forEach(function(l) {
+					if (l.zid.toString() === $(e.target).text().trim()) {
+						ligand = l;
+					}
+				});
+				refreshLigand(ligand);
+				ligand.active = $('#ligand .active').text().trim();
+				ligand.refresh();
+				render();
+			});
+			refreshLigand(ligand = ligands[0]);
+			ligand.active = $('#ligand .active').text().trim();
+			ligand.refresh();
+			$('#ligand').click(function (e) {
+				mdl.remove(ligand.representations[ligand.active]);
+				ligand.active = $(e.target).text().trim();
+				ligand.refresh();
+				render();
+			});
+			var lmin = new THREE.Vector3( 9999, 9999, 9999);
+			var lmax = new THREE.Vector3(-9999,-9999,-9999);
+			atoms = ligand.atoms;
+			for (var i in atoms) {
+				var atom = atoms[i];
+				var coord = atom.coord;
+				lmin.min(coord);
+				lmax.max(coord);
+			}
+			var maxD = lmax.distanceTo(lmin) + 4;
+			sn = -maxD;
+			sf =  maxD;
+			rot.position.z = maxD * 0.35 / Math.tan(Math.PI / 180.0 * 10) - 140;
+			render();
 		});
-		gunzipWorker.postMessage(hits_sdf_gz);
 	});
 	var dg, wh, cx, cy, cq, cz, cp, cn, cf;
 	canvas.bind('contextmenu', function (e) {

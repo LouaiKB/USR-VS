@@ -15,9 +15,6 @@
 #include <GraphMol/Substruct/SubstructMatch.h>
 #include <boost/filesystem/operations.hpp>
 #include <boost/filesystem/fstream.hpp>
-#include <boost/iostreams/device/file.hpp>
-#include <boost/iostreams/filtering_stream.hpp>
-#include <boost/iostreams/filter/gzip.hpp>
 #include <boost/date_time/posix_time/posix_time.hpp>
 #include <mongo/client/dbclient.h>
 #include "io_service_pool.hpp"
@@ -181,7 +178,7 @@ int main(int argc, char* argv[])
 		"[$([O,S;H1;v2]-[!$(*=[O,N,P,S])]),$([O,S;H0;v2]),$([O,S;-]),$([N&v3;H1,H2]-[!$(*=[O,N,P,S])]),$([N;v3;H0]),$([n,o,s;+0]),F]", // acceptor
 		"[N!H0v3,N!H0+v4,OH+0,SH+0,nH+0]", // donor
 	}};
-	const size_t num_hits = 1000;
+	const size_t num_hits = 100;
 
 	// Wrap SMARTS strings to RWMol objects.
 	array<unique_ptr<ROMol>, num_subsets> SubsetMols;
@@ -520,15 +517,10 @@ int main(int argc, char* argv[])
 			cout << local_time() << "Creating output directory and writing output files" << endl;
 			const auto output_dir = job_path / to_string(query_number);
 			create_directory(output_dir);
-			using namespace boost::iostreams;
-			filtering_ostream log_csv_gz;
-			log_csv_gz.push(gzip_compressor());
-			log_csv_gz.push(file_sink((output_dir / "log.csv.gz").string()));
-			log_csv_gz.setf(ios::fixed, ios::floatfield);
-			log_csv_gz << "ZINC ID,USR score,USRCAT score,Molecular weight (g/mol),Partition coefficient xlogP,Apolar desolvation (kcal/mol),Polar desolvation (kcal/mol),Hydrogen bond donors,Hydrogen bond acceptors,Polar surface area tPSA (A^2),Net charge,Rotatable bonds,SMILES,Substance information,Suppliers and annotations\n";
-			filtering_ostream hits_sdf_gz;
-			hits_sdf_gz.push(gzip_compressor());
-			hits_sdf_gz.push(file_sink((output_dir / "hits.sdf.gz").string()));
+			boost::filesystem::ofstream hits_sdf(output_dir / "hits.sdf");
+			boost::filesystem::ofstream log_csv(output_dir / "log.csv");
+			log_csv.setf(ios::fixed, ios::floatfield);
+			log_csv << "ZINC ID,USR score,USRCAT score,Molecular weight (g/mol),Partition coefficient xlogP,Apolar desolvation (kcal/mol),Polar desolvation (kcal/mol),Hydrogen bond donors,Hydrogen bond acceptors,Polar surface area tPSA (A^2),Net charge,Rotatable bonds,SMILES,Suppliers and annotations\n";
 			for (size_t l = 0; l < num_hits; ++l)
 			{
 				const auto k = zcase[l];
@@ -539,7 +531,7 @@ int main(int argc, char* argv[])
 				const auto zip = ziproperties[k];
 				const auto smiles = smileses[k];    // A newline is already included in smileses[k].
 				const auto supplier = suppliers[k]; // A newline is already included in suppliers[k].
-				log_csv_gz
+				log_csv
 					<< zincid
 					<< setprecision(8)
 					<< ',' << u0score
@@ -555,12 +547,11 @@ int main(int argc, char* argv[])
 					<< ',' << zip[3]
 					<< ',' << zip[4]
 					<< ',' << smiles.substr(0, smiles.length() - 1)     // Get rid of the trailing newline.
-					<< ",http://zinc.docking.org/substance/" << zincid
 					<< ',' << supplier.substr(0, supplier.length() - 1) // Get rid of the trailing newline.
 					<< '\n'
 				;
 				const auto lig = ligands[cnfids[k]];
-				hits_sdf_gz.write(lig.data(), lig.size());
+				hits_sdf.write(lig.data(), lig.size());
 			}
 		}
 
@@ -569,4 +560,3 @@ int main(int argc, char* argv[])
 		conn.update(collection, BSON("_id" << _id), BSON("$set" << BSON("completed" << milliseconds_since_epoch() << "nqueries" << num_queries)));
 	}
 }
-
