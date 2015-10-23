@@ -82,206 +82,6 @@ $(function () {
 			}
 			if (job.error) return;
 
-			var vdwRadii = { // Hu, S.Z.; Zhou, Z.H.; Tsai, K.R. Acta Phys.-Chim. Sin., 2003, 19:1073.
-				 H: 1.08,
-				HE: 1.34,
-				LI: 1.75,
-				BE: 2.05,
-				 B: 1.47,
-				 C: 1.49,
-				 N: 1.41,
-				 O: 1.40,
-				 F: 1.39,
-				NE: 1.68,
-				NA: 1.84,
-				MG: 2.05,
-				AL: 2.11,
-				SI: 2.07,
-				 P: 1.92,
-				 S: 1.82,
-				CL: 1.83,
-				AR: 1.93,
-				 K: 2.05,
-				CA: 2.21,
-				SC: 2.16,
-				TI: 1.87,
-				 V: 1.79,
-				CR: 1.89,
-				MN: 1.97,
-				FE: 1.94,
-				CO: 1.92,
-				NI: 1.84,
-				CU: 1.86,
-				ZN: 2.10,
-				GA: 2.08,
-				GE: 2.15,
-				AS: 2.06,
-				SE: 1.93,
-				BR: 1.98,
-				KR: 2.12,
-				RB: 2.16,
-				SR: 2.24,
-				 Y: 2.19,
-				ZR: 1.86,
-				NB: 2.07,
-				MO: 2.09,
-				TC: 2.09,
-				RU: 2.07,
-				RH: 1.95,
-				PD: 2.02,
-				AG: 2.03,
-				CD: 2.30,
-				IN: 2.36,
-				SN: 2.33,
-				SB: 2.25,
-				TE: 2.23,
-				 I: 2.23,
-				XE: 2.21,
-				CS: 2.22,
-				BA: 2.51,
-				LA: 2.40,
-				CE: 2.35,
-				PR: 2.39,
-				ND: 2.29,
-				PM: 2.36,
-				SM: 2.29,
-				EU: 2.33,
-				GD: 2.37,
-				TB: 2.21,
-				DY: 2.29,
-				HO: 2.16,
-				ER: 2.35,
-				TM: 2.27,
-				YB: 2.42,
-				LU: 2.21,
-				HF: 2.12,
-				TA: 2.17,
-				 W: 2.10,
-				RE: 2.17,
-				OS: 2.16,
-				IR: 2.02,
-				PT: 2.09,
-				AU: 2.17,
-				HG: 2.09,
-				TL: 2.35,
-				PB: 2.32,
-				BI: 2.43,
-				PO: 2.29,
-				AT: 2.36,
-				RN: 2.43,
-				FR: 2.56,
-				RA: 2.43,
-				AC: 2.60,
-				TH: 2.37,
-				PA: 2.43,
-				 U: 2.40,
-				NP: 2.21,
-				PU: 2.56,
-				AM: 2.56,
-				CM: 2.56,
-				BK: 2.56,
-				CF: 2.56,
-				ES: 2.56,
-				FM: 2.56,
-			};
-			var covalentRadii = { // http://en.wikipedia.org/wiki/Covalent_radius
-				 H: 0.31,
-				HE: 0.28,
-				LI: 1.28,
-				BE: 0.96,
-				 B: 0.84,
-				 C: 0.76,
-				 N: 0.71,
-				 O: 0.66,
-				 F: 0.57,
-				NE: 0.58,
-				NA: 1.66,
-				MG: 1.41,
-				AL: 1.21,
-				SI: 1.11,
-				 P: 1.07,
-				 S: 1.05,
-				CL: 1.02,
-				AR: 1.06,
-				 K: 2.03,
-				CA: 1.76,
-				SC: 1.70,
-				TI: 1.60,
-				 V: 1.53,
-				CR: 1.39,
-				MN: 1.39,
-				FE: 1.32,
-				CO: 1.26,
-				NI: 1.24,
-				CU: 1.32,
-				ZN: 1.22,
-				GA: 1.22,
-				GE: 1.20,
-				AS: 1.19,
-				SE: 1.20,
-				BR: 1.20,
-				KR: 1.16,
-				RB: 2.20,
-				SR: 1.95,
-				 Y: 1.90,
-				ZR: 1.75,
-				NB: 1.64,
-				MO: 1.54,
-				TC: 1.47,
-				RU: 1.46,
-				RH: 1.42,
-				PD: 1.39,
-				AG: 1.45,
-				CD: 1.44,
-				IN: 1.42,
-				SN: 1.39,
-				SB: 1.39,
-				TE: 1.38,
-				 I: 1.39,
-				XE: 1.40,
-				CS: 2.44,
-				BA: 2.15,
-				LA: 2.07,
-				CE: 2.04,
-				PR: 2.03,
-				ND: 2.01,
-				PM: 1.99,
-				SM: 1.98,
-				EU: 1.98,
-				GD: 1.96,
-				TB: 1.94,
-				DY: 1.92,
-				HO: 1.92,
-				ER: 1.89,
-				TM: 1.90,
-				YB: 1.87,
-				LU: 1.87,
-				HF: 1.75,
-				TA: 1.70,
-				 W: 1.62,
-				RE: 1.51,
-				OS: 1.44,
-				IR: 1.41,
-				PT: 1.36,
-				AU: 1.36,
-				HG: 1.32,
-				TL: 1.45,
-				PB: 1.46,
-				BI: 1.48,
-				PO: 1.40,
-				AT: 1.50,
-				RN: 1.50,
-				FR: 2.60,
-				RA: 2.21,
-				AC: 2.15,
-				TH: 2.06,
-				PA: 2.00,
-				 U: 1.96,
-				NP: 1.90,
-				PU: 1.87,
-				AM: 1.80,
-				CM: 1.69,
-			};
 			var atomColors = { // http://jmol.sourceforge.net/jscolors
 				 H: new THREE.Color(0xFFFFFF),
 				HE: new THREE.Color(0xD9FFFF),
@@ -385,7 +185,6 @@ $(function () {
 				FM: new THREE.Color(0xB31FBA),
 			};
 			var defaultAtomColor = new THREE.Color(0xCCCCCC);
-			var defaultBoxColor  = new THREE.Color(0x1FF01F);
 			var defaultBondColor = new THREE.Color(0x2194D6);
 			var defaultBackgroundColor = new THREE.Color(0x000000);
 			var sphereGeometry = new THREE.SphereGeometry(1, 64, 64);
@@ -706,9 +505,9 @@ void main()\n\
 			labelGeo.faceVertexUvs[0].push([new THREE.Vector2(0, 0), new THREE.Vector2(1, 1), new THREE.Vector2(0, 1)]);
 			labelGeo.faceVertexUvs[0].push([new THREE.Vector2(0, 0), new THREE.Vector2(1, 0), new THREE.Vector2(1, 1)]);
 
-			var createSphere = function (atom, defaultRadius, forceDefault, scale) {
+			var createSphere = function (atom, radius) {
 				var mesh = new THREE.Mesh(sphereGeometry, new THREE.MeshLambertMaterial({ color: atom.color }));
-				mesh.scale.x = mesh.scale.y = mesh.scale.z = forceDefault ? defaultRadius : (vdwRadii[atom.elem] || defaultRadius) * (scale ? scale : 1);
+				mesh.scale.x = mesh.scale.y = mesh.scale.z = radius;
 				mesh.position.copy(atom.coord);
 				return mesh;
 			};
@@ -753,73 +552,26 @@ void main()\n\
 					},
 				}));
 			};
-			var createRepresentationSub = function (atoms, f0, f01) {
+			var createStickRepresentation = function (atoms, atomR, bondR) {
+				var obj = new THREE.Object3D();
 				var ged = new THREE.Geometry();
 				for (var i in atoms) {
 					var atom0 = atoms[i];
-					f0 && f0(atom0);
+					obj.add(createSphere(atom0, atomR, false, 0.4));
 					for (var j in atom0.bonds) {
 						var atom1 = atom0.bonds[j];
 						if (atom1.serial < atom0.serial) continue;
-						if (atom1.chain === atom0.chain && ((atom1.resi === atom0.resi) || (atom0.name === 'C' && atom1.name === 'N') || (atom0.name === 'O3\'' && atom1.name === 'P'))) {
-							f01 && f01(atom0, atom1);
+						if (atom0.color === atom1.color) {
+							obj.add(createCylinder(atom0.coord, atom1.coord, bondR, atom0.color));
 						} else {
-							ged.vertices.push(atom0.coord);
-							ged.vertices.push(atom1.coord);
+							var mp = atom0.coord.clone().add(atom1.coord).multiplyScalar(0.5);
+							obj.add(createCylinder(atom0.coord, mp, bondR, atom0.color));
+							obj.add(createCylinder(atom1.coord, mp, bondR, atom1.color));
 						}
 					}
 				}
 				ged.computeLineDistances();
-				return new THREE.LineSegments(ged, new THREE.LineDashedMaterial({ linewidth: linewidth, color: defaultBondColor, dashSize: 0.25, gapSize: 0.125 }));
-			};
-			var createSphereRepresentation = function (atoms) {
-				var obj = new THREE.Object3D();
-				obj.add(createRepresentationSub(atoms, function (atom0) {
-					obj.add(createSphere(atom0, sphereRadius));
-				}));
-				return obj;
-			};
-			var createStickRepresentation = function (atoms, atomR, bondR) {
-				var obj = new THREE.Object3D();
-				obj.add(createRepresentationSub(atoms, function (atom0) {
-					obj.add(createSphere(atom0, atomR, true));
-				}, function (atom0, atom1) {
-					if (atom0.color === atom1.color) {
-						obj.add(createCylinder(atom0.coord, atom1.coord, bondR, atom0.color));
-					} else {
-						var mp = atom0.coord.clone().add(atom1.coord).multiplyScalar(0.5);
-						obj.add(createCylinder(atom0.coord, mp, bondR, atom0.color));
-						obj.add(createCylinder(atom1.coord, mp, bondR, atom1.color));
-					}
-				}));
-				return obj;
-			};
-			var createLineRepresentation = function (atoms) {
-				var obj = new THREE.Object3D();
-				var geo = new THREE.Geometry();
-				obj.add(new THREE.LineSegments(geo, new THREE.LineBasicMaterial({ linewidth: linewidth, vertexColors: true })));
-				obj.add(createRepresentationSub(atoms, function (atom0) {
-					if (atom0.solvent) {
-						obj.add(createSphere(atom0, sphereRadius, false, 0.2));
-					}
-				}, function (atom0, atom1) {
-					if (atom0.color === atom1.color) {
-						geo.vertices.push(atom0.coord);
-						geo.vertices.push(atom1.coord);
-						geo.colors.push(atom0.color);
-						geo.colors.push(atom1.color);
-					} else {
-						var mp = atom0.coord.clone().add(atom1.coord).multiplyScalar(0.5);
-						geo.vertices.push(atom0.coord);
-						geo.vertices.push(mp);
-						geo.vertices.push(atom1.coord);
-						geo.vertices.push(mp);
-						geo.colors.push(atom0.color);
-						geo.colors.push(atom0.color);
-						geo.colors.push(atom1.color);
-						geo.colors.push(atom1.color);
-					}
-				}));
+				obj.add(new THREE.LineSegments(ged, new THREE.LineDashedMaterial({ linewidth: linewidth, color: defaultBondColor, dashSize: 0.25, gapSize: 0.125 })));
 				return obj;
 			};
 			var createLabelRepresentation = function (atoms) {
@@ -831,26 +583,6 @@ void main()\n\
 					obj.add(bb);
 				}
 				return obj;
-			};
-			var refreshLigand = function(ligand) {
-				if (ligand.representations === undefined) {
-					ligand.representations = {
-						label: createLabelRepresentation({}),
-					};
-				}
-				mdl.add(ligand.representations.label);
-				mdl.position.set(0, 0, 0);
-				rot.quaternion.set(1, 0, 0, 0);
-				var data = $('#data');
-				$('span', data).each(function() {
-					var t = $(this);
-					t.text(ligand[t.attr('id')]);
-				});
-				$('#id', data).parent().attr('href', '//zinc.docking.org/substance/' + ligand.zid);
-				$('#suppliers', data).html(ligand.suppliers.map(function(supplier) {
-					var link = catalogs[supplier];
-					return '<li><a' + (link === undefined || link.length === 0 ? '' : ' href="' + link + '"') + '>' + supplier + '</a></li>';
-				}).join(''));
 			};
 			var render = function () {
 				var center = rot.position.z - camera.position.z;
@@ -864,9 +596,27 @@ void main()\n\
 				scene.fog.far = camera.far;
 				renderer.render(scene, camera);
 			};
-			var hasCovalentBond = function (atom1, atom2) {
-				var r = covalentRadii[atom1.elem] + covalentRadii[atom2.elem];
-				return atom1.coord.distanceToSquared(atom2.coord) < 1.3 * r * r;
+			var refresh = function(ligand) {
+				if (ligand.representations === undefined) {
+					ligand.representations = {
+						stick: createStickRepresentation(ligand.atoms, cylinderRadius, cylinderRadius),
+						label: createLabelRepresentation(ligand.atoms),
+					};
+				}
+				mdl.add(ligand.representations.stick);
+				mdl.add(ligand.representations.label);
+				mdl.position.set(0, 0, 0);
+				rot.quaternion.set(1, 0, 0, 0);
+				var data = $('#data');
+				$('span', data).each(function() {
+					var t = $(this);
+					t.text(ligand[t.attr('id')]);
+				});
+				$('#id', data).parent().attr('href', '//zinc.docking.org/substance/' + ligand.zid);
+				$('#suppliers', data).html(ligand.suppliers.map(function(supplier) {
+					var link = catalogs[supplier];
+					return '<li><a' + (link === undefined || link.length === 0 ? '' : ' href="' + link + '"') + '>' + supplier + '</a></li>';
+				}).join(''));
 			};
 
 			$('#nqueries').text(job.nqueries);
@@ -894,27 +644,6 @@ void main()\n\
 				for (var offset = 0, l = lines.length - 1; offset < l;) {
 					var ligand = {
 						atoms: {},
-						refresh: function() {
-							var r = ligand.representations[ligand.active];
-							if (r === undefined) {
-								switch (ligand.active) {
-									case 'line':
-										r = createLineRepresentation(ligand.atoms);
-										break;
-									case 'stick':
-										r = createStickRepresentation(ligand.atoms, cylinderRadius, cylinderRadius);
-										break;
-									case 'ball & stick':
-										r = createStickRepresentation(ligand.atoms, cylinderRadius, cylinderRadius * 0.5);
-										break;
-									case 'sphere':
-										r = createSphereRepresentation(ligand.atoms);
-										break;
-								}
-								ligand.representations[ligand.active] = r;
-							}
-							mdl.add(r);
-						},
 						zid: lines[offset],
 					}, atoms = ligand.atoms;
 					offset += 3;
@@ -952,7 +681,7 @@ void main()\n\
 					var propNames = [ 'usr_score', 'usrcat_score', 'mwt', 'lgp', 'ads', 'pds', 'hbd', 'hba', 'psa', 'chg', 'nrb', 'smiles', 'suppliers' ];
 					$.each(ligands, function (i, ligand) {
 						var properties = logs[i].split(',');
-						if (ligand.zid !== properties[0]) throw Error("Inequal ZINC IDs.");
+						if (ligand.zid !== properties[0]) throw Error("Inconsistent ZINC IDs found in hits.sdf and log.csv");
 						$.each(propNames, function (j, propName) {
 							ligand[propName] = properties[1+j];
 						});
@@ -960,35 +689,25 @@ void main()\n\
 						ligand.nsuppliers = ligand.suppliers.length;
 					});
 					$('#nhits').text(ligands.length);
-					var ids = $('#ids');
-					ids.html(ligands.map(function(ligand) {
+					var zids = $('#zids');
+					zids.html(ligands.map(function(ligand) {
 						return '<label class="btn btn-primary"><input type="radio">' + ligand.zid + '</label>';
 					}).join(''));
-					$(':first', ids).addClass('active');
-					$('> .btn', ids).click(function(e) {
+					$(':first', zids).addClass('active');
+					$('> .btn', zids).click(function(e) {
 						mdl.remove(ligand.representations.label);
-						mdl.remove(ligand.representations[ligand.active]);
+						mdl.remove(ligand.representations.stick);
 						ligands.forEach(function(l) {
 							if (l.zid.toString() === $(e.target).text().trim()) {
 								ligand = l;
 							}
 						});
-						refreshLigand(ligand);
-						ligand.active = $('#ligand .active').text().trim();
-						ligand.refresh();
+						refresh(ligand);
 						render();
 					});
-					refreshLigand(ligand = ligands[0]);
-					ligand.active = $('#ligand .active').text().trim();
-					ligand.refresh();
-					$('#ligand').click(function (e) {
-						mdl.remove(ligand.representations[ligand.active]);
-						ligand.active = $(e.target).text().trim();
-						ligand.refresh();
-						render();
-					});
-					var lmin = new THREE.Vector3( 9999, 9999, 9999);
-					var lmax = new THREE.Vector3(-9999,-9999,-9999);
+					refresh(ligand = ligands[0]);
+					var lmin = new THREE.Vector3( 10000, 10000, 10000);
+					var lmax = new THREE.Vector3(-10000,-10000,-10000);
 					atoms = ligand.atoms;
 					for (var i in atoms) {
 						var atom = atoms[i];
