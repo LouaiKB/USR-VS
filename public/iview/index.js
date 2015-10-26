@@ -531,8 +531,6 @@ void main()\n\
 				mdl.children = [];
 				mdl.add(ligand.representations.stick);
 				mdl.add(ligand.representations.label);
-				mdl.position.set(0, 0, 0);
-				rot.quaternion.set(1, 0, 0, 0);
 				var data = $('#data');
 				$('span', data).each(function() {
 					var t = $(this);
