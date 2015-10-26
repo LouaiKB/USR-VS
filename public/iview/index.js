@@ -65,7 +65,7 @@ $(function () {
 		$.get('../job', { id: jobid }, function(job) {
 			['submitted', 'started', 'completed'].forEach(function (key) {
 				if (job[key] === undefined) return;
-				job[key] = $.format.date(new Date(job[key]), 'yyyy/MM/dd HH:mm:ss');
+				job[key] = $.format.date(new Date(job[key]), 'yyyy/MM/dd HH:mm:ss.SSS');
 			});
 			job.info = job.completed ? (job.error ? job.error : 'Completed ' + job.nqueries + ' queries') : (job.started ? 'Execution in progress <img src="loading.gif" style="width: 16px; height: 16px;">' : 'Queued for execution');
 			$('span', status).each(function(d) {
