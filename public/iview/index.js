@@ -450,11 +450,9 @@ void main()\n\
 			};
 			var createLabel = function (text, size, color) {
 				var canvas = document.createElement('canvas');
-				canvas.style.backgroundColor = 'rgba(0, 0, 0, 0.0)';
-				var ctx = canvas.getContext('2d');
-				ctx.font = size + 'px Arial';
-				canvas.width = ctx.measureText(text).width;
+				canvas.width = size;
 				canvas.height = size;
+				var ctx = canvas.getContext('2d');
 				ctx.font = size + 'px Arial';
 				ctx.fillStyle = color;
 				ctx.fillText(text, 0, size);
@@ -503,7 +501,7 @@ void main()\n\
 				var obj = new THREE.Object3D();
 				for (var i in atoms) {
 					var atom = atoms[i];
-					var bb = createLabel(atom.elem, 24, '#dddddd');
+					var bb = createLabel(atom.elem, 32, '#dddddd');
 					bb.position.copy(atom.coord);
 					obj.add(bb);
 				}
