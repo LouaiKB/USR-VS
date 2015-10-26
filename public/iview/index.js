@@ -69,7 +69,7 @@ $(function () {
 				job[key] = new Date(job[key]);
 				job[key+'F'] = $.format.date(job[key], 'yyyy/MM/dd HH:mm:ss.SSS');
 			});
-			job.info = job.completed ? (job.error ? job.error : 'Completed ' + job.nqueries + ' queries in ' + (job['completed']-job['started'])*0.001 + ' s') : (job.started ? 'Execution in progress <img src="loading.gif" style="width: 16px; height: 16px;">' : 'Queued for execution');
+			job.info = job.completed ? (job.error ? job.error : 'Completed ' + job.nqueries + ' queries in ' + ((job['completed']-job['started'])*0.001).toFixed(3) + ' s') : (job.started ? 'Execution in progress <img src="loading.gif" style="width: 16px; height: 16px;">' : 'Queued for execution');
 			$('span', status).each(function(d) {
 				var t = $(this);
 				var c = job[t.attr('id')];
