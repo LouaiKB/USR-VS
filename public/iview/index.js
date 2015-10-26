@@ -502,7 +502,7 @@ void main()\n\
 				var obj = new THREE.Object3D();
 				for (var i in atoms) {
 					var atom = atoms[i];
-					var bb = createLabel(atom.elem, 32, '#dddddd');
+					var bb = createLabel(atom.elem, 32, '#EEEEEE');
 					bb.position.copy(atom.coord);
 					obj.add(bb);
 				}
