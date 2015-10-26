@@ -65,9 +65,10 @@ $(function () {
 		$.get('../job', { id: jobid }, function(job) {
 			['submitted', 'started', 'completed'].forEach(function (key) {
 				if (job[key] === undefined) return;
-				job[key] = $.format.date(new Date(job[key]), 'yyyy/MM/dd HH:mm:ss.SSS');
+				job[key] = new Date(job[key]);
+				job[key+'F'] = $.format.date(job[key], 'yyyy/MM/dd HH:mm:ss.SSS');
 			});
-			job.info = job.completed ? (job.error ? job.error : 'Completed ' + job.nqueries + ' queries') : (job.started ? 'Execution in progress <img src="loading.gif" style="width: 16px; height: 16px;">' : 'Queued for execution');
+			job.info = job.completed ? (job.error ? job.error : 'Completed ' + job.nqueries + ' queries in ' + (job['completed']-job['started'])*0.001 + ' s') : (job.started ? 'Execution in progress <img src="loading.gif" style="width: 16px; height: 16px;">' : 'Queued for execution');
 			$('span', status).each(function(d) {
 				var t = $(this);
 				var c = job[t.attr('id')];
@@ -84,105 +85,33 @@ $(function () {
 
 			var atomColors = { // http://jmol.sourceforge.net/jscolors
 				 H: new THREE.Color(0xFFFFFF),
-				HE: new THREE.Color(0xD9FFFF),
-				LI: new THREE.Color(0xCC80FF),
-				BE: new THREE.Color(0xC2FF00),
-				 B: new THREE.Color(0xFFB5B5),
 				 C: new THREE.Color(0x909090),
 				 N: new THREE.Color(0x3050F8),
 				 O: new THREE.Color(0xFF0D0D),
 				 F: new THREE.Color(0x90E050),
-				NE: new THREE.Color(0xB3E3F5),
 				NA: new THREE.Color(0xAB5CF2),
 				MG: new THREE.Color(0x8AFF00),
-				AL: new THREE.Color(0xBFA6A6),
-				SI: new THREE.Color(0xF0C8A0),
 				 P: new THREE.Color(0xFF8000),
 				 S: new THREE.Color(0xFFFF30),
 				CL: new THREE.Color(0x1FF01F),
-				AR: new THREE.Color(0x80D1E3),
 				 K: new THREE.Color(0x8F40D4),
 				CA: new THREE.Color(0x3DFF00),
-				SC: new THREE.Color(0xE6E6E6),
-				TI: new THREE.Color(0xBFC2C7),
-				 V: new THREE.Color(0xA6A6AB),
-				CR: new THREE.Color(0x8A99C7),
 				MN: new THREE.Color(0x9C7AC7),
 				FE: new THREE.Color(0xE06633),
 				CO: new THREE.Color(0xF090A0),
 				NI: new THREE.Color(0x50D050),
 				CU: new THREE.Color(0xC88033),
 				ZN: new THREE.Color(0x7D80B0),
-				GA: new THREE.Color(0xC28F8F),
-				GE: new THREE.Color(0x668F8F),
 				AS: new THREE.Color(0xBD80E3),
 				SE: new THREE.Color(0xFFA100),
 				BR: new THREE.Color(0xA62929),
-				KR: new THREE.Color(0x5CB8D1),
-				RB: new THREE.Color(0x702EB0),
 				SR: new THREE.Color(0x00FF00),
-				 Y: new THREE.Color(0x94FFFF),
-				ZR: new THREE.Color(0x94E0E0),
-				NB: new THREE.Color(0x73C2C9),
 				MO: new THREE.Color(0x54B5B5),
-				TC: new THREE.Color(0x3B9E9E),
-				RU: new THREE.Color(0x248F8F),
-				RH: new THREE.Color(0x0A7D8C),
-				PD: new THREE.Color(0x006985),
-				AG: new THREE.Color(0xC0C0C0),
 				CD: new THREE.Color(0xFFD98F),
-				IN: new THREE.Color(0xA67573),
-				SN: new THREE.Color(0x668080),
-				SB: new THREE.Color(0x9E63B5),
-				TE: new THREE.Color(0xD47A00),
 				 I: new THREE.Color(0x940094),
-				XE: new THREE.Color(0x429EB0),
 				CS: new THREE.Color(0x57178F),
-				BA: new THREE.Color(0x00C900),
-				LA: new THREE.Color(0x70D4FF),
-				CE: new THREE.Color(0xFFFFC7),
-				PR: new THREE.Color(0xD9FFC7),
-				ND: new THREE.Color(0xC7FFC7),
-				PM: new THREE.Color(0xA3FFC7),
-				SM: new THREE.Color(0x8FFFC7),
-				EU: new THREE.Color(0x61FFC7),
-				GD: new THREE.Color(0x45FFC7),
-				TB: new THREE.Color(0x30FFC7),
-				DY: new THREE.Color(0x1FFFC7),
-				HO: new THREE.Color(0x00FF9C),
-				ER: new THREE.Color(0x00E675),
-				TM: new THREE.Color(0x00D452),
-				YB: new THREE.Color(0x00BF38),
-				LU: new THREE.Color(0x00AB24),
-				HF: new THREE.Color(0x4DC2FF),
-				TA: new THREE.Color(0x4DA6FF),
-				 W: new THREE.Color(0x2194D6),
-				RE: new THREE.Color(0x267DAB),
-				OS: new THREE.Color(0x266696),
-				IR: new THREE.Color(0x175487),
-				PT: new THREE.Color(0xD0D0E0),
-				AU: new THREE.Color(0xFFD123),
 				HG: new THREE.Color(0xB8B8D0),
-				TL: new THREE.Color(0xA6544D),
-				PB: new THREE.Color(0x575961),
-				BI: new THREE.Color(0x9E4FB5),
-				PO: new THREE.Color(0xAB5C00),
-				AT: new THREE.Color(0x754F45),
-				RN: new THREE.Color(0x428296),
-				FR: new THREE.Color(0x420066),
-				RA: new THREE.Color(0x007D00),
-				AC: new THREE.Color(0x70ABFA),
-				TH: new THREE.Color(0x00BAFF),
-				PA: new THREE.Color(0x00A1FF),
 				 U: new THREE.Color(0x008FFF),
-				NP: new THREE.Color(0x0080FF),
-				PU: new THREE.Color(0x006BFF),
-				AM: new THREE.Color(0x545CF2),
-				CM: new THREE.Color(0x785CE3),
-				BK: new THREE.Color(0x8A4FE3),
-				CF: new THREE.Color(0xA136D4),
-				ES: new THREE.Color(0xB31FD4),
-				FM: new THREE.Color(0xB31FBA),
 			};
 			var defaultAtomColor = new THREE.Color(0xCCCCCC);
 			var defaultBondColor = new THREE.Color(0x2194D6);
@@ -191,7 +120,6 @@ $(function () {
 			var cylinderGeometry = new THREE.CylinderGeometry(1, 1, 1, 64, 1);
 			var sphereRadius = 1.5;
 			var cylinderRadius = 0.3;
-			var linewidth = 2;
 			var catalogs = {
 				'ACB Blocks': 'http://www.acbblocks.com',
 				'Acorn PharmaTech': 'http://www.acornpharmatech.com',
@@ -554,7 +482,6 @@ void main()\n\
 			};
 			var createStickRepresentation = function (atoms, atomR, bondR) {
 				var obj = new THREE.Object3D();
-				var ged = new THREE.Geometry();
 				for (var i in atoms) {
 					var atom0 = atoms[i];
 					obj.add(createSphere(atom0, atomR, false, 0.4));
@@ -570,8 +497,6 @@ void main()\n\
 						}
 					}
 				}
-				ged.computeLineDistances();
-				obj.add(new THREE.LineSegments(ged, new THREE.LineDashedMaterial({ linewidth: linewidth, color: defaultBondColor, dashSize: 0.25, gapSize: 0.125 })));
 				return obj;
 			};
 			var createLabelRepresentation = function (atoms) {
@@ -596,13 +521,14 @@ void main()\n\
 				scene.fog.far = camera.far;
 				renderer.render(scene, camera);
 			};
-			var refresh = function(ligand) {
+			var refreshLigand = function(ligand) {
 				if (ligand.representations === undefined) {
 					ligand.representations = {
 						stick: createStickRepresentation(ligand.atoms, cylinderRadius, cylinderRadius),
 						label: createLabelRepresentation(ligand.atoms),
 					};
 				}
+				mdl.children = [];
 				mdl.add(ligand.representations.stick);
 				mdl.add(ligand.representations.label);
 				mdl.position.set(0, 0, 0);
@@ -612,116 +538,113 @@ void main()\n\
 					var t = $(this);
 					t.text(ligand[t.attr('id')]);
 				});
-				$('#id', data).parent().attr('href', '//zinc.docking.org/substance/' + ligand.zid);
+				$('#zid', data).parent().attr('href', '//zinc.docking.org/substance/' + ligand.zid);
 				$('#suppliers', data).html(ligand.suppliers.map(function(supplier) {
 					var link = catalogs[supplier];
 					return '<li><a' + (link === undefined || link.length === 0 ? '' : ' href="' + link + '"') + '>' + supplier + '</a></li>';
 				}).join(''));
 			};
+			var qid;
+			var refreshQuery = function (queryid) {
+				qid = queryid;
+				var path = '../jobs/' + jobid + '/' + queryid + '/';
+				$('#downloads a').each(function () {
+					var t = $(this);
+					t.attr('href', path + t.text());
+				});
+				$.ajax({
+					url: path + 'hits.sdf',
+				}).done(function (hits_sdf) {
+					var ligands = [], lines = hits_sdf.split('\n');
+					for (var offset = 0, l = lines.length - 1; offset < l;) {
+						var ligand = {
+							atoms: {},
+							zid: lines[offset],
+						}, atoms = ligand.atoms;
+						offset += 3;
+						var atomCount = parseInt(lines[offset].substr(0, 3));
+						var bondCount = parseInt(lines[offset].substr(3, 3));
+						for (var i = 1; i <= atomCount; ++i) {
+							var line = lines[++offset];
+							var atom = {
+								serial: i,
+								coord: new THREE.Vector3(parseFloat(line.substr( 0, 10)), parseFloat(line.substr(10, 10)), parseFloat(line.substr(20, 10))),
+								elem: line.substr(31, 2).replace(/ /g, '').toUpperCase(),
+								bonds: [],
+							};
+							if (atom.elem === 'H') continue;
+							atom.color = atomColors[atom.elem] || defaultAtomColor;
+							atoms[atom.serial] = atom;
+						}
+						ligand.nha = Object.keys(atoms).length;
+						for (var i = 1; i <= bondCount; ++i) {
+							var line = lines[++offset];
+							var atom0 = atoms[parseInt(line.substr(0, 3))];
+							if (atom0 === undefined) continue;
+							var atom1 = atoms[parseInt(line.substr(3, 3))];
+							if (atom1 === undefined) continue;
+							atom0.bonds.push(atom1);
+							atom1.bonds.push(atom0);
+						}
+						while (lines[offset++] !== "$$$$");
+						ligands.push(ligand);
+					}
+					$.ajax({
+						url: path + 'log.csv',
+					}).done(function (log_csv) {
+						var logs = log_csv.split('\n').slice(1);
+						var propNames = [ 'usr_score', 'usrcat_score', 'mwt', 'lgp', 'ads', 'pds', 'hbd', 'hba', 'psa', 'chg', 'nrb', 'smiles', 'suppliers' ];
+						$.each(ligands, function (i, ligand) {
+							var properties = logs[i].split(',');
+							if (ligand.zid !== properties[0]) throw Error("Inconsistent ZINC IDs found in hits.sdf and log.csv");
+							$.each(propNames, function (j, propName) {
+								ligand[propName] = properties[1+j];
+							});
+							ligand.suppliers = ligand.suppliers.split(' | ').slice(1);
+							ligand.nsuppliers = ligand.suppliers.length;
+						});
+						$('#nhits').text(ligands.length);
+						var zids = $('#zids');
+						zids.html(ligands.map(function(ligand, index) {
+							return '<label class="btn btn-primary"><input type="radio" value="' + index + '">' + ligand.zid + '</label>';
+						}).join(''));
+						$(':first', zids).addClass('active');
+						$('> .btn', zids).click(function(e) {
+							refreshLigand(ligands[$(e.target)[0].children[0].value]);
+							render();
+						});
+						refreshLigand(ligands[0]);
+						var lmin = new THREE.Vector3( 10000, 10000, 10000);
+						var lmax = new THREE.Vector3(-10000,-10000,-10000);
+						atoms = ligands[0].atoms;
+						for (var i in atoms) {
+							var atom = atoms[i];
+							var coord = atom.coord;
+							lmin.min(coord);
+							lmax.max(coord);
+						}
+						var maxD = lmax.distanceTo(lmin) + 4;
+						sn = -maxD;
+						sf =  maxD;
+						rot.position.z = maxD * 0.35 / Math.tan(Math.PI / 180.0 * 10) - 150;
+						render();
+					});
+				});
+			};
 
 			$('#nqueries').text(job.nqueries);
-			var qids = $('#qids'), queryid = 0;
+			var qids = $('#qids');
 			qids.html(Array.apply(0, Array(job.nqueries)).map(function (value, index) {
 				return '<label class="btn btn-success"><input type="radio">' + index + '</label>';
 			}).join(''));
 			$(':first', qids).addClass('active');
 			$('> .btn', qids).click(function(e) {
-				var target = $(e.target).text();
-				if (target == queryid) return;
-				queryid = target;
+				var queryid = $(e.target).text();
+				if (queryid == qid) return;
+				refreshQuery(queryid);
 			});
-			var path = '../jobs/' + jobid + '/' + queryid + '/';
-			$('#downloads a').each(function () {
-				var t = $(this);
-				t.attr('href', path + t.text());
-			});
-			var ligand;
-			$.ajax({
-				url: path + 'hits.sdf',
-			}).done(function (hits_sdf) {
-				var ligands = [];
-				var lines = hits_sdf.split('\n');
-				for (var offset = 0, l = lines.length - 1; offset < l;) {
-					var ligand = {
-						atoms: {},
-						zid: lines[offset],
-					}, atoms = ligand.atoms;
-					offset += 3;
-					var atomCount = parseInt(lines[offset].substr(0, 3));
-					var bondCount = parseInt(lines[offset].substr(3, 3));
-					for (var i = 1; i <= atomCount; ++i) {
-						var line = lines[++offset];
-						var atom = {
-							serial: i,
-							coord: new THREE.Vector3(parseFloat(line.substr( 0, 10)), parseFloat(line.substr(10, 10)), parseFloat(line.substr(20, 10))),
-							elem: line.substr(31, 2).replace(/ /g, '').toUpperCase(),
-							bonds: [],
-						};
-						if (atom.elem === 'H') continue;
-						atom.color = atomColors[atom.elem] || defaultAtomColor;
-						atoms[atom.serial] = atom;
-					}
-					ligand.nha = Object.keys(atoms).length;
-					for (var i = 1; i <= bondCount; ++i) {
-						var line = lines[++offset];
-						var atom0 = atoms[parseInt(line.substr(0, 3))];
-						if (atom0 === undefined) continue;
-						var atom1 = atoms[parseInt(line.substr(3, 3))];
-						if (atom1 === undefined) continue;
-						atom0.bonds.push(atom1);
-						atom1.bonds.push(atom0);
-					}
-					while (lines[offset++] !== "$$$$");
-					ligands.push(ligand);
-				}
-				$.ajax({
-					url: path + 'log.csv',
-				}).done(function (log_csv) {
-					var logs = log_csv.split('\n').slice(1);
-					var propNames = [ 'usr_score', 'usrcat_score', 'mwt', 'lgp', 'ads', 'pds', 'hbd', 'hba', 'psa', 'chg', 'nrb', 'smiles', 'suppliers' ];
-					$.each(ligands, function (i, ligand) {
-						var properties = logs[i].split(',');
-						if (ligand.zid !== properties[0]) throw Error("Inconsistent ZINC IDs found in hits.sdf and log.csv");
-						$.each(propNames, function (j, propName) {
-							ligand[propName] = properties[1+j];
-						});
-						ligand.suppliers = ligand.suppliers.split(' | ').slice(1);
-						ligand.nsuppliers = ligand.suppliers.length;
-					});
-					$('#nhits').text(ligands.length);
-					var zids = $('#zids');
-					zids.html(ligands.map(function(ligand) {
-						return '<label class="btn btn-primary"><input type="radio">' + ligand.zid + '</label>';
-					}).join(''));
-					$(':first', zids).addClass('active');
-					$('> .btn', zids).click(function(e) {
-						mdl.remove(ligand.representations.label);
-						mdl.remove(ligand.representations.stick);
-						ligands.forEach(function(l) {
-							if (l.zid.toString() === $(e.target).text().trim()) {
-								ligand = l;
-							}
-						});
-						refresh(ligand);
-						render();
-					});
-					refresh(ligand = ligands[0]);
-					var lmin = new THREE.Vector3( 10000, 10000, 10000);
-					var lmax = new THREE.Vector3(-10000,-10000,-10000);
-					atoms = ligand.atoms;
-					for (var i in atoms) {
-						var atom = atoms[i];
-						var coord = atom.coord;
-						lmin.min(coord);
-						lmax.max(coord);
-					}
-					var maxD = lmax.distanceTo(lmin) + 4;
-					sn = -maxD;
-					sf =  maxD;
-					rot.position.z = maxD * 0.35 / Math.tan(Math.PI / 180.0 * 10) - 140;
-					render();
-				});
-			});
+			refreshQuery(0);
+
 			var dg, wh, cx, cy, cq, cz, cp, cn, cf;
 			canvas.bind('contextmenu', function (e) {
 				e.preventDefault();
