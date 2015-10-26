@@ -38,6 +38,7 @@ if (cluster.isMaster) {
 					fields: {
 						'_id': 0,
 						'filename': 1,
+						'usr': 1,
 						'submitted': 1,
 						'started': 1,
 						'completed': 1,

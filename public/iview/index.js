@@ -63,6 +63,7 @@ $(function () {
 	var jobid = location.search.substr(1);
 	var tick = function() {
 		$.get('../job', { id: jobid }, function(job) {
+			job.usrF = ['USR', 'USRCAT'][job.usr];
 			['submitted', 'started', 'completed'].forEach(function (key) {
 				if (job[key] === undefined) return;
 				job[key] = new Date(job[key]);
