@@ -601,6 +601,7 @@ void main()\n\
 							ligand.nsuppliers = ligand.suppliers.length;
 						});
 						$('#nhits').text(ligands.length);
+						$('#usrH').text(job.usrF);
 						var hids = $('#hids');
 						hids.html(ligands.map(function(ligand, index) {
 							return '<label class="btn btn-primary"><input type="radio">' + index + '</label>';
