@@ -601,13 +601,13 @@ void main()\n\
 							ligand.nsuppliers = ligand.suppliers.length;
 						});
 						$('#nhits').text(ligands.length);
-						var zids = $('#zids');
-						zids.html(ligands.map(function(ligand, index) {
-							return '<label class="btn btn-primary"><input type="radio" value="' + index + '">' + ligand.zid + '</label>';
+						var hids = $('#hids');
+						hids.html(ligands.map(function(ligand, index) {
+							return '<label class="btn btn-primary"><input type="radio">' + index + '</label>';
 						}).join(''));
-						$(':first', zids).addClass('active');
-						$('> .btn', zids).click(function(e) {
-							refreshLigand(ligands[$(e.target)[0].children[0].value]);
+						$(':first', hids).addClass('active');
+						$('> .btn', hids).click(function(e) {
+							refreshLigand(ligands[$(e.target).text()]);
 							render();
 						});
 						refreshLigand(ligands[0]);
