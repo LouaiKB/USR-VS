@@ -45,6 +45,10 @@ int main(int argc, char* argv[])
 		SubsetMols[k].reset(reinterpret_cast<ROMol*>(SmartsToMol(SubsetSMARTS[k])));
 	}
 
+	array<vector<int>, num_subsets> subsets;
+	array<Point3D, num_references> references{};
+	array<vector<double>, num_references> dista;
+
 	// Loop over the input SDF file, setting sanitize=true, removeHs=false, strictParsing=true.
 	size_t count = 0;
 	for (SDMolSupplier sup(argv[1], true, false, true); !sup.atEnd();)
@@ -58,29 +62,30 @@ int main(int argc, char* argv[])
 		auto& mol = *mol_ptr;
 
 		// Get the number of points, excluding hydrogens.
-		const auto npt = mol.getNumHeavyAtoms();
+		const auto num_points = mol.getNumHeavyAtoms();
 
 		// Categorize atoms into pharmacophoric subsets.
-		array<vector<int>, num_subsets> subsets;
 		for (size_t k = 0; k < num_subsets; ++k)
 		{
-			auto& subset = subsets[k];
-			subset.reserve(npt);
 			vector<vector<pair<int, int>>> matchVect;
 			SubstructMatch(mol, *SubsetMols[k], matchVect);
-			for (const auto& v : matchVect)
+			const auto num_matches = matchVect.size();
+			auto& subset = subsets[k];
+			subset.resize(num_matches);
+			for (size_t i = 0; i < num_matches; ++i)
 			{
-				subset.push_back(v.front().second);
+				subset[i] = matchVect[i].front().second;
 			}
 		}
 		const auto& subset0 = subsets.front();
-		const auto n = subset0.size();
-		assert(n == npt);
-		const auto v = 1.0 / n;
-		const auto& conf = mol.getConformer();
+		assert(subset0.size() == num_points);
 
 		// Determine the reference points.
-		array<Point3D, num_references> references{};
+		const auto& conf = mol.getConformer();
+		for (auto& ref : references)
+		{
+			ref.x = ref.y = ref.z = 0;
+		}
 		auto& ctd = references[0];
 		auto& cst = references[1];
 		auto& fct = references[2];
@@ -90,7 +95,7 @@ int main(int argc, char* argv[])
 			const auto& a = conf.getAtomPos(i);
 			ctd += a;
 		}
-		ctd *= v;
+		ctd /= num_points;
 		double cst_dist = numeric_limits<double>::max();
 		double fct_dist = numeric_limits<double>::lowest();
 		double ftf_dist = numeric_limits<double>::lowest();
@@ -121,15 +126,14 @@ int main(int argc, char* argv[])
 		}
 
 		// Precalculate the distances of heavy atoms to the reference points, given that subsets[1 to 4] are subsets of subsets[0].
-		array<vector<double>, num_references> dista;
 		for (size_t k = 0; k < num_references; ++k)
 		{
 			const auto& reference = references[k];
-			auto& dists = dista[k];
-			dists.resize(n);
-			for (size_t i = 0; i < n; ++i)
+			auto& distp = dista[k];
+			distp.resize(num_points);
+			for (size_t i = 0; i < num_points; ++i)
 			{
-				dists[subset0[i]] = sqrt(dist2(conf.getAtomPos(subset0[i]), reference));
+				distp[subset0[i]] = sqrt(dist2(conf.getAtomPos(subset0[i]), reference));
 			}
 		}
 
