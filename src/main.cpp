@@ -252,13 +252,15 @@ int main(int argc, char* argv[])
 
 	// Enter event loop.
 	cout << local_time() << "Entering event loop" << endl;
+	cout.setf(ios::fixed, ios::floatfield);
 	bool sleeping = false;
 	while (true)
 	{
 		// Fetch an incompleted job in a first-come-first-served manner.
 		if (!sleeping) cout << local_time() << "Fetching an incompleted job" << endl;
 		BSONObj info;
-		conn.runCommand("istar", BSON("findandmodify" << "usr2" << "query" << BSON("started" << BSON("$exists" << false)) << "sort" << BSON("submitted" << 1) << "update" << BSON("$set" << BSON("started" << milliseconds_since_epoch()))), info); // conn.findAndModify() is available since MongoDB C++ Driver legacy-1.0.0
+		const auto started = milliseconds_since_epoch();
+		conn.runCommand("istar", BSON("findandmodify" << "usr2" << "query" << BSON("started" << BSON("$exists" << false)) << "sort" << BSON("submitted" << 1) << "update" << BSON("$set" << BSON("started" << started))), info); // conn.findAndModify() is available since MongoDB C++ Driver legacy-1.0.0
 		const auto value = info["value"];
 		if (value.isNull())
 		{
@@ -564,6 +566,15 @@ int main(int argc, char* argv[])
 
 		// Update job status.
 		cout << local_time() << "Setting completed time" << endl;
-		conn.update(collection, BSON("_id" << _id), BSON("$set" << BSON("completed" << milliseconds_since_epoch() << "nqueries" << num_queries)));
+		const auto completed = milliseconds_since_epoch();
+		conn.update(collection, BSON("_id" << _id), BSON("$set" << BSON("completed" << completed << "nqueries" << num_queries)));
+
+		// Calculate runtime in seconds and screening speed in million conformers per second.
+		const auto runtime = (completed - started) * 0.001;
+		const auto speed = num_conformers * 0.000001 * num_queries / runtime;
+		cout
+			<< local_time() << "Completed " << num_queries << " queries in " << setprecision(3) << runtime << " seconds" << endl
+			<< local_time() << "Screening speed was " << setprecision(0) << speed << " M conformers per second" << endl
+		;
 	}
 }
