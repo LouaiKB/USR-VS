@@ -310,8 +310,8 @@ int main(int argc, char* argv[])
 		// Check the validity of the user-supplied SDF file.
 		if (!num_queries || !sup.atEnd())
 		{
-			const auto error = "Failed to parse the query file";
-			cout << local_time() << error << endl;
+			const auto error = 1;
+			cout << local_time() << "Failed to parse the query file, error code = " << error << endl;
 			conn.update(collection, BSON("_id" << _id), BSON("$set" << BSON("completed" << milliseconds_since_epoch() << "error" << error)));
 			continue;
 		}
