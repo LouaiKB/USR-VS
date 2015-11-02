@@ -36,7 +36,7 @@
         <div class="col-md-12">
           <p>Input is onefold:</p>
           <ul>
-            <li>Query molecules in SDF format. Here is <a href="example.sdf">an example file</a>. Totally 93,903,333 conformers of 23,129,049 molecules collected from the <a href="http://zinc.docking.org/subsets/all-clean">All Clean</a> subset of <a href="http://zinc.docking.org">ZINC</a> are to be screened.</li>
+            <li>A query molecule in SDF format. Here is <a href="example.sdf">an example file</a>. Totally 93,903,333 conformers of 23,129,049 molecules collected from the <a href="http://zinc.docking.org/subsets/all-clean">All Clean</a> subset of <a href="http://zinc.docking.org">ZINC</a> are to be screened.</li>
           </ul>
         </div>
       </div>
@@ -44,20 +44,20 @@
         <div class="col-md-12">
           <p>Output is twofold:</p>
           <ul>
-            <li><img src="excel.png" alt="">log.csv: ZINC ID, USR and USRCAT scores, molecular properties, link to substance information, and suppliers of the top 100 hits geometrically and pharmacophorically similar to each of the query molecule.</li>
-            <li><img src="molecule.png" alt="">hits.sdf: structures of the top 100 hits for each of the query molecule.</li>
+            <li><img src="excel.png" alt="">log.csv: ZINC ID, USR and USRCAT scores, molecular properties, link to substance information, and suppliers of the top 100 hits geometrically and pharmacophorically similar to the query molecule.</li>
+            <li><img src="molecule.png" alt="">hits.sdf: structures of the top 100 hits for the query molecule.</li>
           </ul>
         </div>
       </div>
       <div class="row" role="form">
         <div class="col-md-3">
           <div class="form-group">
-            <label for="query"><a title="must be provided, at most 100KB" id="query_label">1) Open query molecules in SDF format</a></label> <input type="file" id="query">
+            <label for="query"><a title="must be provided, at most 100KB" id="query_label">1) Open a query molecule in SDF format</a></label> <input type="file" id="query">
           </div>
         </div>
         <div class="col-md-3">
           <div class="form-group">
-            <label><a>2) Choose the score for ranking molecules</a></label>
+            <label><a>2) Choose a score for ranking molecules</a></label>
             <div class="input-group">
               <label class="radio-inline">
                 <input type="radio" name="usrRadioOptions" value="0" checked>USR

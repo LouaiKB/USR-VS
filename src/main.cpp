@@ -301,14 +301,10 @@ int main(int argc, char* argv[])
 			return u0score0 < u0score1;
 		};
 
-		// Read the user-supplied SDF file.
-		cout << local_time() << "Reading query file" << endl;
+		// Read and validate the user-supplied SDF file.
+		cout << local_time() << "Reading and validating the query file" << endl;
 		SDMolSupplier sup((job_path / "query.sdf").string(), true, false, true); // sanitize, removeHs, strictParsing
-		const auto num_queries = sup.length();
-		cout << local_time() << "Found " << num_queries << " query molecules" << endl;
-
-		// Check the validity of the user-supplied SDF file.
-		if (!num_queries || !sup.atEnd())
+		if (!sup.length() || !sup.atEnd())
 		{
 			const auto error = 1;
 			cout << local_time() << "Failed to parse the query file, error code = " << error << endl;
@@ -317,6 +313,7 @@ int main(int argc, char* argv[])
 		}
 
 		// Process each of the query molecules sequentially.
+		const auto num_queries = 1; // Restrict the number of query molecules to 1. Setting num_queries = sup.length() to execute any number of query molecules.
 		for (unsigned int query_number = 0; query_number < num_queries; ++query_number)
 		{
 			cout << local_time() << "Processing query molecule " << query_number << endl;
