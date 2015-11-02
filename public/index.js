@@ -7,7 +7,6 @@ $(function() {
 			$('#query_label').tooltip('show');
 			return;
 		}
-		submit.prop('disabled', true);
 		var reader = new FileReader();
 		reader.onload = function () {
 			$.post('job', {
