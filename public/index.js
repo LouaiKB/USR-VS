@@ -14,7 +14,7 @@ $(function() {
 				filename: file.name.substr(0, 20),
 				usr: $('input[name="usrRadioOptions"]:checked').val(),
 			}, function(res) {
-				location.replace('iview/?' + res);
+				location.assign('iview/?' + res);
 			});
 		};
 		reader.readAsText(file);
