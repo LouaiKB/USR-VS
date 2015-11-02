@@ -233,7 +233,7 @@ int main(int argc, char* argv[])
 		vector<double>(num_ligands), // USR score
 		vector<double>(num_ligands)  // USRCAT score
 	}};
-	vector<size_t> cnfids(num_ligands); // ID of conformer of the best score
+	vector<size_t> cnfids(num_ligands); // ID of conformer of the best primary score.
 
 	// Initialize an io service pool and create worker threads for later use.
 	const size_t num_threads = thread::hardware_concurrency();
@@ -277,8 +277,11 @@ int main(int argc, char* argv[])
 		const auto job_path = jobs_path / _id.str();
 		const size_t usr = job["usr"].Int(); // Specify the primary sorting score. 0: USR; 1: USRCAT.
 		assert(usr == 0 || usr == 1);
-		const auto& u0scores = scores[usr];   // Primary sorting score.
-		const auto& u1scores = scores[usr^1]; // Secondary sorting score.
+		const auto usr1 = usr^1;
+		const auto qnu0 = qn[usr];
+		const auto qnu1 = qn[usr1];
+		const auto& u0scores = scores[usr];  // Primary sorting score.
+		const auto& u1scores = scores[usr1]; // Secondary sorting score.
 		const auto compare = [&](const size_t val0, const size_t val1) // Sort by the primary score, if equal then by the secondary score, if equal then by ZINC ID.
 		{
 			const auto u0score0 = u0scores[val0];
@@ -469,33 +472,37 @@ int main(int argc, char* argv[])
 			{
 				io.post([&,l]()
 				{
-					// Calculate the USR and USRCAT scores of molecules of the current chunk.
+					// Loop over molecules of the current chunk.
 					const auto chunk_beg = chunk_size * l;
 					const auto chunk_end = min(chunk_beg + chunk_size, num_ligands);
 					for (size_t k = chunk_beg; k < chunk_end; ++k)
 					{
+						// Loop over conformers of the current molecule and calculate their primary score.
+						auto& scoreuk = scores[usr][k];
 						size_t j = k ? mconfss[k - 1] : 0;
 						for (const auto mconfs = mconfss[k]; j < mconfs; ++j)
 						{
 							const auto& l = features[j];
 							double s = 0;
-							#pragma unroll
-							for (size_t i = 0, u = 0; u < num_usrs; ++u)
+							for (size_t i = 0; i < qnu0; ++i)
 							{
-								auto& scoreuk = scores[u][k];
-								#pragma unroll
-								for (const auto qnu = qn[u]; i < qnu; ++i)
-								{
-									s += abs(q[i] - l[i]);
-									if (u == 1 && s >= scoreuk) break;
-								}
-								if (s < scoreuk)
-								{
-									scoreuk = s;
-									if (u == usr) cnfids[k] = j;
-								}
+								s += abs(q[i] - l[i]);
+								if (s >= scoreuk) break;
+							}
+							if (s < scoreuk)
+							{
+								scoreuk = s;
+								cnfids[k] = j;
 							}
 						}
+						// Calculate the secondary score of the saved conformer, which has the best primary score.
+						const auto& l = features[cnfids[k]];
+						double s = 0;
+						for (size_t i = 0; i < qnu1; ++i)
+						{
+							s += abs(q[i] - l[i]);
+						}
+						scores[usr1][k] = s;
 					}
 
 					// Sort the scores of molecules of the current chunk.
