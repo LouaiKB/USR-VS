@@ -45,8 +45,9 @@ int main(int argc, char* argv[])
 		SubsetMols[k].reset(reinterpret_cast<ROMol*>(SmartsToMol(SubsetSMARTS[k])));
 	}
 
+	// Initialize variables.
 	array<vector<int>, num_subsets> subsets;
-	array<Point3D, num_references> references{};
+	array<Point3D, num_references> references;
 	array<vector<double>, num_references> dista;
 
 	// Loop over the input SDF file, setting sanitize=true, removeHs=false, strictParsing=true.
