@@ -3,7 +3,7 @@ $(function() {
 	var submit = $('#submit');
 	submit.click(function() {
 		var file = $('input[type="file"]')[0].files[0];
-		if (file === undefined || file.size > 102400) {
+		if (file === undefined || file.size > 10240) {
 			$('#query_label').tooltip('show');
 			return;
 		}
