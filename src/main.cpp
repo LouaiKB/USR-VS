@@ -524,9 +524,9 @@ int main(int argc, char* argv[])
 			const auto output_dir = job_path / to_string(query_number);
 			create_directory(output_dir);
 			boost::filesystem::ofstream hits_sdf(output_dir / "hits.sdf");
-			boost::filesystem::ofstream log_csv(output_dir / "log.csv");
-			log_csv.setf(ios::fixed, ios::floatfield);
-			log_csv << "ZINC ID,USR score,USRCAT score,Molecular weight (g/mol),Partition coefficient xlogP,Apolar desolvation (kcal/mol),Polar desolvation (kcal/mol),Hydrogen bond donors,Hydrogen bond acceptors,Polar surface area tPSA (A^2),Net charge,Rotatable bonds,SMILES,Suppliers and annotations\n";
+			boost::filesystem::ofstream hits_csv(output_dir / "hits.csv");
+			hits_csv.setf(ios::fixed, ios::floatfield);
+			hits_csv << "ZINC ID,USR score,USRCAT score,Molecular weight (g/mol),Partition coefficient xlogP,Apolar desolvation (kcal/mol),Polar desolvation (kcal/mol),Hydrogen bond donors,Hydrogen bond acceptors,Polar surface area tPSA (A^2),Net charge,Rotatable bonds,SMILES,Suppliers and annotations\n";
 			for (size_t l = 0; l < num_hits; ++l)
 			{
 				const auto k = zcase[l];
@@ -537,7 +537,7 @@ int main(int argc, char* argv[])
 				const auto zip = ziproperties[k];
 				const auto smiles = smileses[k];    // A newline is already included in smileses[k].
 				const auto supplier = suppliers[k]; // A newline is already included in suppliers[k].
-				log_csv
+				hits_csv
 					<< zincid
 					<< setprecision(8)
 					<< ',' << u0score
