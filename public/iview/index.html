@@ -68,7 +68,7 @@
       <div class="row">
         <div class="col-md-5">
           <div class="form-group">
-            <label><span id="nqueries"></span> query molecules</label>
+            <label><span id="qids_label"></span></label>
             <div>
               <div class="btn-group btn-group-sm" data-toggle="buttons" id="qids"></div>
             </div>
@@ -84,7 +84,7 @@
         </div>
         <div class="col-md-5">
           <div class="form-group">
-            <label><span id="nhits"></span> hit molecules sorted by <span id="usrH"></span> score</label>
+            <label><span id="hids_label"></span></label>
             <div>
               <div class="btn-group btn-group-sm btn-group-x" data-toggle="buttons" id="hids"></div>
             </div>
@@ -101,14 +101,13 @@
       </div>
       <div class="row" id="output">
         <div class="col-md-3">
-          <p>Downloads</p>
+          <p>Output files of the hit molecules</p>
           <ul id="downloads">
             <li><a><img src="../excel.png" alt="">hits.csv</a></li>
             <li><a><img src="../molecule.png" alt="">hits.sdf</a></li>
           </ul>
-          <p>Results</p>
+          <p>Similarities of the selected hit molecule to the query</p>
           <ul>
-            <li>ZINC ID: <a><span id="id"></span></a></li>
             <li>USR score: <span id="usr_score"></span></li>
             <li>USRCAT score: <span id="usrcat_score"></span></li>
           </ul>
@@ -121,8 +120,9 @@
           </ul>
         </div>
         <div class="col-md-5">
-          <p>11 molecular properties</p>
+          <p>11 chemical properties of the selected hit molecule</p>
           <ul>
+            <li>ZINC ID: <a><span id="id"></span></a></li>
             <li>Heavy atoms: <span id="nha"></span></li>
             <li>Molecular weight (g/mol): <span id="mwt"></span></li>
             <li>Partition coefficient xlogP: <span id="lgp"></span></li>

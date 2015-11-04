@@ -84,7 +84,6 @@ $(function () {
 				return;
 			}
 			if (job.error) return;
-			$('#usrH').text(job.usrF);
 
 			var catalogs = {
 				'ACB Blocks': 'http://www.acbblocks.com',
@@ -655,7 +654,7 @@ void main()\n\
 			}).done(function (qsdf) {
 				var qmolecules = parseSDF(qsdf).slice(0, 1);
 				if (qmolecules.length !== job.nqueries) throw Error("qmolecules.length !== job.nqueries");
-				$('#nqueries').text(qmolecules.length);
+				$('#qids_label').text(qmolecules.length + ' query molecule' + (qmolecules.length == 1 ? '' : 's'));
 				var qindex;
 				var refreshQuery = function (qidx) {
 					refreshMolecule(qmolecules[qindex = qidx], iviews[0]);
@@ -672,7 +671,7 @@ void main()\n\
 							url: path + qindex + '/hits.csv',
 						}).done(function (hcsv) {
 							var logs = hcsv.split('\n').slice(1, 101);
-							if (logs.length !== 100) throw Error("logs.length !== 100");
+							if (logs.length !== hmolecules.length) throw Error("logs.length !== hmolecules.length");
 							var propNames = [ 'usr_score', 'usrcat_score', 'mwt', 'lgp', 'ads', 'pds', 'hbd', 'hba', 'psa', 'chg', 'nrb', 'smiles', 'suppliers' ];
 							$.each(hmolecules, function (i, molecule) {
 								var properties = logs[i].split(',');
@@ -683,7 +682,7 @@ void main()\n\
 								molecule.suppliers = molecule.suppliers.split(' | ').slice(1);
 								molecule.nsuppliers = molecule.suppliers.length;
 							});
-							$('#nhits').text(hmolecules.length);
+							$('#hids_label').text(hmolecules.length + ' hit molecules sorted by ' + job.usrF + ' score');
 							var hindex;
 							var refreshHit = function (hidx) {
 								var molecule = hmolecules[hindex = hidx];
