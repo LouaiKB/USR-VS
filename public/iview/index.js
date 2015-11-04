@@ -555,23 +555,24 @@ void main()\n\
 			iview.prototype = {
 				constructor: iview,
 				reset: function (molecule) {
-					var lmin = new THREE.Vector3( 10000, 10000, 10000);
-					var lmax = new THREE.Vector3(-10000,-10000,-10000);
-					var lsum = new THREE.Vector3();
-					var cnt = 0;
-					var atoms = molecule.atoms;
-					for (var i in atoms) {
-						var atom = atoms[i];
-						var coord = atom.coord;
-						lsum.add(coord);
-						lmin.min(coord);
-						lmax.max(coord);
-						++cnt;
+					var maxD = molecule.maxD;
+					if (maxD === undefined) {
+						var cmin = new THREE.Vector3( 10000, 10000, 10000);
+						var cmax = new THREE.Vector3(-10000,-10000,-10000);
+						var csum = new THREE.Vector3();
+						var atoms = molecule.atoms;
+						for (var i in atoms) {
+							var coord = atoms[i].coord;
+							csum.add(coord);
+							cmin.min(coord);
+							cmax.max(coord);
+						}
+						molecule.maxD = maxD = cmax.distanceTo(cmin) + 4;
+						molecule.ctrV = csum.clone().multiplyScalar(-1 / molecule.nha);
 					}
-					var maxD = lmax.distanceTo(lmin) + 4;
 					this.sn = -maxD;
 					this.sf =  maxD;
-					this.mdl.position.copy(lsum).multiplyScalar(-1 / cnt);
+					this.mdl.position.copy(molecule.ctrV);
 					this.rot.position.z = maxD * 0.35 / Math.tan(Math.PI / 180.0 * 10) - 140;
 				},
 				render: function () {
