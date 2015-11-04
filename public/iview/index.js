@@ -593,7 +593,7 @@ void main()\n\
 			};
 			var parseSDF = function (src) {
 				var molecules = [];
-				for (var lines = src.split('\n'), l = lines.length - 1, offset = 0; offset < l;) {
+				for (var lines = src.split(/\r?\n/), l = lines.length - 1, offset = 0; offset < l;) {
 					var molecule = {
 						atoms: {},
 						id: lines[offset],
@@ -623,7 +623,7 @@ void main()\n\
 						atom0.bonds.push(atom1);
 						atom1.bonds.push(atom0);
 					}
-					while (lines[offset++].substr(0, 4) !== "$$$$");
+					while (lines[offset++] !== "$$$$");
 					molecules.push(molecule);
 				}
 				return molecules;
@@ -670,7 +670,7 @@ void main()\n\
 						$.ajax({
 							url: path + qindex + '/hits.csv',
 						}).done(function (hcsv) {
-							var logs = hcsv.split('\n').slice(1, 101);
+							var logs = hcsv.split(/\r?\n/).slice(1, 101);
 							if (logs.length !== hmolecules.length) throw Error("logs.length !== hmolecules.length");
 							var propNames = [ 'usr_score', 'usrcat_score', 'mwt', 'lgp', 'ads', 'pds', 'hbd', 'hba', 'psa', 'chg', 'nrb', 'smiles', 'suppliers' ];
 							$.each(hmolecules, function (i, molecule) {
