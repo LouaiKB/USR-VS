@@ -32,30 +32,14 @@
       <div class="page-header">
         <h2>Run a virtual screen</h2>
       </div>
-      <div class="row">
-        <div class="col-md-12">
-          <p>Input is onefold:</p>
-          <ul>
-            <li>A query molecule in SDF format. Here is <a href="example.sdf">an example file</a>. If the input file contains more than one molecule, only the first molecule will be used. Totally 93,903,333 conformers of 23,129,049 molecules collected from the <a href="http://zinc.docking.org/subsets/all-clean">All Clean</a> subset of <a href="http://zinc.docking.org">ZINC</a> are to be screened.</li>
-          </ul>
-        </div>
-      </div>
-      <div class="row">
-        <div class="col-md-12">
-          <p>Output is twofold:</p>
-          <ul>
-            <li><img src="excel.png" alt="">log.csv: ZINC ID, USR and USRCAT scores, molecular properties, link to substance information, and suppliers of the top 100 hits geometrically and pharmacophorically similar to the query molecule.</li>
-            <li><img src="molecule.png" alt="">hits.sdf: structures of the top 100 hits for the query molecule.</li>
-          </ul>
-        </div>
-      </div>
       <div class="row" role="form">
-        <div class="col-md-3">
+        <div class="col-md-4">
           <div class="form-group">
             <label for="query"><a title="must be provided, at most 10KB" id="query_label">1) Upload a query molecule in SDF format</a></label> <input type="file" id="query">
           </div>
+          <p>Here is <a href="example.sdf">an example file</a>.<br>If the input file contains more than one molecule,<br>only the first molecule will be used.</p>
         </div>
-        <div class="col-md-3">
+        <div class="col-md-4">
           <div class="form-group">
             <label><a>2) Choose a score for ranking molecules</a></label>
             <div class="input-group">
@@ -68,13 +52,14 @@
             </div>
           </div>
         </div>
-        <div class="col-md-3">
+        <div class="col-md-4">
           <div class="form-group">
             <label><a>3) Go</a></label>
             <div class="input-group">
               <button class="btn btn-primary" id="submit"><span class="glyphicon glyphicon-cloud-upload"></span> Submit</button>
             </div>
           </div>
+          <p>The USR and USRCAT similarities between the query molecule and each of the 94M 3D conformers of 23M molecules will be calculated.<br>Once the button is clicked, the user will be redirected to the result page with a unique URL.</p>
         </div>
       </div>
     </section>
