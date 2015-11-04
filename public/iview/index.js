@@ -1,10 +1,10 @@
 /*!
- * iview is an interactive WebGL visualizer for protein-ligand complex. iview is based on GLmol, three.js and jQuery.
+ * iview is an interactive WebGL visualizer for protein-molecule complex. iview is based on GLmol, three.js and jQuery.
  * http://github.com/HongjianLi/istar
  * Copyright (c) 2012-2014 Chinese University of Hong Kong
  * License: Apache License 2.0
  * Hongjian Li, Kwong-Sak Leung, Takanori Nakane and Man-Hon Wong.
- * iview: an interactive WebGL visualizer for protein-ligand complex.
+ * iview: an interactive WebGL visualizer for protein-molecule complex.
  * BMC Bioinformatics, 15(1):56, 2014.
  *
  * GLmol
@@ -61,66 +61,31 @@ $(function () {
 	// Get the latest job status
 	var status = $('#status');
 	var jobid = location.search.substr(1);
-	var tick = function() {
-		$.get('../job', { id: jobid }, function(job) {
+	var tick = function () {
+		$.get('../job', { id: jobid }, function (job) {
 			job.usrF = ['USR', 'USRCAT'][job.usr];
 			['submitted', 'started', 'completed'].forEach(function (key) {
 				if (job[key] === undefined) return;
 				job[key] = new Date(job[key]);
 				job[key+'F'] = $.format.date(job[key], 'yyyy/MM/dd HH:mm:ss.SSS');
 			});
-			job.info = job.completed ? (job.error ? ["", "Failed to parse the query file. Please choose a file in SDF format."][parseInt(job.error)] : 'Completed ' + job.nqueries + ' queries in ' + (runtime=((job['completed']-job['started'])*0.001)).toFixed(3) + ' seconds.<br>Screening speed was ' + (93.903333*parseInt(job.nqueries)/runtime).toFixed(0) + ' million 3D conformers per second.') : (job.started ? 'Execution in progress <img src="loading.gif" style="width: 16px; height: 16px;">' : 'Queued for execution');
-			$('span', status).each(function(d) {
+			job.info = job.completed ? (job.error ? ["", "Failed to parse the query file. Please choose a file in SDF format."][parseInt(job.error)] : 'Completed ' + job.nqueries + ' ' + (job.nqueries == 1 ? 'query' : 'queries') + ' in ' + (runtime=((job['completed']-job['started'])*0.001)).toFixed(3) + ' seconds.<br>Screening speed was ' + (93.903333*parseInt(job.nqueries)/runtime).toFixed(0) + ' million 3D conformers per second.') : (job.started ? 'Execution in progress <img src="loading.gif" style="width: 16px; height: 16px;">' : 'Queued for execution');
+			$('span', status).each(function (d) {
 				var t = $(this);
 				var c = job[t.attr('id')];
 				if (t.html() !== c) {
 					t.html(c).hide().fadeIn('slow');
 				}
 			});
-			$('#filename', status).parent().attr('href', '../jobs/' + jobid + '/query.sdf');
+			var path = '../jobs/' + jobid + '/';
+			$('#filename', status).parent().attr('href', path + 'query.sdf');
 			if (!job.completed) {
 				setTimeout(tick, 1000);
 				return;
 			}
 			if (job.error) return;
+			$('#usrH').text(job.usrF);
 
-			var atomColors = { // http://jmol.sourceforge.net/jscolors
-				 H: new THREE.Color(0xFFFFFF),
-				 C: new THREE.Color(0x909090),
-				 N: new THREE.Color(0x3050F8),
-				 O: new THREE.Color(0xFF0D0D),
-				 F: new THREE.Color(0x90E050),
-				NA: new THREE.Color(0xAB5CF2),
-				MG: new THREE.Color(0x8AFF00),
-				 P: new THREE.Color(0xFF8000),
-				 S: new THREE.Color(0xFFFF30),
-				CL: new THREE.Color(0x1FF01F),
-				 K: new THREE.Color(0x8F40D4),
-				CA: new THREE.Color(0x3DFF00),
-				MN: new THREE.Color(0x9C7AC7),
-				FE: new THREE.Color(0xE06633),
-				CO: new THREE.Color(0xF090A0),
-				NI: new THREE.Color(0x50D050),
-				CU: new THREE.Color(0xC88033),
-				ZN: new THREE.Color(0x7D80B0),
-				AS: new THREE.Color(0xBD80E3),
-				SE: new THREE.Color(0xFFA100),
-				BR: new THREE.Color(0xA62929),
-				SR: new THREE.Color(0x00FF00),
-				MO: new THREE.Color(0x54B5B5),
-				CD: new THREE.Color(0xFFD98F),
-				 I: new THREE.Color(0x940094),
-				CS: new THREE.Color(0x57178F),
-				HG: new THREE.Color(0xB8B8D0),
-				 U: new THREE.Color(0x008FFF),
-			};
-			var defaultAtomColor = new THREE.Color(0xCCCCCC);
-			var defaultBondColor = new THREE.Color(0x2194D6);
-			var defaultBackgroundColor = new THREE.Color(0x000000);
-			var sphereGeometry = new THREE.SphereGeometry(1, 64, 64);
-			var cylinderGeometry = new THREE.CylinderGeometry(1, 1, 1, 64, 1);
-			var sphereRadius = 1.5;
-			var cylinderRadius = 0.3;
 			var catalogs = {
 				'ACB Blocks': 'http://www.acbblocks.com',
 				'Acorn PharmaTech': 'http://www.acornpharmatech.com',
@@ -137,7 +102,7 @@ $(function () {
 				'American Custom Chemicals Corp.': 'http://www.acccorporation.com',
 				'Amidohydrolase AH-EFI': 'http://www.enzymefunction.org',
 				'Amino acid derivatives (EFI)': 'http://www.enzymefunction.org',
-				'AmpC ligands': 'http://shoichetlab.compbio.ucsf.edu',
+				'AmpC molecules': 'http://shoichetlab.compbio.ucsf.edu',
 				'AmpC non-binders': 'http://shoichetlab.compbio.ucsf.edu',
 				'AnalytiCon Discovery Natural Derivatives': 'http://www.ac-discovery.com',
 				'AnalytiCon Discovery NP': 'http://www.ac-discovery.com',
@@ -196,7 +161,6 @@ $(function () {
 				'Collaborative Drug Discovery': 'http://www.collaborativedrug.com',
 				'Combi-Blocks': 'http://www.combi-blocks.com',
 				'CombiUgi': 'http://usefulchem.wikispaces.com/combiugi',
-				'DiPeptides (Hao)': '',
 				'DrugBank-approved': 'http://www.drugbank.ca',
 				'DrugBank-experimental': 'http://www.drugbank.ca',
 				'DrugBank-nutriceuticals': 'http://www.drugbank.ca',
@@ -293,7 +257,6 @@ $(function () {
 				'Otava Premium BB': 'http://www.otavachemicals.com',
 				'PBMR Labs': 'http://pbmr.com.ua',
 				'PBMR Labs Building Blocks': 'http://pbmr.com.ua',
-				'PDSP via PubChem': '',
 				'Peakdale': 'http://www.peakdale.com',
 				'PepTech': 'http://www.peptechcorp.com',
 				'Pharmeks': 'http://www.pharmeks.com',
@@ -304,7 +267,6 @@ $(function () {
 				'Princeton BioMolecular BuildingBlocks': 'http://www.princetonbio.com',
 				'Princeton BioMolecular Research': 'http://www.princetonbio.com',
 				'Princeton NP': 'http://www.princetonbio.com',
-				'Prous via PubChem': '',
 				'ProVence': 'http://www.provetech.com',
 				'ProVence Building Blocks': 'http://www.provetech.com',
 				'PubChem': 'http://pubchem.ncbi.nlm.nih.gov',
@@ -320,17 +282,6 @@ $(function () {
 				'ShangHai Biochempartner': 'http://www.biochempartner.com',
 				'Shanghai Sinofluoro Scientific': 'http://www.sinofluoro.com',
 				'Sigma Aldrich (Building Blocks)': 'http://www.sigmaaldrich.com',
-				'SMDC Asinex (building blocks)': '',
-				'SMDC CDiv Carboxamide': '',
-				'SMDC CDiv Diverse': '',
-				'SMDC CDiv Kinase': '',
-				'SMDC ChBr Diverse': '',
-				'SMDC ChBr Premium': '',
-				'SMDC Iconix': '',
-				'SMDC Life and Maybridge (building blocks)': '',
-				'SMDC Life Kinase': '',
-				'SMDC MicroSource': '',
-				'SMDC Pharmakon': '',
 				'Specs': 'http://www.specs.net',
 				'Specs Building Blocks': 'http://www.specs.net',
 				'Specs Natural Products': 'http://www.specs.net',
@@ -354,7 +305,6 @@ $(function () {
 				'Toslab': 'http://www.toslab.com',
 				'Toslab Building Blocks': 'http://www.toslab.com',
 				'Tractus': 'http://www.tractuschem.com',
-				'TTD via PubChem': '',
 				'Tyger Building Blocks': 'http://www.tygersci.com',
 				'Ubichem': 'http://www.ubichem.com',
 				'UEFS Natural Products': 'http://www.uefs.br',
@@ -365,9 +315,6 @@ $(function () {
 				'Vitas-M': 'http://www.vitasmlab.com',
 				'Vitas-M BB': 'http://www.vitasmlab.com',
 				'Wisdom Chemicals': 'http://www.wisdompharma.com',
-				'Yu Chen 1': '',
-				'Yu Chen 2': '',
-				'Yu Chen 3': '',
 				'Zelinsky Institute': 'http://zelinsky.com',
 				'Zelinsky Institute Building Blocks': 'http://zelinsky.com',
 				'Zelinsky Institute Make on Demand': 'http://zelinsky.com',
@@ -376,31 +323,40 @@ $(function () {
 				'Zylexa Pharma': 'http://www.zylexa-pharma.com',
 				'Zylexa Pharma BB': 'http://www.zylexa-pharma.com',
 			};
-
-			var canvas = $('canvas');
-			canvas.widthInv  = 1 / canvas.width();
-			canvas.heightInv = 1 / canvas.height();
-			var renderer = new THREE.WebGLRenderer({
-				canvas: canvas.get(0),
-				antialias: true,
-			});
-			renderer.setSize(canvas.width(), canvas.height());
-			renderer.setClearColor(defaultBackgroundColor);
-			var scene = new THREE.Scene();
-			var directionalLight = new THREE.DirectionalLight(0xFFFFFF, 1.2);
-			directionalLight.position.set(0.2, 0.2, -1).normalize();
-			var ambientLight = new THREE.AmbientLight(0x202020);
-			var rot = new THREE.Object3D();
-			var mdl = new THREE.Object3D();
-			rot.add(mdl);
-			scene.add(directionalLight);
-			scene.add(ambientLight);
-			scene.add(rot);
-			scene.fog = new THREE.Fog(defaultBackgroundColor, 100, 200);
-			var camera = new THREE.PerspectiveCamera(20, canvas.width() / canvas.height(), 1, 800);
-			camera.position.set(0, 0, -150);
-			camera.lookAt(new THREE.Vector3(0, 0, 0));
-			var sn, sf;
+			var atomColors = { // http://jmol.sourceforge.net/jscolors
+				 H: new THREE.Color(0xFFFFFF),
+				 C: new THREE.Color(0x909090),
+				 N: new THREE.Color(0x3050F8),
+				 O: new THREE.Color(0xFF0D0D),
+				 F: new THREE.Color(0x90E050),
+				NA: new THREE.Color(0xAB5CF2),
+				MG: new THREE.Color(0x8AFF00),
+				 P: new THREE.Color(0xFF8000),
+				 S: new THREE.Color(0xFFFF30),
+				CL: new THREE.Color(0x1FF01F),
+				 K: new THREE.Color(0x8F40D4),
+				CA: new THREE.Color(0x3DFF00),
+				MN: new THREE.Color(0x9C7AC7),
+				FE: new THREE.Color(0xE06633),
+				CO: new THREE.Color(0xF090A0),
+				NI: new THREE.Color(0x50D050),
+				CU: new THREE.Color(0xC88033),
+				ZN: new THREE.Color(0x7D80B0),
+				AS: new THREE.Color(0xBD80E3),
+				SE: new THREE.Color(0xFFA100),
+				BR: new THREE.Color(0xA62929),
+				SR: new THREE.Color(0x00FF00),
+				MO: new THREE.Color(0x54B5B5),
+				CD: new THREE.Color(0xFFD98F),
+				 I: new THREE.Color(0x940094),
+				CS: new THREE.Color(0x57178F),
+				HG: new THREE.Color(0xB8B8D0),
+				 U: new THREE.Color(0x008FFF),
+			};
+			var defaultAtomColor = new THREE.Color(0xCCCCCC);
+			var defaultBackgroundColor = new THREE.Color(0x000000);
+			var sphereGeometry = new THREE.SphereGeometry(1, 64, 64);
+			var cylinderGeometry = new THREE.CylinderGeometry(1, 1, 1, 64, 1);
 			var labelVertexShader = '\
 uniform float width, height;\n\
 varying vec2 vUv;\n\
@@ -433,7 +389,6 @@ void main()\n\
 			labelGeo.faces.push(new THREE.Face3(0, 2, 3));
 			labelGeo.faceVertexUvs[0].push([new THREE.Vector2(0, 0), new THREE.Vector2(1, 1), new THREE.Vector2(0, 1)]);
 			labelGeo.faceVertexUvs[0].push([new THREE.Vector2(0, 0), new THREE.Vector2(1, 0), new THREE.Vector2(1, 1)]);
-
 			var createSphere = function (atom, radius) {
 				var mesh = new THREE.Mesh(sphereGeometry, new THREE.MeshLambertMaterial({ color: atom.color }));
 				mesh.scale.x = mesh.scale.y = mesh.scale.z = radius;
@@ -502,213 +457,272 @@ void main()\n\
 				var obj = new THREE.Object3D();
 				for (var i in atoms) {
 					var atom = atoms[i];
-					var bb = createLabel(atom.elem, 32, '#EEEEEE');
+					var bb = createLabel(atom.elem, 64, '#EEEEEE');
 					bb.position.copy(atom.coord);
 					obj.add(bb);
 				}
 				return obj;
 			};
-			var render = function () {
-				var center = rot.position.z - camera.position.z;
-				if (center < 1) center = 1;
-				camera.near = center + sn;
-				if (camera.near < 1) camera.near = 1;
-				camera.far = center + sf;
-				if (camera.near + 1 > camera.far) camera.far = camera.near + 1;
-				camera.updateProjectionMatrix();
-				scene.fog.near = camera.near + 0.4 * (camera.far - camera.near);
-				scene.fog.far = camera.far;
-				renderer.render(scene, camera);
+			var iview = function (canvas) {
+				this.canvas = $(canvas);
+				this.canvas.height(this.canvas.width());
+				this.canvas.widthInv  = 1 / this.canvas.width();
+				this.canvas.heightInv = 1 / this.canvas.height();
+				this.renderer = new THREE.WebGLRenderer({
+					canvas: this.canvas.get(0),
+					antialias: true,
+				});
+				this.renderer.setSize(this.canvas.width(), this.canvas.height());
+				this.renderer.setClearColor(defaultBackgroundColor);
+				this.directionalLight = new THREE.DirectionalLight(0xFFFFFF, 1.2);
+				this.directionalLight.position.set(0.2, 0.2, -1).normalize();
+				this.ambientLight = new THREE.AmbientLight(0x202020);
+				this.mdl = new THREE.Object3D();
+				this.rot = new THREE.Object3D();
+				this.rot.add(this.mdl);
+				this.scene = new THREE.Scene();
+				this.scene.add(this.directionalLight);
+				this.scene.add(this.ambientLight);
+				this.scene.add(this.rot);
+				this.scene.fog = new THREE.Fog(defaultBackgroundColor, 100, 200);
+				this.camera = new THREE.PerspectiveCamera(20, this.canvas.width() / this.canvas.height(), 1, 800);
+				this.camera.position.set(0, 0, -150);
+				this.camera.lookAt(new THREE.Vector3(0, 0, 0));
+				var me = this;
+				this.canvas.bind('contextmenu', function (e) {
+					e.preventDefault();
+				});
+				this.canvas.bind('mouseup touchend', function (e) {
+					me.dg = false;
+				});
+				this.canvas.bind('mousedown touchstart', function (e) {
+					e.preventDefault();
+					var x = e.pageX;
+					var y = e.pageY;
+					if (e.originalEvent.targetTouches && e.originalEvent.targetTouches[0]) {
+						x = e.originalEvent.targetTouches[0].pageX;
+						y = e.originalEvent.targetTouches[0].pageY;
+					}
+					me.dg = true;
+					me.wh = e.which;
+					me.cx = x;
+					me.cy = y;
+					me.cq = me.rot.quaternion.clone();
+					me.cz = me.rot.position.z;
+					me.cp = me.mdl.position.clone();
+					me.cn = me.sn;
+					me.cf = me.sf;
+				});
+				this.canvas.bind('mousemove touchmove', function (e) {
+					e.preventDefault();
+					if (!me.dg) return;
+					var x = e.pageX;
+					var y = e.pageY;
+					if (e.originalEvent.targetTouches && e.originalEvent.targetTouches[0]) {
+						x = e.originalEvent.targetTouches[0].pageX;
+						y = e.originalEvent.targetTouches[0].pageY;
+					}
+					var dx = (x - me.cx) * me.canvas.widthInv;
+					var dy = (y - me.cy) * me.canvas.heightInv;
+					if (!dx && !dy) return;
+					if (e.ctrlKey && e.shiftKey) { // Slab
+						me.sn = me.cn + dx * 100;
+						me.sf = me.cf + dy * 100;
+					} else if (e.ctrlKey || me.wh == 3) { // Translate
+						var scaleFactor = Math.max((me.rot.position.z - me.camera.position.z) * 0.85, 20);
+						me.mdl.position.copy(me.cp).add(new THREE.Vector3(-dx * scaleFactor, -dy * scaleFactor, 0).applyQuaternion(me.rot.quaternion.clone().inverse().normalize()));
+					} else if (e.shiftKey || me.wh == 2) { // Zoom
+						var scaleFactor = Math.max((me.rot.position.z - me.camera.position.z) * 0.85, 80);
+						me.rot.position.z = me.cz - dy * scaleFactor;
+					} else { // Rotate
+						var r = Math.sqrt(dx * dx + dy * dy);
+						var rs = Math.sin(r * Math.PI) / r;
+						me.rot.quaternion.set(1, 0, 0, 0).multiply(new THREE.Quaternion(Math.cos(r * Math.PI), 0, rs * dx, rs * dy)).multiply(me.cq);
+					}
+					me.render();
+				});
+				this.canvas.bind('mousewheel', function (e) {
+					e.preventDefault();
+					me.rot.position.z -= e.originalEvent.wheelDelta * 0.025;
+					me.render();
+				});
+				this.canvas.bind('DOMMouseScroll', function (e) {
+					e.preventDefault();
+					me.rot.position.z += e.originalEvent.detail;
+					me.render();
+				});
 			};
-			var refreshLigand = function(ligand) {
-				if (ligand.representations === undefined) {
-					ligand.representations = {
-						stick: createStickRepresentation(ligand.atoms, cylinderRadius, cylinderRadius),
-						label: createLabelRepresentation(ligand.atoms),
+			iview.prototype = {
+				constructor: iview,
+				reset: function (molecule) {
+					var lmin = new THREE.Vector3( 10000, 10000, 10000);
+					var lmax = new THREE.Vector3(-10000,-10000,-10000);
+					var lsum = new THREE.Vector3();
+					var cnt = 0;
+					var atoms = molecule.atoms;
+					for (var i in atoms) {
+						var atom = atoms[i];
+						var coord = atom.coord;
+						lsum.add(coord);
+						lmin.min(coord);
+						lmax.max(coord);
+						++cnt;
+					}
+					var maxD = lmax.distanceTo(lmin) + 4;
+					this.sn = -maxD;
+					this.sf =  maxD;
+					this.mdl.position.copy(lsum).multiplyScalar(-1 / cnt);
+					this.rot.position.z = maxD * 0.35 / Math.tan(Math.PI / 180.0 * 10) - 140;
+				},
+				render: function () {
+					var center = this.rot.position.z - this.camera.position.z;
+					if (center < 1) center = 1;
+					this.camera.near = center + this.sn;
+					if (this.camera.near < 1) this.camera.near = 1;
+					this.camera.far = center + this.sf;
+					if (this.camera.near + 1 > this.camera.far) this.camera.far = this.camera.near + 1;
+					this.camera.updateProjectionMatrix();
+					this.scene.fog.near = this.camera.near + 0.4 * (this.camera.far - this.camera.near);
+					this.scene.fog.far = this.camera.far;
+					this.renderer.render(this.scene, this.camera);
+				},
+				exportCanvas: function () {
+					this.render();
+					window.open(this.renderer.domElement.toDataURL('image/png'));
+				},
+			};
+			var parseSDF = function (src) {
+				var molecules = [];
+				for (var lines = src.split('\n'), l = lines.length - 1, offset = 0; offset < l;) {
+					var molecule = {
+						atoms: {},
+						id: lines[offset],
+					}, atoms = molecule.atoms;
+					offset += 3;
+					var atomCount = parseInt(lines[offset].substr(0, 3));
+					var bondCount = parseInt(lines[offset].substr(3, 3));
+					for (var i = 1; i <= atomCount; ++i) {
+						var line = lines[++offset];
+						var atom = {
+							serial: i,
+							coord: new THREE.Vector3(parseFloat(line.substr(0, 10)), parseFloat(line.substr(10, 10)), parseFloat(line.substr(20, 10))),
+							elem: line.substr(31, 2).replace(/ /g, '').toUpperCase(),
+							bonds: [],
+						};
+						if (atom.elem === 'H') continue;
+						atom.color = atomColors[atom.elem] || defaultAtomColor;
+						atoms[atom.serial] = atom;
+					}
+					molecule.nha = Object.keys(atoms).length;
+					for (var i = 1; i <= bondCount; ++i) {
+						var line = lines[++offset];
+						var atom0 = atoms[parseInt(line.substr(0, 3))];
+						if (atom0 === undefined) continue;
+						var atom1 = atoms[parseInt(line.substr(3, 3))];
+						if (atom1 === undefined) continue;
+						atom0.bonds.push(atom1);
+						atom1.bonds.push(atom0);
+					}
+					while (lines[offset++] !== "$$$$");
+					molecules.push(molecule);
+				}
+				return molecules;
+			};
+			var refreshMolecule = function (molecule, iv) {
+				if (molecule.representations === undefined) {
+					molecule.representations = {
+						stick: createStickRepresentation(molecule.atoms, 0.3, 0.3),
+						label: createLabelRepresentation(molecule.atoms),
 					};
 				}
-				mdl.children = [];
-				mdl.add(ligand.representations.stick);
-				mdl.add(ligand.representations.label);
-				var data = $('#data');
-				$('span', data).each(function() {
-					var t = $(this);
-					t.text(ligand[t.attr('id')]);
-				});
-				$('#zid', data).parent().attr('href', '//zinc.docking.org/substance/' + ligand.zid);
-				$('#suppliers', data).html(ligand.suppliers.map(function(supplier) {
-					var link = catalogs[supplier];
-					return '<li><a' + (link === undefined || link.length === 0 ? '' : ' href="' + link + '"') + '>' + supplier + '</a></li>';
-				}).join(''));
+				iv.mdl.children = [];
+				iv.mdl.add(molecule.representations.stick);
+				iv.mdl.add(molecule.representations.label);
+				iv.reset(molecule);
+				iv.render();
 			};
-			var qid;
-			var refreshQuery = function (queryid) {
-				qid = queryid;
-				var path = '../jobs/' + jobid + '/' + queryid + '/';
-				$('#downloads a').each(function () {
-					var t = $(this);
-					t.attr('href', path + t.text());
+
+			var iviews = $('canvas').map(function (index) {
+				var iv = new iview(this);
+				$('#exportButton' + index).click(function (e) {
+					iv.exportCanvas();
 				});
-				$.ajax({
-					url: path + 'hits.sdf',
-				}).done(function (hits_sdf) {
-					var ligands = [], lines = hits_sdf.split('\n');
-					for (var offset = 0, l = lines.length - 1; offset < l;) {
-						var ligand = {
-							atoms: {},
-							zid: lines[offset],
-						}, atoms = ligand.atoms;
-						offset += 3;
-						var atomCount = parseInt(lines[offset].substr(0, 3));
-						var bondCount = parseInt(lines[offset].substr(3, 3));
-						for (var i = 1; i <= atomCount; ++i) {
-							var line = lines[++offset];
-							var atom = {
-								serial: i,
-								coord: new THREE.Vector3(parseFloat(line.substr( 0, 10)), parseFloat(line.substr(10, 10)), parseFloat(line.substr(20, 10))),
-								elem: line.substr(31, 2).replace(/ /g, '').toUpperCase(),
-								bonds: [],
-							};
-							if (atom.elem === 'H') continue;
-							atom.color = atomColors[atom.elem] || defaultAtomColor;
-							atoms[atom.serial] = atom;
-						}
-						ligand.nha = Object.keys(atoms).length;
-						for (var i = 1; i <= bondCount; ++i) {
-							var line = lines[++offset];
-							var atom0 = atoms[parseInt(line.substr(0, 3))];
-							if (atom0 === undefined) continue;
-							var atom1 = atoms[parseInt(line.substr(3, 3))];
-							if (atom1 === undefined) continue;
-							atom0.bonds.push(atom1);
-							atom1.bonds.push(atom0);
-						}
-						while (lines[offset++] !== "$$$$");
-						ligands.push(ligand);
-					}
-					$.ajax({
-						url: path + 'log.csv',
-					}).done(function (log_csv) {
-						var logs = log_csv.split('\n').slice(1);
-						var propNames = [ 'usr_score', 'usrcat_score', 'mwt', 'lgp', 'ads', 'pds', 'hbd', 'hba', 'psa', 'chg', 'nrb', 'smiles', 'suppliers' ];
-						$.each(ligands, function (i, ligand) {
-							var properties = logs[i].split(',');
-							if (ligand.zid !== properties[0]) throw Error("Inconsistent ZINC IDs found in hits.sdf and log.csv");
-							$.each(propNames, function (j, propName) {
-								ligand[propName] = properties[1+j];
-							});
-							ligand.suppliers = ligand.suppliers.split(' | ').slice(1);
-							ligand.nsuppliers = ligand.suppliers.length;
-						});
-						$('#nhits').text(ligands.length);
-						$('#usrH').text(job.usrF);
-						var hids = $('#hids');
-						hids.html(ligands.map(function(ligand, index) {
-							return '<label class="btn btn-primary"><input type="radio">' + index + '</label>';
-						}).join(''));
-						$(':first', hids).addClass('active');
-						$('> .btn', hids).click(function(e) {
-							refreshLigand(ligands[$(e.target).text()]);
-							render();
-						});
-						refreshLigand(ligands[0]);
-						var lmin = new THREE.Vector3( 10000, 10000, 10000);
-						var lmax = new THREE.Vector3(-10000,-10000,-10000);
-						atoms = ligands[0].atoms;
-						for (var i in atoms) {
-							var atom = atoms[i];
-							var coord = atom.coord;
-							lmin.min(coord);
-							lmax.max(coord);
-						}
-						var maxD = lmax.distanceTo(lmin) + 4;
-						sn = -maxD;
-						sf =  maxD;
-						rot.position.z = maxD * 0.35 / Math.tan(Math.PI / 180.0 * 10) - 150;
-						render();
+				return iv;
+			});
+			$.ajax({
+				url: path + 'query.sdf',
+			}).done(function (qsdf) {
+				var qmolecules = parseSDF(qsdf);
+				if (qmolecules.length !== job.nqueries) throw Error("qmolecules.length !== job.nqueries");
+				$('#nqueries').text(qmolecules.length);
+				var qindex;
+				var refreshQuery = function (qidx) {
+					refreshMolecule(qmolecules[qindex = qidx], iviews[0]);
+					$('#downloads a').each(function () {
+						var t = $(this);
+						t.attr('href', path + qindex + '/' + t.text());
 					});
+					$.ajax({
+						url: path + qindex + '/hits.sdf',
+					}).done(function (hsdf) {
+						var hmolecules = parseSDF(hsdf);
+						if (hmolecules.length !== 100) throw Error("hmolecules.length !== 100");
+						$.ajax({
+							url: path + qindex + '/hits.csv',
+						}).done(function (hcsv) {
+							var logs = hcsv.split('\n').slice(1, 101);
+							if (logs.length !== 100) throw Error("logs.length !== 100");
+							var propNames = [ 'usr_score', 'usrcat_score', 'mwt', 'lgp', 'ads', 'pds', 'hbd', 'hba', 'psa', 'chg', 'nrb', 'smiles', 'suppliers' ];
+							$.each(hmolecules, function (i, molecule) {
+								var properties = logs[i].split(',');
+								if (molecule.id !== properties[0]) throw Error("molecule.id !== properties[0]");
+								$.each(propNames, function (j, propName) {
+									molecule[propName] = properties[1+j];
+								});
+								molecule.suppliers = molecule.suppliers.split(' | ').slice(1);
+								molecule.nsuppliers = molecule.suppliers.length;
+							});
+							$('#nhits').text(hmolecules.length);
+							var hindex;
+							var refreshHit = function (hidx) {
+								var molecule = hmolecules[hindex = hidx];
+								refreshMolecule(molecule, iviews[1]);
+								var output = $('#output');
+								$('span', output).each(function () {
+									var t = $(this);
+									t.text(molecule[t.attr('id')]);
+								});
+								$('#id', output).parent().attr('href', '//zinc.docking.org/substance/' + molecule.id);
+								$('#suppliers', output).html(molecule.suppliers.map(function (supplier) {
+									var link = catalogs[supplier];
+									return '<li><a' + (link === undefined ? '' : ' href="' + link + '"') + '>' + supplier + '</a></li>';
+								}).join(''));
+							};
+							var hids = $('#hids');
+							hids.html(hmolecules.map(function (molecule, index) {
+								return '<label class="btn btn-primary"><input type="radio">' + index + '</label>';
+							}).join(''));
+							$('> .btn', hids).click(function (e) {
+								var hidx = $(e.target).text();
+								if (hidx == hindex) return;
+								refreshHit(hidx);
+							});
+							$(':first', hids).addClass('active');
+							refreshHit(0);
+						});
+					});
+				};
+				var qids = $('#qids');
+				qids.html(Array.apply(0, Array(qmolecules.length)).map(function (value, index) {
+					return '<label class="btn btn-primary"><input type="radio">' + index + '</label>';
+				}).join(''));
+				$('> .btn', qids).click(function (e) {
+					var qidx = $(e.target).text();
+					if (qidx == qindex) return;
+					refreshQuery(qidx);
 				});
-			};
-
-			$('#nqueries').text(job.nqueries);
-			var qids = $('#qids');
-			qids.html(Array.apply(0, Array(job.nqueries)).map(function (value, index) {
-				return '<label class="btn btn-success"><input type="radio">' + index + '</label>';
-			}).join(''));
-			$(':first', qids).addClass('active');
-			$('> .btn', qids).click(function(e) {
-				var queryid = $(e.target).text();
-				if (queryid == qid) return;
-				refreshQuery(queryid);
-			});
-			refreshQuery(0);
-
-			var dg, wh, cx, cy, cq, cz, cp, cn, cf;
-			canvas.bind('contextmenu', function (e) {
-				e.preventDefault();
-			});
-			canvas.bind('mouseup touchend', function (e) {
-				dg = false;
-			});
-			canvas.bind('mousedown touchstart', function (e) {
-				e.preventDefault();
-				var x = e.pageX;
-				var y = e.pageY;
-				if (e.originalEvent.targetTouches && e.originalEvent.targetTouches[0]) {
-					x = e.originalEvent.targetTouches[0].pageX;
-					y = e.originalEvent.targetTouches[0].pageY;
-				}
-				dg = true;
-				wh = e.which;
-				cx = x;
-				cy = y;
-				cq = rot.quaternion.clone();
-				cz = rot.position.z;
-				cp = mdl.position.clone();
-				cn = sn;
-				cf = sf;
-			});
-			canvas.bind('mousemove touchmove', function (e) {
-				e.preventDefault();
-				if (!dg) return;
-				var x = e.pageX;
-				var y = e.pageY;
-				if (e.originalEvent.targetTouches && e.originalEvent.targetTouches[0]) {
-					x = e.originalEvent.targetTouches[0].pageX;
-					y = e.originalEvent.targetTouches[0].pageY;
-				}
-				var dx = (x - cx) * canvas.widthInv;
-				var dy = (y - cy) * canvas.heightInv;
-				if (!dx && !dy) return;
-				if (e.ctrlKey && e.shiftKey) { // Slab
-					sn = cn + dx * 100;
-					sf = cf + dy * 100;
-				} else if (e.ctrlKey || wh == 3) { // Translate
-					var scaleFactor = Math.max((rot.position.z - camera.position.z) * 0.85, 20);
-					mdl.position.copy(cp).add(new THREE.Vector3(-dx * scaleFactor, -dy * scaleFactor, 0).applyQuaternion(rot.quaternion.clone().inverse().normalize()));
-				} else if (e.shiftKey || wh == 2) { // Zoom
-					var scaleFactor = Math.max((rot.position.z - camera.position.z) * 0.85, 80);
-					rot.position.z = cz - dy * scaleFactor;
-				} else { // Rotate
-					var r = Math.sqrt(dx * dx + dy * dy);
-					var rs = Math.sin(r * Math.PI) / r;
-					rot.quaternion.set(1, 0, 0, 0).multiply(new THREE.Quaternion(Math.cos(r * Math.PI), 0, rs * dx, rs * dy)).multiply(cq);
-				}
-				render();
-			});
-			canvas.bind('mousewheel', function (e) {
-				e.preventDefault();
-				rot.position.z -= e.originalEvent.wheelDelta * 0.025;
-				render();
-			});
-			canvas.bind('DOMMouseScroll', function (e) {
-				e.preventDefault();
-				rot.position.z += e.originalEvent.detail;
-				render();
-			});
-			$('#exportCanvas').click(function (e) {
-				render();
-				window.open(renderer.domElement.toDataURL('image/png'));
+				$(':first', qids).addClass('active');
+				refreshQuery(0);
 			});
 		});
 	};

@@ -58,12 +58,15 @@
         </div>
       </div>
       <div class="row">
-        <div class="col-md-12">
+        <div class="col-md-6">
+          <canvas>Your browser does not support WebGL.</canvas>
+        </div>
+        <div class="col-md-6">
           <canvas>Your browser does not support WebGL.</canvas>
         </div>
       </div>
       <div class="row">
-        <div class="col-md-12">
+        <div class="col-md-5">
           <div class="form-group">
             <label><span id="nqueries"></span> query molecules</label>
             <div>
@@ -71,29 +74,50 @@
             </div>
           </div>
         </div>
-      </div>
-      <div class="row">
-        <div class="col-md-12">
+        <div class="col-md-1">
           <div class="form-group">
-            <label>Top <span id="nhits"></span> hits sorted by <span id="usrH"></span> score</label>
+            <label>Canvas-PNG</label>
+            <div>
+              <button class="btn btn-primary btn-sm" id="exportButton0"><span class="glyphicon glyphicon-picture"></span> Export</button>
+            </div>
+          </div>
+        </div>
+        <div class="col-md-5">
+          <div class="form-group">
+            <label><span id="nhits"></span> hit molecules sorted by <span id="usrH"></span> score</label>
             <div>
               <div class="btn-group btn-group-sm btn-group-x" data-toggle="buttons" id="hids"></div>
             </div>
           </div>
         </div>
+        <div class="col-md-1">
+          <div class="form-group">
+            <label>Canvas-PNG</label>
+            <div>
+              <button class="btn btn-primary btn-sm" id="exportButton1"><span class="glyphicon glyphicon-picture"></span> Export</button>
+            </div>
+          </div>
+        </div>
       </div>
-      <div class="row" id="data">
+      <div class="row" id="output">
         <div class="col-md-3">
           <p>Downloads</p>
           <ul id="downloads">
-            <li><a><img src="../excel.png" alt="">log.csv</a></li>
+            <li><a><img src="../excel.png" alt="">hits.csv</a></li>
             <li><a><img src="../molecule.png" alt="">hits.sdf</a></li>
           </ul>
           <p>Results</p>
           <ul>
-            <li>ZINC ID: <a><span id="zid"></span></a></li>
+            <li>ZINC ID: <a><span id="id"></span></a></li>
             <li>USR score: <span id="usr_score"></span></li>
             <li>USRCAT score: <span id="usrcat_score"></span></li>
+          </ul>
+          <p>Keyings of <a href="//istar.cse.cuhk.edu.hk/iview">iview</a></p>
+          <ul>
+            <li>Default: rotate</li>
+            <li>Ctrl: translate</li>
+            <li>Shift: zoom in/out</li>
+            <li>Ctrl + shift: slab</li>
           </ul>
         </div>
         <div class="col-md-5">
@@ -119,34 +143,8 @@
         </div>
       </div>
       <div class="row">
-        <div class="col-md-4">
-          <p>iview is based on the following components</p>
-          <ul>
-            <li>3D molecular viewer <a href="https://github.com/biochem-fan/GLmol">GLmol</a> by biochem_fan</li>
-            <li>JavaScript 3D library <a href="http://threejs.org">three.js</a> by mrdoob</li>
-            <li>Surface construction <a href="http://zhanglab.ccmb.med.umich.edu/EDTSurf">EDTSurf</a> by Dong Xu and Yang Zhang</li>
-            <li><a href="http://webglmol.sourceforge.jp/surface.html">JavaScript port of EDTSurf</a> by biochem_fan</li>
-          </ul>
-        </div>
-        <div class="col-md-4">
-          <p>iview supports the following keyings</p>
-          <ul>
-            <li>Default: rotate</li>
-            <li>Ctrl: translate</li>
-            <li>Shift: zoom in/out</li>
-            <li>Ctrl + shift: slab</li>
-          </ul>
-        </div>
-        <div class="col-md-4">
-        <p>iview supports the following functions</p>
-          <ul>
-            <li><button class="btn btn-primary btn-sm" id="exportCanvas"><span class="glyphicon glyphicon-picture"></span> Export canvas to png</button></li>
-          </ul>
-        </div>
-      </div>
-      <div class="row">
         <div class="col-md-12">
-          <p>Hongjian Li, Kwong-Sak Leung, Takanori Nakane and Man-Hon Wong. iview: an interactive WebGL visualizer for protein-ligand complex. <em>BMC Bioinformatics</em>, 15(1):56, 2014. <a href="http://dx.doi.org/10.1186/1471-2105-15-56">DOI: 10.1186/1471-2105-15-56</a></p>
+          <p class="text-center">Hongjian Li, Kwong-Sak Leung, Takanori Nakane and Man-Hon Wong. iview: an interactive WebGL visualizer for protein-ligand complex. <em>BMC Bioinformatics</em>, 15(1):56, 2014. <a href="http://dx.doi.org/10.1186/1471-2105-15-56">DOI: 10.1186/1471-2105-15-56</a></p>
         </div>
       </div>
     </div>
@@ -156,7 +154,7 @@
       <p>Copyright 2015 <a href="http://www.cse.cuhk.edu.hk/~hjli">Hongjian Li</a>. Code licensed under <a href="http://www.apache.org/licenses/LICENSE-2.0">Apache License 2.0</a>. Documentation licensed under <a href="http://creativecommons.org/licenses/by/3.0">CC BY 3.0</a>. Web pages conform to <a href="http://validator.w3.org/check?uri=referer">HTML5</a>.</p>
     </div>
   </footer>
-  <script src="http://code.jquery.com/jquery-2.1.4.min.js"></script>
+  <script src="../jquery-2.1.4.min.js"></script>
   <script src="../bootstrap.min.js"></script>
   <script src="jquery-dateFormat.min.js"></script>
   <script src="three.min.js"></script>
