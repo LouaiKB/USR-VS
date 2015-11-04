@@ -623,7 +623,7 @@ void main()\n\
 						atom0.bonds.push(atom1);
 						atom1.bonds.push(atom0);
 					}
-					while (lines[offset++] !== "$$$$");
+					while (lines[offset++].substr(0, 4) !== "$$$$");
 					molecules.push(molecule);
 				}
 				return molecules;
