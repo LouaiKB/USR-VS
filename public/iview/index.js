@@ -653,7 +653,7 @@ void main()\n\
 			$.ajax({
 				url: path + 'query.sdf',
 			}).done(function (qsdf) {
-				var qmolecules = parseSDF(qsdf);
+				var qmolecules = parseSDF(qsdf).slice(0, 1);
 				if (qmolecules.length !== job.nqueries) throw Error("qmolecules.length !== job.nqueries");
 				$('#nqueries').text(qmolecules.length);
 				var qindex;
