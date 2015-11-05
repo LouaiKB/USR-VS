@@ -1,20 +1,3 @@
-.ribbon {
-  position: absolute;
-  z-index: 2000;
-  top: 0;
-  left: 0;
-  width: 134px;
-  height: 134px;
-  background: url(http://s3.amazonaws.com/github/ribbons/forkme_left_green_007200.png);
-  opacity: .7;
-  -webkit-transition: opacity .5s linear;
-          transition: opacity .5s linear;
-}
-
-.ribbon:hover {
-  opacity: 1;
-}
-
 .jumbotron {
   padding-top: 0px;
   padding-bottom: 10px;
