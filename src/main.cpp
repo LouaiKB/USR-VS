@@ -227,13 +227,13 @@ int main(int argc, char* argv[])
 	array<vector<double>, num_references> dista;
 	alignas(32) array<double, qn.back()> q;
 
-	// Initialize vectors to store compounds' USR and USRCAT scores and their corresponding conformer.
-	array<vector<double>, 2> scores
-	{{
-		vector<double>(num_ligands), // USR score
-		vector<double>(num_ligands)  // USRCAT score
-	}};
-	vector<size_t> cnfids(num_ligands); // ID of conformer of the best primary score.
+	// Initialize vectors to store compounds' primary score and their corresponding conformer.
+	vector<double> scores(num_ligands); // Primary score of molecules.
+	vector<size_t> cnfids(num_ligands); // ID of conformer with the best primary score.
+	const auto compare = [&](const size_t val0, const size_t val1) // Sort by the primary score.
+	{
+		return scores[val0] < scores[val1];
+	};
 
 	// Initialize an io service pool and create worker threads for later use.
 	const size_t num_threads = thread::hardware_concurrency();
@@ -277,29 +277,11 @@ int main(int argc, char* argv[])
 		const auto _id = job["_id"].OID();
 		cout << local_time() << "Executing job " << _id.str() << endl;
 		const auto job_path = jobs_path / _id.str();
-		const size_t usr = job["usr"].Int(); // Specify the primary sorting score. 0: USR; 1: USRCAT.
-		assert(usr == 0 || usr == 1);
-		const auto usr1 = usr^1;
-		const auto qnu0 = qn[usr];
+		const size_t usr0 = job["usr"].Int(); // Specify the primary sorting score. 0: USR; 1: USRCAT.
+		assert(usr0 == 0 || usr0 == 1);
+		const auto usr1 = usr0 ^ 1;
+		const auto qnu0 = qn[usr0];
 		const auto qnu1 = qn[usr1];
-		const auto& u0scores = scores[usr];  // Primary sorting score.
-		const auto& u1scores = scores[usr1]; // Secondary sorting score.
-		const auto compare = [&](const size_t val0, const size_t val1) // Sort by the primary score, if equal then by the secondary score, if equal then by ZINC ID.
-		{
-			const auto u0score0 = u0scores[val0];
-			const auto u0score1 = u0scores[val1];
-			if (u0score0 == u0score1)
-			{
-				const auto u1score0 = u1scores[val0];
-				const auto u1score1 = u1scores[val1];
-				if (u1score0 == u1score1)
-				{
-					return zincids[val0] < zincids[val1];
-				}
-				return u1score0 < u1score1;
-			}
-			return u0score0 < u0score1;
-		};
 
 		// Read and validate the user-supplied SDF file.
 		cout << local_time() << "Reading and validating the query file" << endl;
@@ -460,11 +442,8 @@ int main(int argc, char* argv[])
 			assert(qo == qn.back());
 
 			// Compute USR and USRCAT scores.
-			cout << local_time() << "Calculating " << num_ligands << " USR and USRCAT scores" << endl;
-			for (auto& ss : scores)
-			{
-				ss.assign(ss.size(), numeric_limits<double>::max());
-			}
+			cout << local_time() << "Calculating " << num_ligands << " " << usr_names[usr0] << " scores" << endl;
+			scores.assign(scores.size(), numeric_limits<double>::max());
 			iota(scase.begin(), scase.end(), 0);
 			cnt.init(num_chunks);
 			for (size_t l = 0; l < num_chunks; ++l)
@@ -477,31 +456,23 @@ int main(int argc, char* argv[])
 					for (size_t k = chunk_beg; k < chunk_end; ++k)
 					{
 						// Loop over conformers of the current molecule and calculate their primary score.
-						auto& scoreuk = scores[usr][k];
+						auto& scorek = scores[k];
 						size_t j = k ? mconfss[k - 1] : 0;
 						for (const auto mconfs = mconfss[k]; j < mconfs; ++j)
 						{
-							const auto& l = features[j];
+							const auto& d = features[j];
 							double s = 0;
 							for (size_t i = 0; i < qnu0; ++i)
 							{
-								s += abs(q[i] - l[i]);
-								if (s >= scoreuk) break;
+								s += abs(q[i] - d[i]);
+								if (s >= scorek) break;
 							}
-							if (s < scoreuk)
+							if (s < scorek)
 							{
-								scoreuk = s;
+								scorek = s;
 								cnfids[k] = j;
 							}
 						}
-						// Calculate the secondary score of the saved conformer, which has the best primary score.
-						const auto& l = features[cnfids[k]];
-						double s = 0;
-						for (size_t i = 0; i < qnu1; ++i)
-						{
-							s += abs(q[i] - l[i]);
-						}
-						scores[usr1][k] = s;
 					}
 
 					// Sort the scores of molecules of the current chunk.
@@ -516,7 +487,7 @@ int main(int argc, char* argv[])
 			cnt.wait();
 
 			// Sort the top hits from chunks.
-			cout << local_time() << "Sorting " << zcase.size() << " hits by " << usr_names[usr] << " score" << endl;
+			cout << local_time() << "Sorting " << zcase.size() << " hits by " << usr_names[usr0] << " score" << endl;
 			sort(zcase.begin(), zcase.end(), compare);
 
 			// Create output directory and write output files.
@@ -530,9 +501,18 @@ int main(int argc, char* argv[])
 			for (size_t l = 0; l < num_hits; ++l)
 			{
 				const auto k = zcase[l];
+
+				// Calculate the secondary score of the saved conformer, which has the best primary score.
+				const auto& d = features[cnfids[k]];
+				double s = 0;
+				for (size_t i = 0; i < qnu1; ++i)
+				{
+					s += abs(q[i] - d[i]);
+				}
+
+				const auto u0score = 1 / (1 + scores[k] * qv[usr0]); // Primary score of the current molecule.
+				const auto u1score = 1 / (1 + s         * qv[usr1]); // Secondary score of the current molecule.
 				const auto zincid = zincids[k].substr(0, 8); // Take another substr() to get rid of the trailing newline.
-				const auto u0score = 1 / (1 + scores[0][k] * qv[0]);
-				const auto u1score = 1 / (1 + scores[1][k] * qv[1]);
 				const auto zfp = zfproperties[k];
 				const auto zip = ziproperties[k];
 				const auto smiles = smileses[k];    // A newline is already included in smileses[k].
@@ -540,8 +520,8 @@ int main(int argc, char* argv[])
 				hits_csv
 					<< zincid
 					<< setprecision(8)
-					<< ',' << u0score
-					<< ',' << u1score
+					<< ',' << (usr1 ? u0score : u1score)
+					<< ',' << (usr1 ? u1score : u0score)
 					<< setprecision(3)
 					<< ',' << zfp[0]
 					<< ',' << zfp[1]
