@@ -33,6 +33,11 @@ label {
   font-weight: normal;
 }
 
+label a {
+  font-weight: bold;
+  font-size: 20px;
+}
+
 canvas {
   width: 100%;
 }
