@@ -84,6 +84,7 @@ $(function () {
 				return;
 			}
 			if (job.error) return;
+			$('#results').removeClass('hidden');
 
 			var catalogs = {
 				'ACB Blocks': 'http://www.acbblocks.com',
