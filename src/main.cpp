@@ -497,7 +497,7 @@ int main(int argc, char* argv[])
 			boost::filesystem::ofstream hits_sdf(output_dir / "hits.sdf");
 			boost::filesystem::ofstream hits_csv(output_dir / "hits.csv");
 			hits_csv.setf(ios::fixed, ios::floatfield);
-			hits_csv << "ZINC ID,USR score,USRCAT score,Molecular weight (g/mol),Partition coefficient xlogP,Apolar desolvation (kcal/mol),Polar desolvation (kcal/mol),Hydrogen bond donors,Hydrogen bond acceptors,Polar surface area tPSA (A^2),Net charge,Rotatable bonds,SMILES,Suppliers and annotations\n";
+			hits_csv << "ZINC ID,USR score,USRCAT score,Molecular weight (g/mol),Partition coefficient xlogP,Apolar desolvation (kcal/mol),Polar desolvation (kcal/mol),Hydrogen bond donors,Hydrogen bond acceptors,Polar surface area tPSA (Å^2),Net charge,Rotatable bonds,SMILES,Suppliers and annotations\n";
 			for (size_t l = 0; l < num_hits; ++l)
 			{
 				const auto k = zcase[l];
