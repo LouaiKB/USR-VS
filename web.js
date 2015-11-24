@@ -21,7 +21,7 @@ if (cluster.isMaster) {
 			var bodyParser = require('body-parser');
 			var errorHandler = require('errorhandler');
 			var app = express();
-			app.use(bodyParser.urlencoded({ limit: '10kb', extended: false }));
+			app.use(bodyParser.urlencoded({ limit: '12kb', extended: false }));
 			app.use(errorHandler({ dumpExceptions: true, showStack: true }));
 			app.use(express.static(__dirname + '/public'));
 			var validator = require('./public/validator');
