@@ -1,0 +1,60 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="author" content="Hongjian Li">
+  <meta name="description" content="USR-VS: a webserver for ligand-based virtual screening powered by ultrafast shape recognition techniques">
+  <title>USR-VS: a webserver for ligand-based virtual screening powered by ultrafast shape recognition techniques</title>
+  <link rel="stylesheet" href="../bootstrap.min.css">
+  <link rel="stylesheet" href="../bootstrap-theme.min.css">
+  <link rel="stylesheet" href="../index.css">
+  <script>
+    (function(i,s,o,g,r,a,m){i['GoogleAnalyticsObject']=r;i[r]=i[r]||function(){
+    (i[r].q=i[r].q||[]).push(arguments)},i[r].l=1*new Date();a=s.createElement(o),
+    m=s.getElementsByTagName(o)[0];a.async=1;a.src=g;m.parentNode.insertBefore(a,m)
+    })(window,document,'script','//www.google-analytics.com/analytics.js','ga');
+    ga('create', 'UA-20604862-2', 'auto');
+    ga('send', 'pageview');
+  </script>
+</head>
+<body>
+  <a class="sr-only" href="#content">Skip navigation</a>
+  <div class="jumbotron" id="content" role="main">
+    <div class="container">
+      <h1><img src="../logo.png" alt="" class="logo">USR-VS</h1>
+      <p>a webserver for ligand-based virtual screening powered by ultrafast shape recognition techniques</p>
+    </div>
+  </div>
+  <div class="container">
+    <section>
+      <div class="page-header">
+        <h2>Tutorial</h2>
+      </div>
+      <p>USR-VS is the first webserver for large-scale prospective virtual screening using USR [1] and USRCAT [2], two validated ligand-based 3D methods.</p>
+      <p>To run a virtual screen, the user must provide a single-molecule query file (file size within 50KB) in SDF format specifying the 3D geometry of the molecule, choose either USR or USRCAT as the ranking score (USR by default), and press the submit button. These three steps are illustrated in Figure 1. Regardless of the ranking score, both USR and USRCAT similarities will be calculated.</p>
+      <img src="index.png" alt="">
+      <p class="text-center">Figure 1: Run a virtual screen in three steps indicated in blue color.</p>
+      <p>Once the virtual screen is submitted, the user will be redirected to the result webpage (Figure 2) with a unique URL that is only available to the user. Users are suggested to bookmark the result webpage if they want to browse the result at a later time. In this webpage, a table at the top provides a link to the input file for download and shows the results of the virtual screen, including the time of its submission, execution and completion, as well as the screening speed (this comes from dividing the 94 million 3D conformers by the time taken to compute their similarity scores to the query molecule, sort the scores and write the top hits).</p>
+      <img src="iview.png" alt="">
+      <p class="text-center">Figure 2: Visualizing the query and hit molecules in iview.</p>
+      <p>When the virtual screen is completed, the top 100 most similar molecules to the query molecule and their similarity scores are written to two output files for download (hits.csv and hits.sdf). By using the WebGL visualizer iview [3], the query molecule is shown in the left canvas, and the hit molecules are shown in the right canvas. Users can switch among different hit molecules by pressing the button below the right canvas, and interactively translate, rotate and zoom in/out the 3D structure of the selected hit molecule to match the orientation of the query molecule. The latter permits to assess the degree of 3D similarity of both molecules. Furthermore, USR and USRCAT scores, chemical properties and different options to purchase the hit molecule are displayed. This stage is intended to help the user decide which hits to purchase and how to purchase them to experimentally measure their activity against selected targets of the query molecule. Note that these targets can be both molecular (e.g. a protein of a known pathway) and non-molecular (a cancer cell line).</p>
+    </section>
+    <section>
+      <div class="page-header">
+        <h2>References</h2>
+      </div>
+      <p>[1] Pedro J. Ballester. Ultrafast shape recognition: method and applications. <em>Future Medicinal Chemistry</em>, 3(1):65-78, 2011. <a href="http://dx.doi.org/10.4155/fmc.10.280">DOI: 10.4155/fmc.10.280</a></p>
+      <p>[2] Adrian M Schreyer and Tom Blundell. USRCAT: real-time ultrafast shape recognition with pharmacophoric constraints. <em>Journal of Cheminformatics</em>, 4(1):27, 2012. <a href="http://dx.doi.org/10.1186/1758-2946-4-27">DOI: 10.1186/1758-2946-4-27</a></p>
+      <p>[3] Hongjian Li, Kwong-Sak Leung, Takanori Nakane and Man-Hon Wong. iview: an interactive WebGL visualizer for protein-ligand complex. <em>BMC Bioinformatics</em>, 15(1):56, 2014. <a href="http://dx.doi.org/10.1186/1471-2105-15-56">DOI: 10.1186/1471-2105-15-56</a></p>
+    </section>
+  </div>
+  <footer>
+    <div class="container">
+      <p>Copyright 2015 Chinese University of Hong Kong. Webserver designed by <a href="http://www.cse.cuhk.edu.hk/~hjli">Hongjian Li</a>. Code licensed under <a href="http://www.apache.org/licenses/LICENSE-2.0">Apache License 2.0</a>. Web pages conform to <a href="http://validator.w3.org/check?uri=referer">HTML5</a>.</p>
+    </div>
+  </footer>
+  <script src="../jquery-2.1.4.min.js"></script>
+  <script src="../bootstrap.min.js"></script>
+</body>
+</html>
