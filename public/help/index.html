@@ -33,11 +33,13 @@
       </div>
       <p>USR-VS is the first webserver for large-scale prospective virtual screening using USR [1] and USRCAT [2], two validated ligand-based 3D methods.</p>
       <p>To run a virtual screen, the user must provide a single-molecule query file (file size within 50KB) in SDF format specifying the 3D geometry of the molecule, choose either USR or USRCAT as the ranking score (USR by default), and press the submit button. These three steps are illustrated in Figure 1. Regardless of the ranking score, both USR and USRCAT similarities will be calculated.</p>
-      <img src="index.png" alt="">
+      <img src="index.png" alt="" class="col-md-12">
       <p class="text-center"><a href="..">Figure 1</a>: Run a virtual screen in three steps indicated in blue color.</p>
+      <br>
       <p>Once the virtual screen is submitted, the user will be redirected to the result webpage (Figure 2) with a unique URL that is only available to the user. Users are suggested to bookmark the result webpage if they want to browse the result at a later time. In this webpage, a table at the top provides a link to the input file for download and shows the results of the virtual screen, including the time of its submission, execution and completion, as well as the screening speed (this comes from dividing the 94 million 3D conformers by the time taken to compute their similarity scores to the query molecule, sort the scores and write the top hits).</p>
-      <img src="iview.png" alt="">
+      <img src="iview.png" alt="" class="col-md-12">
       <p class="text-center"><a href="../iview/?">Figure 2</a>: Visualizing the query and hit molecules in iview.</p>
+      <br>
       <p>When the virtual screen is completed, the top 100 most similar molecules to the query molecule and their similarity scores are written to two output files for download (hits.csv and hits.sdf). By using the WebGL visualizer iview [3], the query molecule is shown in the left canvas, and the hit molecules are shown in the right canvas. Users can switch among different hit molecules by pressing the button below the right canvas, and interactively translate, rotate and zoom in/out the 3D structure of the selected hit molecule to match the orientation of the query molecule. The latter permits to assess the degree of 3D similarity of both molecules. Furthermore, USR and USRCAT scores, chemical properties and different options to purchase the hit molecule are displayed. This stage is intended to help the user decide which hits to purchase and how to purchase them to experimentally measure their activity against selected targets of the query molecule. Note that these targets can be both molecular (e.g. a protein of a known pathway) and non-molecular (a cancer cell line).</p>
     </section>
     <section>
