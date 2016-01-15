@@ -1,7 +1,8 @@
 node_modules
 jobs
-16_*
 web.log
 obj
 bin
 nrb
+16
+start.sh

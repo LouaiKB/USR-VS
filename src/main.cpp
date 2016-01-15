@@ -188,37 +188,37 @@ int main(int argc, char* argv[])
 	}
 
 	// Read ZINC ID file.
-	const string_array<size_t> zincids("16_zincid.txt");
+	const string_array<size_t> zincids("16/zincid.txt");
 	const auto num_ligands = zincids.size();
 	cout << local_time() << "Found " << num_ligands << " database molecules" << endl;
 
 	// Read SMILES file.
-	const string_array<size_t> smileses("16_smiles.txt");
+	const string_array<size_t> smileses("16/smiles.txt");
 	assert(smileses.size() == num_ligands);
 
 	// Read supplier file.
-	const string_array<size_t> suppliers("16_supplier.txt");
+	const string_array<size_t> suppliers("16/supplier.txt");
 	assert(suppliers.size() == num_ligands);
 
 	// Read property files of floating point types and integer types.
-	const auto zfproperties = read<array<float, 4>>("16_zfprop.f32");
+	const auto zfproperties = read<array<float, 4>>("16/zfprop.f32");
 	assert(zfproperties.size() == num_ligands);
-	const auto ziproperties = read<array<int16_t, 5>>("16_ziprop.i16");
+	const auto ziproperties = read<array<int16_t, 5>>("16/ziprop.i16");
 	assert(ziproperties.size() == num_ligands);
 
 	// Read cumulative number of conformers file.
-	const auto mconfss = read<size_t>("16_mconfs.u64");
+	const auto mconfss = read<size_t>("16/mconfs.u64");
 	const auto num_conformers = mconfss.back();
 	assert(mconfss.size() == num_ligands);
 	assert(num_conformers >= num_ligands);
 	cout << local_time() << "Found " << num_conformers << " database conformers" << endl;
 
 	// Read feature file.
-	const auto features = read<array<double, qn.back()>>("16_usrcat.f64");
+	const auto features = read<array<double, qn.back()>>("16/usrcat.f64");
 	assert(features.size() == num_conformers);
 
 	// Read ligand footer file and open ligand SDF file for seeking and reading.
-	stream_array<size_t> ligands("16_ligand.sdf");
+	stream_array<size_t> ligands("16/ligand.sdf");
 	assert(ligands.size() == num_conformers);
 
 	// Initialize variables.
