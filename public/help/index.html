@@ -29,18 +29,57 @@
   <div class="container">
     <section>
       <div class="page-header">
-        <h2>Tutorial</h2>
+        <h2>What are USR and USRCAT</h2>
       </div>
-      <p>USR-VS is the first webserver for large-scale prospective virtual screening using USR [1] and USRCAT [2], two validated ligand-based 3D methods.</p>
-      <p>To run a virtual screen, the user must provide a single-molecule query file (file size within 50KB) in SDF format specifying the 3D geometry of the molecule, choose either USR or USRCAT as the ranking score (USR by default), and press the submit button. These three steps are illustrated in Figure 1. Regardless of the ranking score, both USR and USRCAT similarities will be calculated.</p>
+      <p>USR-VS is the first webserver for large-scale prospective virtual screening using <a href="http://dx.doi.org/10.4155/fmc.10.280">USR</a> [1] and <a href="http://dx.doi.org/10.1186/1758-2946-4-27">USRCAT</a> [2], two validated ultrafast ligand-based 3D shape matching methods.</p>
+      <p>USR compares the 3D shape of two molecules, whereas USRCAT compares not only the 3D shape but also the atom type. Both methods are invariant to spatial rotation and translation, so they do not require structural alignment. Their implementation at USR-VS is highly optimized, able to screen more than 50 million 3D conformers per second. The similarity score between two molecules is normalized to (0, 1], with 1 being the most similar and 0 being the most dissimilar.</p>
+    </section>
+    <section>
+      <div class="page-header">
+        <h2>How to run a virtual screen</h2>
+      </div>
+      <p>To run a virtual screen, there are only three simple steps, illustrated in Figure 1:</p>
+      <ol>
+        <li>provide a single-molecule query file (file size within 50KB) in SDF format specifying the 3D geometry of the molecule,</li>
+        <li>choose either USR or USRCAT as the ranking score (USR by default),</li>
+        <li>press the submit button.</li>
+      </ol>
+      <p>Provided as two example query molecules are fluspirilene (<a href="http://zinc.docking.org/substance/00537755">ZINC ID: 00537755</a>) and vemurafenib (<a href="https://pubchem.ncbi.nlm.nih.gov/compound/42611257">PubChem CID: 42611257</a>).</p>
       <img src="index.png" alt="" class="col-md-12">
-      <p class="text-center"><a href="..">Figure 1</a>: Run a virtual screen in three steps indicated in blue color.</p>
-      <br>
-      <p>Once the virtual screen is submitted, the user will be redirected to the result webpage (Figure 2) with a unique URL that is only available to the user. Users are suggested to bookmark the result webpage if they want to browse the result at a later time. In this webpage, a table at the top provides a link to the input file for download and shows the results of the virtual screen, including the time of its submission, execution and completion, as well as the screening speed (this comes from dividing the 94 million 3D conformers by the time taken to compute their similarity scores to the query molecule, sort the scores and write the top hits).</p>
-      <img src="iview.png" alt="" class="col-md-12">
-      <p class="text-center"><a href="../iview/?">Figure 2</a>: Visualizing the query and hit molecules in iview.</p>
-      <br>
-      <p>When the virtual screen is completed, the top 100 most similar molecules to the query molecule and their similarity scores are written to two output files for download (hits.csv and hits.sdf). By using the WebGL visualizer iview [3], the query molecule is shown in the left canvas, and the hit molecules are shown in the right canvas. Users can switch among different hit molecules by pressing the button below the right canvas, and interactively translate, rotate and zoom in/out the 3D structure of the selected hit molecule to match the orientation of the query molecule. The latter permits to assess the degree of 3D similarity of both molecules. Furthermore, USR and USRCAT scores, chemical properties and different options to purchase the hit molecule are displayed. This stage is intended to help the user decide which hits to purchase and how to purchase them to experimentally measure their activity against selected targets of the query molecule. Note that these targets can be both molecular (e.g. a protein of a known pathway) and non-molecular (a cancer cell line).</p>
+      <p class="text-center">Figure 1: Running a virtual screen in three steps highlighted in blue color.</p>
+    </section>
+    <section>
+      <div class="page-header">
+        <h2>How to obtain a SDF file</h2>
+      </div>
+      <p>There are public databases for users to obtain a SDF file for their desired compounds.</p>
+      <ul>
+        <li><a href="http://zinc.docking.org">ZINC</a> is a free database of over 35 million purchasable compounds in 3D formats, including SDF.</li>
+        <li><a href="https://pubchem.ncbi.nlm.nih.gov">PubChem</a> contains more than 79 million unique structures.</li>
+      </ul>
+      <p>Users can search these third-party websites for their desired molecules using the compound name or the SMILES string, and then download the SDF file for the structure.</p>
+    </section>
+    <section>
+      <div class="page-header">
+        <h2>How to interpret the result</h2>
+      </div>
+      <p>Once a virtual screen is submitted, the user will be redirected to the result webpage with a unique URL that is only available to the user. Users are suggested to bookmark the result webpage if they want to browse the result at a later time.</p>
+      <p>Figure 2 shows <a href="../iview/?569c9c3016ce44970259ad8b">the result webpage of using ZINC00537755.sdf as the query molecule and choosing USR as the ranking score</a>. In this webpage, a table at the top provides a link to the input file for download and shows the results of the virtual screen, including the submission time, execution time, completion time, and screening speed (this comes from dividing the 94 million 3D conformers by the time taken to compute their similarity scores to the query molecule, sort the scores and write the top hits).</p>
+      <img src="569c9c3016ce44970259ad8b.png" alt="" class="col-md-12">
+      <p class="text-center">Figure 2: Visualizing the query and hit molecules.</p>
+      <p>When the virtual screen is completed, the top 100 most similar molecules to the query molecule and their similarity scores are written to two output files for download (hits.csv and hits.sdf). Regardless of the selection of the ranking score, both USR and USRCAT similarities are calculated for the top hits.</p>
+      <p>By using the WebGL visualizer <a href="http://istar.cse.cuhk.edu.hk/iview">iview</a> [3], the query molecule is shown in the left canvas, and the hit molecules are shown in the right canvas (this take may a few seconds to load, depending on the internet bandwidth). The user can switch among the top 100 hit molecules (named from 0 to 99) by pressing the button below the right canvas, and interactively translate, rotate and zoom in/out the 3D structure of the selected hit molecule to match the orientation of the query molecule. The latter permits to assess the degree of 3D similarity of both molecules. Note that neither USR nor USRCAT performs structural alignment, so the user has to manually align the hit molecule to the query molecule in order to intuitively inspect their similarity.</p>
+      <p>Also displayed are USR and USRCAT scores, chemical properties, and different options to purchase the hit molecule. This stage is intended to help the user decide which hits to purchase and how to purchase them to experimentally measure their activity against selected targets of the query molecule. Note that these targets can be both molecular (e.g. a protein of a known pathway) and non-molecular (a cancer cell line).</p>
+      <p>In this example run, the first hit molecule shown in the right canvas is identical to the query molecule shown in the left canvas, because the query molecule is one of the 23 million molecules of the screening library. This demonstrates USR's capability of correctly retriving an existing molecule from the database, thus validating the method. Such validity also applies to USRCAT, as can be seen in <a href="../iview/?569c9c5716ce44970259ad8c">the corresponding result webpage</a>. Note that the similarity scores are close to 1 but not exactly 1 because of floating point rounding error.</p>
+      <p>For the second hit molecule, there is a big difference between <a href="../iview/?569c9c3016ce44970259ad8b">the USR result webpage</a> and <a href="../iview/?569c9c5716ce44970259ad8c">the USRCAT result webpage</a>. In the case of USR, the second hit molecule has a similar shape to the query molecule, regardless of their atom types. In the case of USRCAT, the second hit molecule is similar to the query molecule in terms of both shape and atom type.</p>
+    </section>
+    <section>
+      <div class="page-header">
+        <h2>How to purchase a hit molecule</h2>
+      </div>
+      <p>To purchase a desired molecule, the user can click the ZINC ID to redirect to ZINC's substance webpage, where the latest vendor list can be found, as illustrated in Figure 3.</p>
+      <img src="ZINC00537755.png" alt="" class="col-md-12">
+      <p class="text-center">Figure 3: Reviewing the vendors and annotations of hit molecules.</p>
     </section>
     <section>
       <div class="page-header">
