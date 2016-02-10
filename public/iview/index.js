@@ -594,7 +594,7 @@ void main()\n\
 			};
 			var parseSDF = function (src) {
 				var molecules = [];
-				for (var lines = src.split(/\r?\n/), l = lines.length - 1, offset = 0; offset < l;) {
+				for (var lines = src.split(/\r\n|\n|\r/), l = lines.length - 1, offset = 0; offset < l;) {
 					var molecule = {
 						atoms: {},
 						id: lines[offset],
