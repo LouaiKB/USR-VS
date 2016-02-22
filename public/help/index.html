@@ -1,110 +1,110 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <meta name="author" content="Hongjian Li">
-  <meta name="description" content="USR-VS: a webserver for ligand-based virtual screening powered by ultrafast shape recognition techniques">
-  <title>USR-VS: a webserver for ligand-based virtual screening powered by ultrafast shape recognition techniques</title>
-  <link rel="stylesheet" href="../bootstrap.min.css">
-  <link rel="stylesheet" href="../bootstrap-theme.min.css">
-  <link rel="stylesheet" href="../index.css">
-  <script>
-    (function(i,s,o,g,r,a,m){i['GoogleAnalyticsObject']=r;i[r]=i[r]||function(){
-    (i[r].q=i[r].q||[]).push(arguments)},i[r].l=1*new Date();a=s.createElement(o),
-    m=s.getElementsByTagName(o)[0];a.async=1;a.src=g;m.parentNode.insertBefore(a,m)
-    })(window,document,'script','//www.google-analytics.com/analytics.js','ga');
-    ga('create', 'UA-20604862-2', 'auto');
-    ga('send', 'pageview');
-  </script>
+	<meta charset="utf-8">
+	<meta name="viewport" content="width=device-width, initial-scale=1.0">
+	<meta name="author" content="Hongjian Li">
+	<meta name="description" content="USR-VS: a webserver for ligand-based virtual screening powered by ultrafast shape recognition techniques">
+	<title>USR-VS: a webserver for ligand-based virtual screening powered by ultrafast shape recognition techniques</title>
+	<link rel="stylesheet" href="../bootstrap.min.css">
+	<link rel="stylesheet" href="../bootstrap-theme.min.css">
+	<link rel="stylesheet" href="../index.css">
+	<script>
+		(function(i,s,o,g,r,a,m){i['GoogleAnalyticsObject']=r;i[r]=i[r]||function(){
+		(i[r].q=i[r].q||[]).push(arguments)},i[r].l=1*new Date();a=s.createElement(o),
+		m=s.getElementsByTagName(o)[0];a.async=1;a.src=g;m.parentNode.insertBefore(a,m)
+		})(window,document,'script','//www.google-analytics.com/analytics.js','ga');
+		ga('create', 'UA-20604862-2', 'auto');
+		ga('send', 'pageview');
+	</script>
 </head>
 <body>
-  <a class="sr-only" href="#content">Skip navigation</a>
-  <div class="jumbotron" id="content" role="main">
-    <div class="container">
-      <h1><img src="../logo.png" alt="" class="logo">USR-VS</h1>
-      <p>a webserver for ligand-based virtual screening powered by ultrafast shape recognition techniques</p>
-    </div>
-  </div>
-  <div class="container">
-    <section>
-      <div class="page-header">
-        <h2>What are USR and USRCAT</h2>
-      </div>
-      <p>USR-VS is the first webserver for large-scale prospective virtual screening using <a href="http://dx.doi.org/10.4155/fmc.10.280">USR</a> [1,2] and <a href="http://dx.doi.org/10.1186/1758-2946-4-27">USRCAT</a> [3], two ultrafast ligand-based 3D molecular similarity methods that have been retrospectively validated [1-3] (a number of successful prospective virtual screening applications have also been reported for USR [4-7]).</p>
-      <p>USR compares the 3D shape of two molecules, whereas USRCAT compares not only the 3D shape but also the spatial distribution of atom types relevant for molecular recognition (aromatic, hydrogen bond donor, hydrogen bond acceptor and hydrophobic atoms). Both methods are invariant to spatial rotation and translation, so they do not require structural alignment. Their implementation at USR-VS is highly optimized, currently able to screen more than 50 million 3D conformers per second. The similarity score between two molecules is normalized to (0, 1], with 1 being the maximum similarity and 0 being the minimum dissimilarity.</p>
-    </section>
-    <section>
-      <div class="page-header">
-        <h2>How to run a virtual screen</h2>
-      </div>
-      <p>To run a virtual screen, only three simple steps are required, as illustrated in Figure 1:</p>
-      <ol>
-        <li>provide a single-molecule query file in SDF format specifying the 3D geometry of the molecule (file size within 50KB),</li>
-        <li>choose either USR or USRCAT as the ranking score (USR by default),</li>
-        <li>press the submit button.</li>
-      </ol>
-      <p>Provided as two example query molecules are fluspirilene (<a href="http://zinc.docking.org/substance/00537755">ZINC ID: 00537755</a>) and vemurafenib (<a href="https://pubchem.ncbi.nlm.nih.gov/compound/42611257">PubChem CID: 42611257</a>).</p>
-      <img src="index.png" alt="" class="col-md-12">
-      <p class="text-center">Figure 1: Running a virtual screen by following the three steps highlighted in blue color.</p>
-    </section>
-    <section>
-      <div class="page-header">
-        <h2>How to obtain a SDF file</h2>
-      </div>
-      <p>There are public databases for users to obtain a SDF file of the 3D conformer of the selected molecule to be used as query molecule (i.e. search template):</p>
-      <ul>
-        <li><a href="http://zinc.docking.org">ZINC</a> is a free database of over 35 million purchasable compounds in 3D formats, including SDF.</li>
-        <li><a href="https://pubchem.ncbi.nlm.nih.gov">PubChem</a> contains more than 79 million unique structures.</li>
-      </ul>
-      <p>Users can search these third-party websites for their desired molecules using the compound name or the SMILES string, and then download the SDF file for the structure.</p>
-    </section>
-    <section>
-      <div class="page-header">
-        <h2>How to interpret the result</h2>
-      </div>
-      <p>Once a virtual screen is submitted, the user will be redirected to the result webpage with a unique URL that is only available to the user. Users are suggested to bookmark the result webpage if they want to browse the result at a later time.</p>
-      <p>Figure 2 shows <a href="../iview/?569c9c3016ce44970259ad8b">the result webpage of using ZINC00537755.sdf as the query molecule and choosing USR as the ranking score</a>. In this webpage, a table at the top provides a link to the input file for download and shows the results of the virtual screen, including the submission time, execution time, completion time, and screening speed (this comes from dividing the 94 million 3D conformers by the total execution time of the query, including computing their similarity scores to the query molecule, sorting the scores and writing the top hits).</p>
-      <img src="569c9c3016ce44970259ad8b.png" alt="" class="col-md-12">
-      <p class="text-center">Figure 2: Visualizing the query (left) and hit molecules (right). By pressing he numbered buttons below the right canvas, the user can select different top hits for visualization. In this case, the most similar hit (number 0) is the actual query itself as USR identified it among the 23 million compounds in the screening library.</p>
-      <p>When the virtual screen is completed, the top 100 most similar molecules to the query molecule and their similarity scores are written to two output files for download (hits.csv and hits.sdf). Regardless of the selection of the ranking score, both USR and USRCAT similarities are calculated for the top hits.</p>
-      <p>By using the WebGL visualizer <a href="http://istar.cse.cuhk.edu.hk/iview">iview</a> [8], the query molecule is shown in the left canvas, and the hit molecules are shown in the right canvas (this may take a few seconds to load, depending on the internet bandwidth). The user can switch among the top 100 hit molecules (numbered from 0 to 99) by pressing the button below the right canvas, and interactively translate, rotate and zoom in/out the 3D structure of the selected hit molecule to match the orientation of the query molecule. The latter permits to assess the degree of 3D similarity of both molecules. Note that neither USR nor USRCAT performs structural alignment, so the user has to manually align the hit molecule to the query molecule in order to intuitively inspect their similarity.</p>
-      <p>Also displayed are USR and USRCAT scores, chemical properties, and different options to purchase the hit molecule. This stage is intended to help the user decide which hits to purchase and how to purchase them to experimentally measure their activity against selected targets of the query molecule. Note that these targets can be both molecular (e.g. a protein of a known pathway) and non-molecular (e.g. a given cancer cell line).</p>
-      <p>In this example run, the first hit molecule shown in the right canvas is identical to the query molecule shown in the left canvas, because the query molecule is one of the 23 million molecules of the screening library. This demonstrates USR's capability of correctly retriving an existing molecule from the database, thus validating the method. Such validity also applies to USRCAT, as can be seen in <a href="../iview/?569c9c5716ce44970259ad8c">the corresponding result webpage</a>. Note that the similarity scores are close to 1, but not exactly 1, because of floating point rounding error.</p>
-      <p>For the second hit molecule, there is a big difference between <a href="../iview/?569c9c3016ce44970259ad8b">the USR result webpage</a> and <a href="../iview/?569c9c5716ce44970259ad8c">the USRCAT result webpage</a>. In the case of USR, the second hit molecule has a similar shape to the query molecule, regardless of their atom types. In the case of USRCAT, the second hit molecule is similar to the query molecule in terms of both shape and pharmacophoric features.</p>
-    </section>
-    <section>
-      <div class="page-header">
-        <h2>How to purchase a hit molecule</h2>
-      </div>
-      <p>To purchase a desired molecule, the user can click the ZINC ID to redirect to ZINC's substance webpage, where the latest vendor list can be found, as illustrated in Figure 3.</p>
-      <img src="ZINC00537755.png" alt="" class="col-md-12">
-      <p class="text-center">Figure 3: Reviewing the vendors and annotations of hit molecules in order to purchase them for wet-lab validation.</p>
-    </section>
-    <section>
-      <div class="page-header">
-        <h2>References</h2>
-      </div>
-      <h4>USR</h4>
-      <p>[1] Pedro J. Ballester and W. Graham Richards. Ultrafast shape recognition to search compound databases for similar molecular shapes. <em>Journal of Computational Chemistry</em>, 28(10):1711-1723, 2007. <a href="http://dx.doi.org/10.1002/jcc.20681">DOI: 10.1002/jcc.20681</a></p>
-      <p>[2] Pedro J. Ballester. Ultrafast shape recognition: method and applications. <em>Future Medicinal Chemistry</em>, 3(1):65-78, 2011. <a href="http://dx.doi.org/10.4155/fmc.10.280">DOI: 10.4155/fmc.10.280</a></p>
-      <h4>USRCAT</h4>
-      <p>[3] Adrian M Schreyer and Tom Blundell. USRCAT: real-time ultrafast shape recognition with pharmacophoric constraints. <em>Journal of Cheminformatics</em>, 4(1):27, 2012. <a href="http://dx.doi.org/10.1186/1758-2946-4-27">DOI: 10.1186/1758-2946-4-27</a></p>
-      <h4>Prospective applications of USR</h4>
-      <p>[4] Birgit Hoeger, Maren Diether, Pedro J. Ballester and Maja Köhn. Biochemical evaluation of virtual screening methods reveals a cell-active inhibitor of the cancer-promoting phosphatases of regenerating liver. <em>European Journal of Medicinal Chemistry</em>, 88:89-100, 2014. <a href="http://dx.doi.org/10.1016/j.ejmech.2014.08.060">DOI: 10.1016/j.ejmech.2014.08.060</a></p>
-      <p>[5] Sachin P. Patil, Pedro J. Ballester and Cassidy R. Kerezsi. Prospective virtual screening for novel p53-MDM2 inhibitors using ultrafast shape recognition. <em>Journal of Computer-Aided Molecular Design</em>, 28(2):89-97, 2014. <a href="http://dx.doi.org/10.1007/s10822-014-9732-4">DOI: 10.1007/s10822-014-9732-4</a></p>
-      <p>[6] Pedro J. Ballester, Martina Mangold, Nigel I. Howard, Richard L. Marchese Robinson, Chris Abell, Jochen Blumberger and John B. O. Mitchell. Hierarchical virtual screening for the discovery of new molecular scaffolds in antibacterial hit identification. <em>Journal of The Royal Society Interface</em>, 9(77):3196-3207, 2012. <a href="http://dx.doi.org/10.1098/rsif.2012.0569">DOI: 10.1098/rsif.2012.0569</a></p>
-      <p>[7] Pedro J. Ballester, Isaac Westwood, Nicola Laurieri, Edith Sim, W. Graham Richards. Prospective virtual screening with Ultrafast Shape Recognition: the identification of novel inhibitors of arylamine N-acetyltransferases. <em>Journal of The Royal Society Interface</em>, 7(43):335-342, 2009. <a href="http://dx.doi.org/10.1098/rsif.2009.0170">DOI: 10.1098/rsif.2009.0170</a></p>
-      <h4>iview</h4>
-      <p>[8] Hongjian Li, Kwong-Sak Leung, Takanori Nakane and Man-Hon Wong. iview: an interactive WebGL visualizer for protein-ligand complex. <em>BMC Bioinformatics</em>, 15(1):56, 2014. <a href="http://dx.doi.org/10.1186/1471-2105-15-56">DOI: 10.1186/1471-2105-15-56</a></p>
-    </section>
-  </div>
-  <footer>
-    <div class="container">
-      <p>Copyright 2015-2016 <a href="http://www.inserm.fr">Institut national de la santé et de la recherche médicale</a> and <a href="http://www.cuhk.edu.hk">Chinese University of Hong Kong</a>. Webserver designed by <a href="http://www.cse.cuhk.edu.hk/~hjli">Hongjian Li</a> and <a href="http://crcm.marseille.inserm.fr/en/researchteams/pedro-ballester">Pedro Ballester</a>. Code licensed under <a href="http://www.apache.org/licenses/LICENSE-2.0">Apache License 2.0</a>. Web pages conform to <a href="http://validator.w3.org/check?uri=referer">HTML5</a>.</p>
-    </div>
-  </footer>
-  <script src="../jquery-2.2.0.min.js"></script>
-  <script src="../bootstrap.min.js"></script>
+	<a class="sr-only" href="#content">Skip navigation</a>
+	<div class="jumbotron" id="content" role="main">
+		<div class="container">
+			<h1><img src="../logo.png" alt="" class="logo">USR-VS</h1>
+			<p>a webserver for ligand-based virtual screening powered by ultrafast shape recognition techniques</p>
+		</div>
+	</div>
+	<div class="container">
+		<section>
+			<div class="page-header">
+				<h2>What are USR and USRCAT</h2>
+			</div>
+			<p>USR-VS is the first webserver for large-scale prospective virtual screening using <a href="http://dx.doi.org/10.4155/fmc.10.280">USR</a> [1,2] and <a href="http://dx.doi.org/10.1186/1758-2946-4-27">USRCAT</a> [3], two ultrafast ligand-based 3D molecular similarity methods that have been retrospectively validated [1-3] (a number of successful prospective virtual screening applications have also been reported for USR [4-7]).</p>
+			<p>USR compares the 3D shape of two molecules, whereas USRCAT compares not only the 3D shape but also the spatial distribution of atom types relevant for molecular recognition (aromatic, hydrogen bond donor, hydrogen bond acceptor and hydrophobic atoms). Both methods are invariant to spatial rotation and translation, so they do not require structural alignment. Their implementation at USR-VS is highly optimized, currently able to screen more than 50 million 3D conformers per second. The similarity score between two molecules is normalized to (0, 1], with 1 being the maximum similarity and 0 being the minimum dissimilarity.</p>
+		</section>
+		<section>
+			<div class="page-header">
+				<h2>How to run a virtual screen</h2>
+			</div>
+			<p>To run a virtual screen, only three simple steps are required, as illustrated in Figure 1:</p>
+			<ol>
+				<li>provide a single-molecule query file in SDF format specifying the 3D geometry of the molecule (file size within 50KB),</li>
+				<li>choose either USR or USRCAT as the ranking score (USR by default),</li>
+				<li>press the submit button.</li>
+			</ol>
+			<p>Provided as two example query molecules are fluspirilene (<a href="http://zinc.docking.org/substance/00537755">ZINC ID: 00537755</a>) and vemurafenib (<a href="https://pubchem.ncbi.nlm.nih.gov/compound/42611257">PubChem CID: 42611257</a>).</p>
+			<img src="index.png" alt="" class="col-md-12">
+			<p class="text-center">Figure 1: Running a virtual screen by following the three steps highlighted in blue color.</p>
+		</section>
+		<section>
+			<div class="page-header">
+				<h2>How to obtain a SDF file</h2>
+			</div>
+			<p>There are public databases for users to obtain a SDF file of the 3D conformer of the selected molecule to be used as query molecule (i.e. search template):</p>
+			<ul>
+				<li><a href="http://zinc.docking.org">ZINC</a> is a free database of over 35 million purchasable compounds in 3D formats, including SDF.</li>
+				<li><a href="https://pubchem.ncbi.nlm.nih.gov">PubChem</a> contains more than 79 million unique structures.</li>
+			</ul>
+			<p>Users can search these third-party websites for their desired molecules using the compound name or the SMILES string, and then download the SDF file for the structure.</p>
+		</section>
+		<section>
+			<div class="page-header">
+				<h2>How to interpret the result</h2>
+			</div>
+			<p>Once a virtual screen is submitted, the user will be redirected to the result webpage with a unique URL that is only available to the user. Users are suggested to bookmark the result webpage if they want to browse the result at a later time.</p>
+			<p>Figure 2 shows <a href="../iview/?569c9c3016ce44970259ad8b">the result webpage of using ZINC00537755.sdf as the query molecule and choosing USR as the ranking score</a>. In this webpage, a table at the top provides a link to the input file for download and shows the results of the virtual screen, including the submission time, execution time, completion time, and screening speed (this comes from dividing the 94 million 3D conformers by the total execution time of the query, including computing their similarity scores to the query molecule, sorting the scores and writing the top hits).</p>
+			<img src="569c9c3016ce44970259ad8b.png" alt="" class="col-md-12">
+			<p class="text-center">Figure 2: Visualizing the query (left) and hit molecules (right). By pressing he numbered buttons below the right canvas, the user can select different top hits for visualization. In this case, the most similar hit (number 0) is the actual query itself as USR identified it among the 23 million compounds in the screening library.</p>
+			<p>When the virtual screen is completed, the top 100 most similar molecules to the query molecule and their similarity scores are written to two output files for download (hits.csv and hits.sdf). Regardless of the selection of the ranking score, both USR and USRCAT similarities are calculated for the top hits.</p>
+			<p>By using the WebGL visualizer <a href="http://istar.cse.cuhk.edu.hk/iview">iview</a> [8], the query molecule is shown in the left canvas, and the hit molecules are shown in the right canvas (this may take a few seconds to load, depending on the internet bandwidth). The user can switch among the top 100 hit molecules (numbered from 0 to 99) by pressing the button below the right canvas, and interactively translate, rotate and zoom in/out the 3D structure of the selected hit molecule to match the orientation of the query molecule. The latter permits to assess the degree of 3D similarity of both molecules. Note that neither USR nor USRCAT performs structural alignment, so the user has to manually align the hit molecule to the query molecule in order to intuitively inspect their similarity.</p>
+			<p>Also displayed are USR and USRCAT scores, chemical properties, and different options to purchase the hit molecule. This stage is intended to help the user decide which hits to purchase and how to purchase them to experimentally measure their activity against selected targets of the query molecule. Note that these targets can be both molecular (e.g. a protein of a known pathway) and non-molecular (e.g. a given cancer cell line).</p>
+			<p>In this example run, the first hit molecule shown in the right canvas is identical to the query molecule shown in the left canvas, because the query molecule is one of the 23 million molecules of the screening library. This demonstrates USR's capability of correctly retriving an existing molecule from the database, thus validating the method. Such validity also applies to USRCAT, as can be seen in <a href="../iview/?569c9c5716ce44970259ad8c">the corresponding result webpage</a>. Note that the similarity scores are close to 1, but not exactly 1, because of floating point rounding error.</p>
+			<p>For the second hit molecule, there is a big difference between <a href="../iview/?569c9c3016ce44970259ad8b">the USR result webpage</a> and <a href="../iview/?569c9c5716ce44970259ad8c">the USRCAT result webpage</a>. In the case of USR, the second hit molecule has a similar shape to the query molecule, regardless of their atom types. In the case of USRCAT, the second hit molecule is similar to the query molecule in terms of both shape and pharmacophoric features.</p>
+		</section>
+		<section>
+			<div class="page-header">
+				<h2>How to purchase a hit molecule</h2>
+			</div>
+			<p>To purchase a desired molecule, the user can click the ZINC ID to redirect to ZINC's substance webpage, where the latest vendor list can be found, as illustrated in Figure 3.</p>
+			<img src="ZINC00537755.png" alt="" class="col-md-12">
+			<p class="text-center">Figure 3: Reviewing the vendors and annotations of hit molecules in order to purchase them for wet-lab validation.</p>
+		</section>
+		<section>
+			<div class="page-header">
+				<h2>References</h2>
+			</div>
+			<h4>USR</h4>
+			<p>[1] Pedro J. Ballester and W. Graham Richards. Ultrafast shape recognition to search compound databases for similar molecular shapes. <em>Journal of Computational Chemistry</em>, 28(10):1711-1723, 2007. <a href="http://dx.doi.org/10.1002/jcc.20681">DOI: 10.1002/jcc.20681</a></p>
+			<p>[2] Pedro J. Ballester. Ultrafast shape recognition: method and applications. <em>Future Medicinal Chemistry</em>, 3(1):65-78, 2011. <a href="http://dx.doi.org/10.4155/fmc.10.280">DOI: 10.4155/fmc.10.280</a></p>
+			<h4>USRCAT</h4>
+			<p>[3] Adrian M Schreyer and Tom Blundell. USRCAT: real-time ultrafast shape recognition with pharmacophoric constraints. <em>Journal of Cheminformatics</em>, 4(1):27, 2012. <a href="http://dx.doi.org/10.1186/1758-2946-4-27">DOI: 10.1186/1758-2946-4-27</a></p>
+			<h4>Prospective applications of USR</h4>
+			<p>[4] Birgit Hoeger, Maren Diether, Pedro J. Ballester and Maja Köhn. Biochemical evaluation of virtual screening methods reveals a cell-active inhibitor of the cancer-promoting phosphatases of regenerating liver. <em>European Journal of Medicinal Chemistry</em>, 88:89-100, 2014. <a href="http://dx.doi.org/10.1016/j.ejmech.2014.08.060">DOI: 10.1016/j.ejmech.2014.08.060</a></p>
+			<p>[5] Sachin P. Patil, Pedro J. Ballester and Cassidy R. Kerezsi. Prospective virtual screening for novel p53-MDM2 inhibitors using ultrafast shape recognition. <em>Journal of Computer-Aided Molecular Design</em>, 28(2):89-97, 2014. <a href="http://dx.doi.org/10.1007/s10822-014-9732-4">DOI: 10.1007/s10822-014-9732-4</a></p>
+			<p>[6] Pedro J. Ballester, Martina Mangold, Nigel I. Howard, Richard L. Marchese Robinson, Chris Abell, Jochen Blumberger and John B. O. Mitchell. Hierarchical virtual screening for the discovery of new molecular scaffolds in antibacterial hit identification. <em>Journal of The Royal Society Interface</em>, 9(77):3196-3207, 2012. <a href="http://dx.doi.org/10.1098/rsif.2012.0569">DOI: 10.1098/rsif.2012.0569</a></p>
+			<p>[7] Pedro J. Ballester, Isaac Westwood, Nicola Laurieri, Edith Sim, W. Graham Richards. Prospective virtual screening with Ultrafast Shape Recognition: the identification of novel inhibitors of arylamine N-acetyltransferases. <em>Journal of The Royal Society Interface</em>, 7(43):335-342, 2009. <a href="http://dx.doi.org/10.1098/rsif.2009.0170">DOI: 10.1098/rsif.2009.0170</a></p>
+			<h4>iview</h4>
+			<p>[8] Hongjian Li, Kwong-Sak Leung, Takanori Nakane and Man-Hon Wong. iview: an interactive WebGL visualizer for protein-ligand complex. <em>BMC Bioinformatics</em>, 15(1):56, 2014. <a href="http://dx.doi.org/10.1186/1471-2105-15-56">DOI: 10.1186/1471-2105-15-56</a></p>
+		</section>
+	</div>
+	<footer>
+		<div class="container">
+			<p>Copyright 2015-2016 <a href="http://www.inserm.fr">Institut national de la santé et de la recherche médicale</a> and <a href="http://www.cuhk.edu.hk">Chinese University of Hong Kong</a>. Webserver designed by <a href="http://www.cse.cuhk.edu.hk/~hjli">Hongjian Li</a> and <a href="http://crcm.marseille.inserm.fr/en/researchteams/pedro-ballester">Pedro Ballester</a>. Code licensed under <a href="http://www.apache.org/licenses/LICENSE-2.0">Apache License 2.0</a>. Web pages conform to <a href="http://validator.w3.org/check?uri=referer">HTML5</a>.</p>
+		</div>
+	</footer>
+	<script src="../jquery-2.2.0.min.js"></script>
+	<script src="../bootstrap.min.js"></script>
 </body>
 </html>

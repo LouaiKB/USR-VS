@@ -1,63 +1,63 @@
 .jumbotron {
-  padding-top: 0px;
-  padding-bottom: 10px;
-  margin-bottom: 0px;
-  text-align: center;
+	padding-top: 0px;
+	padding-bottom: 10px;
+	margin-bottom: 0px;
+	text-align: center;
 }
 
 .jumbotron h1 {
-  font-weight: bold;
+	font-weight: bold;
 }
 
 .jumbotron img {
-  height: 60px;
-  padding-right: 8px;
+	height: 60px;
+	padding-right: 8px;
 }
 
 .bg-gray {
-  background-color: #eee;
+	background-color: #eee;
 }
 
 .page-header h2 {
-  font-size: 36px;
-  font-weight: bold;
-  text-align: center;
+	font-size: 36px;
+	font-weight: bold;
+	text-align: center;
 }
 
 li img {
-  height: 20px;
-  padding-right: 8px;
+	height: 20px;
+	padding-right: 8px;
 }
 
 label {
-  font-weight: normal;
+	font-weight: normal;
 }
 
 label a {
-  font-weight: bold;
-  font-size: 20px;
+	font-weight: bold;
+	font-size: 20px;
 }
 
 canvas {
-  width: 100%;
+	width: 100%;
 }
 
 .btn-group {
-  display: inherit;
+	display: inherit;
 }
 
 .btn-group > .btn {
-  float: none;
+	float: none;
 }
 
 .btn-group-x {
-  overflow-x: scroll;
-  white-space: nowrap;
+	overflow-x: scroll;
+	white-space: nowrap;
 }
 
 footer {
-  padding-top: 10px;
-  margin: 10px 0;
-  border-top: 1px solid #eeeeee;
-  text-align: center;
+	padding-top: 10px;
+	margin: 10px 0;
+	border-top: 1px solid #eeeeee;
+	text-align: center;
 }
