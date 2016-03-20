@@ -300,10 +300,10 @@ int main(int argc, char* argv[])
 		{
 			cout << local_time() << "Processing query molecule " << query_number << endl;
 			const unique_ptr<ROMol> qry_ptr(sup.next()); // Calling next() may print "ERROR: Could not sanitize molecule on line XXXX" to stderr.
-			auto& qry = *qry_ptr;
+			auto& qryMol = *qry_ptr;
 
 			// Get the number of points, excluding hydrogens.
-			const auto num_points = qry.getNumHeavyAtoms();
+			const auto num_points = qryMol.getNumHeavyAtoms();
 			assert(num_points);
 			cout << local_time() << "Found " << num_points << " heavy atoms" << endl;
 
@@ -312,7 +312,7 @@ int main(int argc, char* argv[])
 			for (size_t k = 0; k < num_subsets; ++k)
 			{
 				vector<vector<pair<int, int>>> matchVect;
-				SubstructMatch(qry, *SubsetMols[k], matchVect);
+				SubstructMatch(qryMol, *SubsetMols[k], matchVect);
 				const auto num_matches = matchVect.size();
 				auto& subset = subsets[k];
 				subset.resize(num_matches);
@@ -327,7 +327,7 @@ int main(int argc, char* argv[])
 
 			// Calculate the four reference points.
 			cout << local_time() << "Calculating " << num_refPoints << " reference points" << endl;
-			const auto& conf = qry.getConformer();
+			const auto& conf = qryMol.getConformer();
 			for (auto& ref : refPoints)
 			{
 				ref.x = ref.y = ref.z = 0;
