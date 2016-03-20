@@ -10,9 +10,12 @@
 #include <cassert>
 #include <chrono>
 #include <thread>
-#include <GraphMol/FileParsers/MolSupplier.h>
 #include <GraphMol/SmilesParse/SmilesParse.h>
+#include <GraphMol/FileParsers/MolSupplier.h>
 #include <GraphMol/Substruct/SubstructMatch.h>
+#include <Numerics/Alignment/AlignPoints.h>
+#include <GraphMol/MolTransforms/MolTransforms.h>
+#include <GraphMol/FileParsers/MolWriters.h>
 #include <boost/filesystem/operations.hpp>
 #include <boost/filesystem/fstream.hpp>
 #include <boost/date_time/posix_time/posix_time.hpp>
@@ -23,6 +26,8 @@ using namespace std;
 using namespace std::chrono;
 using namespace RDKit;
 using namespace RDGeom;
+using namespace RDNumeric::Alignments;
+using namespace MolTransforms;
 using namespace boost::filesystem;
 using namespace boost::gregorian;
 using namespace boost::posix_time;
@@ -381,6 +386,13 @@ int main(int argc, char* argv[])
 			// Calculate the four reference points.
 			cout << local_time() << "Calculating " << num_refPoints << " reference points" << endl;
 			const auto qryRefPoints = calcRefPoints(qryMol, subset0);
+			Point3DConstPtrVect qryRefPointv
+			{{
+				&qryRefPoints[0],
+				&qryRefPoints[1],
+				&qryRefPoints[2],
+				&qryRefPoints[3],
+			}};
 
 			// Precalculate the distances of heavy atoms to the reference points, given that subsets[1 to 4] are subsets of subsets[0].
 			cout << local_time() << "Calculating " << num_points * num_refPoints << " pairwise distances" << endl;
@@ -506,7 +518,7 @@ int main(int argc, char* argv[])
 			cout << local_time() << "Creating output directory and writing output files" << endl;
 			const auto output_dir = job_path / to_string(query_number);
 			create_directory(output_dir);
-			boost::filesystem::ofstream hits_sdf(output_dir / "hits.sdf");
+			SDWriter hits_sdf((output_dir / "hits.sdf").string());
 			boost::filesystem::ofstream hits_csv(output_dir / "hits.csv");
 			hits_csv.setf(ios::fixed, ios::floatfield);
 			hits_csv << "ZINC ID,USR score,USRCAT score,Molecular weight (g/mol),Partition coefficient xlogP,Apolar desolvation (kcal/mol),Polar desolvation (kcal/mol),Hydrogen bond donors,Hydrogen bond acceptors,Polar surface area tPSA (Å^2),Net charge,Rotatable bonds,SMILES,Suppliers and annotations\n";
@@ -549,7 +561,27 @@ int main(int argc, char* argv[])
 					<< '\n'
 				;
 				const auto lig = ligands[cnfids[k]];
-				hits_sdf.write(lig.data(), lig.size());
+				istringstream iss(lig);
+				SDMolSupplier sup(&iss, true, true, false, true);
+				assert(sup.length() == 1);
+				assert(sup.atEnd());
+				const unique_ptr<ROMol> hit_ptr(sup.next());
+				auto& hitMol = *hit_ptr;
+				vector<int> hitHeavyAtoms(hitMol.getNumHeavyAtoms());
+				iota(hitHeavyAtoms.begin(), hitHeavyAtoms.end(), 0);
+				const auto hitRefPoints = calcRefPoints(hitMol, hitHeavyAtoms);
+				Point3DConstPtrVect hitRefPointv
+				{{
+					&hitRefPoints[0],
+					&hitRefPoints[1],
+					&hitRefPoints[2],
+					&hitRefPoints[3],
+				}};
+				Transform3D trans;
+				AlignPoints(qryRefPointv, hitRefPointv, trans);
+				auto& hitCnf = hitMol.getConformer();
+				transformConformer(hitCnf, trans);
+				hits_sdf.write(hitMol);
 			}
 		}
 
