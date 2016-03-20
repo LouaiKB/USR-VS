@@ -134,6 +134,59 @@ double dist2(const T& p0, const T& p1)
 	return d0 * d0 + d1 * d1 + d2 * d2;
 }
 
+array<Point3D, 4> calcRefPoints(const ROMol& mol, const vector<int>& heavyAtoms)
+{
+	const auto num_points = heavyAtoms.size();
+	assert(num_points == mol.getNumHeavyAtoms());
+	const auto& conf = mol.getConformer();
+	array<Point3D, 4> refPoints;
+	for (auto& ref : refPoints)
+	{
+		assert(ref[0] == 0);
+		assert(ref[1] == 0);
+		assert(ref[2] == 0);
+	}
+	auto& ctd = refPoints[0];
+	auto& cst = refPoints[1];
+	auto& fct = refPoints[2];
+	auto& ftf = refPoints[3];
+	for (const auto i : heavyAtoms)
+	{
+		const auto& a = conf.getAtomPos(i);
+		ctd += a;
+	}
+	ctd /= num_points;
+	double cst_dist = numeric_limits<double>::max();
+	double fct_dist = numeric_limits<double>::lowest();
+	double ftf_dist = numeric_limits<double>::lowest();
+	for (const auto i : heavyAtoms)
+	{
+		const auto& a = conf.getAtomPos(i);
+		const auto this_dist = dist2(a, ctd);
+		if (this_dist < cst_dist)
+		{
+			cst = a;
+			cst_dist = this_dist;
+		}
+		if (this_dist > fct_dist)
+		{
+			fct = a;
+			fct_dist = this_dist;
+		}
+	}
+	for (const auto i : heavyAtoms)
+	{
+		const auto& a = conf.getAtomPos(i);
+		const auto this_dist = dist2(a, fct);
+		if (this_dist > ftf_dist)
+		{
+			ftf = a;
+			ftf_dist = this_dist;
+		}
+	}
+	return refPoints;
+}
+
 int main(int argc, char* argv[])
 {
 	// Check the required number of command line arguments.
@@ -327,52 +380,11 @@ int main(int argc, char* argv[])
 
 			// Calculate the four reference points.
 			cout << local_time() << "Calculating " << num_refPoints << " reference points" << endl;
-			const auto& conf = qryMol.getConformer();
-			for (auto& ref : refPoints)
-			{
-				ref.x = ref.y = ref.z = 0;
-			}
-			auto& ctd = refPoints[0];
-			auto& cst = refPoints[1];
-			auto& fct = refPoints[2];
-			auto& ftf = refPoints[3];
-			for (const auto i : subset0)
-			{
-				const auto& a = conf.getAtomPos(i);
-				ctd += a;
-			}
-			ctd /= num_points;
-			double cst_dist = numeric_limits<double>::max();
-			double fct_dist = numeric_limits<double>::lowest();
-			double ftf_dist = numeric_limits<double>::lowest();
-			for (const auto i : subset0)
-			{
-				const auto& a = conf.getAtomPos(i);
-				const auto this_dist = dist2(a, ctd);
-				if (this_dist < cst_dist)
-				{
-					cst = a;
-					cst_dist = this_dist;
-				}
-				if (this_dist > fct_dist)
-				{
-					fct = a;
-					fct_dist = this_dist;
-				}
-			}
-			for (const auto i : subset0)
-			{
-				const auto& a = conf.getAtomPos(i);
-				const auto this_dist = dist2(a, fct);
-				if (this_dist > ftf_dist)
-				{
-					ftf = a;
-					ftf_dist = this_dist;
-				}
-			}
+			const auto qryRefPoints = calcRefPoints(qryMol, subset0);
 
 			// Precalculate the distances of heavy atoms to the reference points, given that subsets[1 to 4] are subsets of subsets[0].
 			cout << local_time() << "Calculating " << num_points * num_refPoints << " pairwise distances" << endl;
+			const auto& qryCnf = qryMol.getConformer();
 			for (size_t k = 0; k < num_refPoints; ++k)
 			{
 				const auto& refPoint = refPoints[k];
@@ -380,7 +392,7 @@ int main(int argc, char* argv[])
 				distp.resize(num_points);
 				for (size_t i = 0; i < num_points; ++i)
 				{
-					distp[subset0[i]] = sqrt(dist2(conf.getAtomPos(subset0[i]), refPoint));
+					distp[subset0[i]] = sqrt(dist2(qryCnf.getAtomPos(subset0[i]), refPoint));
 				}
 			}
 
