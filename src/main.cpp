@@ -168,7 +168,7 @@ int main(int argc, char* argv[])
 	const array<string, 2> usr_names{{ "USR", "USRCAT" }};
 	constexpr array<size_t, num_usrs> qn{{ 12, 60 }};
 	constexpr array<double, num_usrs> qv{{ 1.0 / qn[0], 1.0 / qn[1] }};
-	const size_t num_references = 4;
+	const size_t num_refpoints = 4;
 	const size_t num_subsets = 5;
 	const array<string, num_subsets> SubsetSMARTS
 	{{
@@ -223,8 +223,8 @@ int main(int argc, char* argv[])
 
 	// Initialize variables.
 	array<vector<int>, num_subsets> subsets;
-	array<Point3D, num_references> references;
-	array<vector<double>, num_references> dista;
+	array<Point3D, num_refpoints> refpoints;
+	array<vector<double>, num_refpoints> dista;
 	alignas(32) array<double, qn.back()> q;
 
 	// Initialize vectors to store compounds' primary score and their corresponding conformer.
@@ -326,16 +326,16 @@ int main(int argc, char* argv[])
 			assert(subset0.size() == num_points);
 
 			// Calculate the four reference points.
-			cout << local_time() << "Calculating " << num_references << " reference points" << endl;
+			cout << local_time() << "Calculating " << num_refpoints << " reference points" << endl;
 			const auto& conf = mol.getConformer();
-			for (auto& ref : references)
+			for (auto& ref : refpoints)
 			{
 				ref.x = ref.y = ref.z = 0;
 			}
-			auto& ctd = references[0];
-			auto& cst = references[1];
-			auto& fct = references[2];
-			auto& ftf = references[3];
+			auto& ctd = refpoints[0];
+			auto& cst = refpoints[1];
+			auto& fct = refpoints[2];
+			auto& ftf = refpoints[3];
 			for (const auto i : subset0)
 			{
 				const auto& a = conf.getAtomPos(i);
@@ -372,10 +372,10 @@ int main(int argc, char* argv[])
 			}
 
 			// Precalculate the distances of heavy atoms to the reference points, given that subsets[1 to 4] are subsets of subsets[0].
-			cout << local_time() << "Calculating " << num_points * num_references << " pairwise distances" << endl;
-			for (size_t k = 0; k < num_references; ++k)
+			cout << local_time() << "Calculating " << num_points * num_refpoints << " pairwise distances" << endl;
+			for (size_t k = 0; k < num_refpoints; ++k)
 			{
-				const auto& reference = references[k];
+				const auto& reference = refpoints[k];
 				auto& distp = dista[k];
 				distp.resize(num_points);
 				for (size_t i = 0; i < num_points; ++i)
@@ -385,12 +385,12 @@ int main(int argc, char* argv[])
 			}
 
 			// Loop over pharmacophoric subsets and reference points.
-			cout << local_time() << "Calculating " << 3 * num_references * num_subsets << " moments of USRCAT feature" << endl;
+			cout << local_time() << "Calculating " << 3 * num_refpoints * num_subsets << " moments of USRCAT feature" << endl;
 			size_t qo = 0;
 			for (const auto& subset : subsets)
 			{
 				const auto n = subset.size();
-				for (size_t k = 0; k < num_references; ++k)
+				for (size_t k = 0; k < num_refpoints; ++k)
 				{
 					// Load distances from precalculated ones.
 					const auto& distp = dista[k];
