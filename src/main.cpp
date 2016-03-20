@@ -375,12 +375,12 @@ int main(int argc, char* argv[])
 			cout << local_time() << "Calculating " << num_points * num_refPoints << " pairwise distances" << endl;
 			for (size_t k = 0; k < num_refPoints; ++k)
 			{
-				const auto& reference = refPoints[k];
+				const auto& refPoint = refPoints[k];
 				auto& distp = dista[k];
 				distp.resize(num_points);
 				for (size_t i = 0; i < num_points; ++i)
 				{
-					distp[subset0[i]] = sqrt(dist2(conf.getAtomPos(subset0[i]), reference));
+					distp[subset0[i]] = sqrt(dist2(conf.getAtomPos(subset0[i]), refPoint));
 				}
 			}
 
