@@ -694,6 +694,7 @@ void main()\n\
 									t.text(molecule[t.attr('id')]);
 								});
 								$('#id', output).parent().attr('href', '//zinc.docking.org/substance/' + molecule.id);
+								$('#vas', output).attr('href', '//zinc.docking.org/substance/' + molecule.id + '#vendors');
 								$('#suppliers', output).html(molecule.suppliers.map(function (supplier) {
 									var link = catalogs[supplier];
 									return '<li><a' + (link === undefined ? '' : ' href="' + link + '"') + '>' + supplier + '</a></li>';
