@@ -524,10 +524,12 @@ int main(int argc, char* argv[])
 			hits_csv << "ZINC ID,USR score,USRCAT score,Molecular weight (g/mol),Partition coefficient xlogP,Apolar desolvation (kcal/mol),Polar desolvation (kcal/mol),Hydrogen bond donors,Hydrogen bond acceptors,Polar surface area tPSA (Å^2),Net charge,Rotatable bonds,SMILES,Vendors and annotations\n";
 			for (size_t l = 0; l < num_hits; ++l)
 			{
+				// Obtain indexes to the hit molecule and the hit conformer.
 				const auto k = zcase[l];
+				const auto j = cnfids[k];
 
 				// Calculate the secondary score of the saved conformer, which has the best primary score.
-				const auto& d = features[cnfids[k]];
+				const auto& d = features[j];
 				double s = 0;
 				for (size_t i = 0; i < qnu1; ++i)
 				{
@@ -560,7 +562,7 @@ int main(int argc, char* argv[])
 					<< ',' << supplier.substr(0, supplier.length() - 1) // Get rid of the trailing newline.
 					<< '\n'
 				;
-				const auto lig = ligands[cnfids[k]];
+				const auto lig = ligands[j];
 				istringstream iss(lig);
 				SDMolSupplier sup(&iss, true, true, false, true);
 				assert(sup.length() == 1);
