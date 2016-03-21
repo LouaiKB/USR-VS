@@ -10,7 +10,7 @@ using namespace RDKit::DGeomHelpers;
 
 int main(int argc, char* argv[])
 {
-	SmilesMolSupplier sup("query.smi", "\t", 0, -1, false);
+	SmilesMolSupplier sup(&cin, false, "\t", 0, -1, false);
 	if (!sup.length() || !sup.atEnd()) return 1;
 
 	// Obtain a pointer to the current molecule with heavy atoms only.
@@ -32,6 +32,6 @@ int main(int argc, char* argv[])
 	}
 
 	// Create output streams.
-	SDWriter writer("query.sdf");
+	SDWriter writer(&cout);
 	writer.write(mol);
 }
