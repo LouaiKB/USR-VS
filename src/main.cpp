@@ -386,7 +386,7 @@ int main(int argc, char* argv[])
 			// Calculate the four reference points.
 			cout << local_time() << "Calculating " << num_refPoints << " reference points" << endl;
 			const auto qryRefPoints = calcRefPoints(qryMol, subset0);
-			Point3DConstPtrVect qryRefPointv
+			const Point3DConstPtrVect qryRefPointv
 			{{
 				&qryRefPoints[0],
 				&qryRefPoints[1],
@@ -570,7 +570,7 @@ int main(int argc, char* argv[])
 				vector<int> hitHeavyAtoms(hitMol.getNumHeavyAtoms());
 				iota(hitHeavyAtoms.begin(), hitHeavyAtoms.end(), 0);
 				const auto hitRefPoints = calcRefPoints(hitMol, hitHeavyAtoms);
-				Point3DConstPtrVect hitRefPointv
+				const Point3DConstPtrVect hitRefPointv
 				{{
 					&hitRefPoints[0],
 					&hitRefPoints[1],
