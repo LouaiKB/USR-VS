@@ -528,6 +528,40 @@ int main(int argc, char* argv[])
 				const auto k = zcase[l];
 				const auto j = cnfids[k];
 
+				// Read SDF content of the hit conformer.
+				const auto lig = ligands[j];
+
+				// Construct a RDKit ROMol object.
+				istringstream iss(lig);
+				SDMolSupplier sup(&iss, true, true, false, true);
+				assert(sup.length() == 1);
+				assert(sup.atEnd());
+				const unique_ptr<ROMol> hit_ptr(sup.next());
+				auto& hitMol = *hit_ptr;
+
+				// Calculate the four reference points.
+				vector<int> hitHeavyAtoms(hitMol.getNumHeavyAtoms());
+				iota(hitHeavyAtoms.begin(), hitHeavyAtoms.end(), 0);
+				const auto hitRefPoints = calcRefPoints(hitMol, hitHeavyAtoms);
+				const Point3DConstPtrVect hitRefPointv
+				{{
+					&hitRefPoints[0],
+					&hitRefPoints[1],
+					&hitRefPoints[2],
+					&hitRefPoints[3],
+				}};
+
+				// Calculate a 3D transform from the four reference points of the hit conformer to those of the query molecule.
+				Transform3D trans;
+				AlignPoints(qryRefPointv, hitRefPointv, trans);
+
+				// Apply the 3D transform to all atoms of the hit conformer.
+				auto& hitCnf = hitMol.getConformer();
+				transformConformer(hitCnf, trans);
+
+				// Write the aligned hit conformer.
+				hits_sdf.write(hitMol);
+
 				// Calculate the secondary score of the saved conformer, which has the best primary score.
 				const auto& d = features[j];
 				double s = 0;
@@ -562,28 +596,6 @@ int main(int argc, char* argv[])
 					<< ',' << supplier.substr(0, supplier.length() - 1) // Get rid of the trailing newline.
 					<< '\n'
 				;
-				const auto lig = ligands[j];
-				istringstream iss(lig);
-				SDMolSupplier sup(&iss, true, true, false, true);
-				assert(sup.length() == 1);
-				assert(sup.atEnd());
-				const unique_ptr<ROMol> hit_ptr(sup.next());
-				auto& hitMol = *hit_ptr;
-				vector<int> hitHeavyAtoms(hitMol.getNumHeavyAtoms());
-				iota(hitHeavyAtoms.begin(), hitHeavyAtoms.end(), 0);
-				const auto hitRefPoints = calcRefPoints(hitMol, hitHeavyAtoms);
-				const Point3DConstPtrVect hitRefPointv
-				{{
-					&hitRefPoints[0],
-					&hitRefPoints[1],
-					&hitRefPoints[2],
-					&hitRefPoints[3],
-				}};
-				Transform3D trans;
-				AlignPoints(qryRefPointv, hitRefPointv, trans);
-				auto& hitCnf = hitMol.getConformer();
-				transformConformer(hitCnf, trans);
-				hits_sdf.write(hitMol);
 			}
 		}
 
