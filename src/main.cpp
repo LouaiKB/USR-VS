@@ -538,7 +538,7 @@ int main(int argc, char* argv[])
 
 				// Construct a RDKit ROMol object.
 				istringstream iss(lig);
-				SDMolSupplier sup(&iss, true, true, false, true);
+				SDMolSupplier sup(&iss, false, true, false, true);
 				assert(sup.length() == 1);
 				assert(sup.atEnd());
 				const unique_ptr<ROMol> hit_ptr(sup.next());
