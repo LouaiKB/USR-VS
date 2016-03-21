@@ -526,7 +526,7 @@ int main(int argc, char* argv[])
 			SDWriter hits_sdf((output_dir / "hits.sdf").string());
 			boost::filesystem::ofstream hits_csv(output_dir / "hits.csv");
 			hits_csv.setf(ios::fixed, ios::floatfield);
-			hits_csv << "ZINC ID,USR score,USRCAT score,Molecular weight (g/mol),Partition coefficient xlogP,Apolar desolvation (kcal/mol),Polar desolvation (kcal/mol),Hydrogen bond donors,Hydrogen bond acceptors,Polar surface area tPSA (Å^2),Net charge,Rotatable bonds,SMILES,Vendors and annotations\n";
+			hits_csv << "ZINC ID,USR score,USRCAT score,Tanimoto score,Molecular weight (g/mol),Partition coefficient xlogP,Apolar desolvation (kcal/mol),Polar desolvation (kcal/mol),Hydrogen bond donors,Hydrogen bond acceptors,Polar surface area tPSA (Å^2),Net charge,Rotatable bonds,SMILES,Vendors and annotations\n";
 			for (size_t l = 0; l < num_hits; ++l)
 			{
 				// Obtain indexes to the hit molecule and the hit conformer.
@@ -593,6 +593,7 @@ int main(int argc, char* argv[])
 					<< setprecision(8)
 					<< ',' << (usr1 ? u0score : u1score)
 					<< ',' << (usr1 ? u1score : u0score)
+					<< ',' << ts
 					<< setprecision(3)
 					<< ',' << zfp[0]
 					<< ',' << zfp[1]

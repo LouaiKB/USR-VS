@@ -673,7 +673,7 @@ void main()\n\
 						}).done(function (hcsv) {
 							var logs = hcsv.split(/\r?\n/).slice(1, 101);
 							if (logs.length !== hmolecules.length) throw Error("logs.length !== hmolecules.length");
-							var propNames = [ 'usr_score', 'usrcat_score', 'mwt', 'lgp', 'ads', 'pds', 'hbd', 'hba', 'psa', 'chg', 'nrb', 'smiles', 'suppliers' ];
+							var propNames = [ 'usr_score', 'usrcat_score', 'tanimoto_score', 'mwt', 'lgp', 'ads', 'pds', 'hbd', 'hba', 'psa', 'chg', 'nrb', 'smiles', 'suppliers' ];
 							$.each(hmolecules, function (i, molecule) {
 								var properties = logs[i].split(',');
 								if (molecule.id !== properties[0]) throw Error("molecule.id !== properties[0]");
