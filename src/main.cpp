@@ -283,7 +283,6 @@ int main(int argc, char* argv[])
 
 	// Initialize variables.
 	array<vector<int>, num_subsets> subsets;
-	array<Point3D, num_refPoints> refPoints;
 	array<vector<double>, num_refPoints> dista;
 	alignas(32) array<double, qn.back()> q;
 
@@ -404,7 +403,7 @@ int main(int argc, char* argv[])
 			const auto& qryCnf = qryMol.getConformer();
 			for (size_t k = 0; k < num_refPoints; ++k)
 			{
-				const auto& refPoint = refPoints[k];
+				const auto& refPoint = qryRefPoints[k];
 				auto& distp = dista[k];
 				distp.resize(num_points);
 				for (size_t i = 0; i < num_points; ++i)
