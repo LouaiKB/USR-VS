@@ -12,6 +12,7 @@
 #include <thread>
 #include <GraphMol/SmilesParse/SmilesParse.h>
 #include <GraphMol/FileParsers/MolSupplier.h>
+#include <GraphMol/Fingerprints/MorganFingerprints.h>
 #include <GraphMol/Substruct/SubstructMatch.h>
 #include <Numerics/Alignment/AlignPoints.h>
 #include <GraphMol/MolTransforms/MolTransforms.h>
@@ -25,6 +26,7 @@
 using namespace std;
 using namespace std::chrono;
 using namespace RDKit;
+using namespace RDKit::MorganFingerprints;
 using namespace RDGeom;
 using namespace RDNumeric::Alignments;
 using namespace MolTransforms;
@@ -365,6 +367,9 @@ int main(int argc, char* argv[])
 			assert(num_points);
 			cout << local_time() << "Found " << num_points << " heavy atoms" << endl;
 
+			// Calculate Morgan fingerprint.
+			const unique_ptr<SparseIntVect<uint32_t>> qryFp(getFingerprint(qryMol, 2));
+
 			// Classify atoms to pharmacophoric subsets.
 			cout << local_time() << "Classifying atoms into subsets" << endl;
 			for (size_t k = 0; k < num_subsets; ++k)
@@ -538,6 +543,12 @@ int main(int argc, char* argv[])
 				assert(sup.atEnd());
 				const unique_ptr<ROMol> hit_ptr(sup.next());
 				auto& hitMol = *hit_ptr;
+
+				// Calculate Morgan fingerprint.
+				const unique_ptr<SparseIntVect<uint32_t>> hitFp(getFingerprint(hitMol, 2));
+
+				// Calculate Tanimoto similarity.
+				const auto ts = TanimotoSimilarity(*qryFp, *hitFp);
 
 				// Calculate the four reference points.
 				vector<int> hitHeavyAtoms(hitMol.getNumHeavyAtoms());
