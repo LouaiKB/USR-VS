@@ -5,7 +5,12 @@ obj
 bin
 doc
 nrb
+log
+mongod
 16
 start.sh
+init.sh
+embed
 95465265
 *.png
+*.pdf
