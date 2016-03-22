@@ -673,15 +673,13 @@ void main()\n\
 						}).done(function (hcsv) {
 							var logs = hcsv.split(/\r?\n/).slice(1, 101);
 							if (logs.length !== hmolecules.length) throw Error("logs.length !== hmolecules.length");
-							var propNames = [ 'usr_score', 'usrcat_score', 'tanimoto_score', 'mwt', 'lgp', 'ads', 'pds', 'hbd', 'hba', 'psa', 'chg', 'nrb', 'smiles', 'suppliers' ];
+							var propNames = [ 'usr_score', 'usrcat_score', 'tanimoto_score', 'mwt', 'lgp', 'ads', 'pds', 'hbd', 'hba', 'psa', 'chg', 'nrb', 'smiles' ];
 							$.each(hmolecules, function (i, molecule) {
 								var properties = logs[i].split(',');
 								if (molecule.id !== properties[0]) throw Error("molecule.id !== properties[0]");
 								$.each(propNames, function (j, propName) {
 									molecule[propName] = properties[1+j];
 								});
-								molecule.suppliers = molecule.suppliers.split(' | ').slice(1);
-								molecule.nsuppliers = molecule.suppliers.length;
 							});
 							$('#hids_label').text(hmolecules.length + ' hit molecules sorted by ' + job.usrF + ' score');
 							var hindex;
@@ -695,10 +693,6 @@ void main()\n\
 								});
 								$('#id', output).parent().attr('href', '//zinc.docking.org/substance/' + molecule.id);
 								$('#vas', output).attr('href', '//zinc.docking.org/substance/' + molecule.id + '#vendors');
-								$('#suppliers', output).html(molecule.suppliers.map(function (supplier) {
-									var link = catalogs[supplier];
-									return '<li><a' + (link === undefined ? '' : ' href="' + link + '"') + '>' + supplier + '</a></li>';
-								}).join(''));
 							};
 							var hids = $('#hids');
 							hids.html(hmolecules.map(function (molecule, index) {
