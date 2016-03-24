@@ -567,9 +567,19 @@ int main(int argc, char* argv[])
 				// Calculate Tanimoto similarity.
 				const auto ts = TanimotoSimilarity(*qryFp, *hitFp);
 
+				// Find heavy atoms.
+				cout << local_time() << "Classifying atoms into subset 0" << endl;
+				vector<vector<pair<int, int>>> matchVect;
+				SubstructMatch(hitMol, *SubsetMols[0], matchVect);
+				const auto num_matches = matchVect.size();
+				assert(num_matches == hitMol.getNumHeavyAtoms());
+				vector<int> hitHeavyAtoms(num_matches);
+				for (size_t i = 0; i < num_matches; ++i)
+				{
+					hitHeavyAtoms[i] = matchVect[i].front().second;
+				}
+
 				// Calculate the four reference points.
-				vector<int> hitHeavyAtoms(hitMol.getNumHeavyAtoms());
-				iota(hitHeavyAtoms.begin(), hitHeavyAtoms.end(), 0);
 				const auto hitRefPoints = calcRefPoints(hitMol, hitHeavyAtoms);
 				const Point3DConstPtrVect hitRefPointv
 				{{
