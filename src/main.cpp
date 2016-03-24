@@ -27,6 +27,7 @@
 using namespace std;
 using namespace std::chrono;
 using namespace RDKit;
+using namespace RDKit::MolOps;
 using namespace RDDepict;
 using namespace RDKit::Drawing;
 using namespace RDKit::MorganFingerprints;
@@ -376,10 +377,12 @@ int main(int argc, char* argv[])
 
 			// Draw a SVG.
 			cout << local_time() << "Drawing a SVG" << endl;
-			compute2DCoords(qryMol);
 			{
+				const unique_ptr<ROMol> qrz_ptr(removeHs(qryMol));
+				auto& qrzMol = *qrz_ptr;
+				compute2DCoords(qrzMol);
 				boost::filesystem::ofstream ofs(output_dir / "query.svg");
-				ofs << DrawingToSVG(MolToDrawing(qryMol));
+				ofs << DrawingToSVG(MolToDrawing(qrzMol));
 			}
 
 			// Calculate Morgan fingerprint.
