@@ -667,6 +667,7 @@ void main()\n\
 					});
 					var qsvg = $('#qsvg', output);
 					var qsvgpath = qpath + 'query.svg';
+					qsvg.attr('src', null);
 					qsvg.attr('src', qsvgpath);
 					qsvg.parent().attr('href', qsvgpath);
 					$.ajax({
@@ -700,6 +701,7 @@ void main()\n\
 								$('#vas', output).attr('href', '//zinc.docking.org/substance/' + molecule.id + '#vendors');
 								var hsvg = $('#hsvg', output);
 								var hsvgpath = 'svg/' + molecule.id + '.svg';
+								hsvg.attr('src', null);
 								hsvg.attr('src', hsvgpath);
 								hsvg.parent().attr('href', hsvgpath);
 							};
