@@ -12,6 +12,7 @@
 #include <thread>
 #include <GraphMol/SmilesParse/SmilesParse.h>
 #include <GraphMol/FileParsers/MolSupplier.h>
+#include <GraphMol/MolDrawing/DrawingToSVG.h>
 #include <GraphMol/Fingerprints/MorganFingerprints.h>
 #include <GraphMol/Substruct/SubstructMatch.h>
 #include <Numerics/Alignment/AlignPoints.h>
@@ -26,6 +27,8 @@
 using namespace std;
 using namespace std::chrono;
 using namespace RDKit;
+using namespace RDDepict;
+using namespace RDKit::Drawing;
 using namespace RDKit::MorganFingerprints;
 using namespace RDGeom;
 using namespace RDNumeric::Alignments;
@@ -357,7 +360,7 @@ int main(int argc, char* argv[])
 		const auto num_queries = 1; // Restrict the number of query molecules to 1. Setting num_queries = sup.length() to execute any number of query molecules.
 		for (unsigned int query_number = 0; query_number < num_queries; ++query_number)
 		{
-			cout << local_time() << "Processing query molecule " << query_number << endl;
+			cout << local_time() << "Parsing query molecule " << query_number << endl;
 			const unique_ptr<ROMol> qry_ptr(sup.next()); // Calling next() may print "ERROR: Could not sanitize molecule on line XXXX" to stderr.
 			auto& qryMol = *qry_ptr;
 
@@ -366,7 +369,21 @@ int main(int argc, char* argv[])
 			assert(num_points);
 			cout << local_time() << "Found " << num_points << " heavy atoms" << endl;
 
+			// Create an output directory.
+			cout << local_time() << "Creating output directory" << endl;
+			const auto output_dir = job_path / to_string(query_number);
+			create_directory(output_dir);
+
+			// Draw a SVG.
+			cout << local_time() << "Drawing a SVG" << endl;
+			compute2DCoords(qryMol);
+			{
+				boost::filesystem::ofstream ofs(output_dir / "query.svg");
+				ofs << DrawingToSVG(MolToDrawing(qryMol));
+			}
+
 			// Calculate Morgan fingerprint.
+			cout << local_time() << "Calculating Morgan fingerprint" << endl;
 			const unique_ptr<SparseIntVect<uint32_t>> qryFp(getFingerprint(qryMol, 2));
 
 			// Classify atoms to pharmacophoric subsets.
@@ -519,9 +536,7 @@ int main(int argc, char* argv[])
 			sort(zcase.begin(), zcase.end(), compare);
 
 			// Create output directory and write output files.
-			cout << local_time() << "Creating output directory and writing output files" << endl;
-			const auto output_dir = job_path / to_string(query_number);
-			create_directory(output_dir);
+			cout << local_time() << "Writing output files" << endl;
 			SDWriter hits_sdf((output_dir / "hits.sdf").string());
 			boost::filesystem::ofstream hits_csv(output_dir / "hits.csv");
 			hits_csv.setf(ios::fixed, ios::floatfield);

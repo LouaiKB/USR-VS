@@ -659,17 +659,23 @@ void main()\n\
 				var qindex;
 				var refreshQuery = function (qidx) {
 					refreshMolecule(qmolecules[qindex = qidx], iviews[0]);
-					$('#downloads a').each(function () {
+					var qpath = path + qindex + '/';
+					var output = $('#output');
+					$('#downloads a', output).each(function () {
 						var t = $(this);
-						t.attr('href', path + qindex + '/' + t.text());
+						t.attr('href', qpath + t.text());
 					});
+					var qsvg = $('#qsvg', output);
+					var qsvgpath = qpath + 'query.svg';
+					qsvg.attr('src', qsvgpath);
+					qsvg.parent().attr('href', qsvgpath);
 					$.ajax({
-						url: path + qindex + '/hits.sdf',
+						url: qpath + 'hits.sdf',
 					}).done(function (hsdf) {
 						var hmolecules = parseSDF(hsdf);
 						if (hmolecules.length !== 100) throw Error("hmolecules.length !== 100");
 						$.ajax({
-							url: path + qindex + '/hits.csv',
+							url: qpath + 'hits.csv',
 						}).done(function (hcsv) {
 							var logs = hcsv.split(/\r?\n/).slice(1, 101);
 							if (logs.length !== hmolecules.length) throw Error("logs.length !== hmolecules.length");
@@ -686,13 +692,16 @@ void main()\n\
 							var refreshHit = function (hidx) {
 								var molecule = hmolecules[hindex = hidx];
 								refreshMolecule(molecule, iviews[1]);
-								var output = $('#output');
 								$('span', output).each(function () {
 									var t = $(this);
 									t.text(molecule[t.attr('id')]);
 								});
 								$('#id', output).parent().attr('href', '//zinc.docking.org/substance/' + molecule.id);
 								$('#vas', output).attr('href', '//zinc.docking.org/substance/' + molecule.id + '#vendors');
+								var hsvg = $('#hsvg', output);
+								var hsvgpath = 'svg/' + molecule.id + '.svg');
+								hsvg.attr('src', hsvgpath);
+								hsvg.parent().attr('href', hsvgpath);
 							};
 							var hids = $('#hids');
 							hids.html(hmolecules.map(function (molecule, index) {

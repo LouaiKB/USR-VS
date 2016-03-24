@@ -6,6 +6,7 @@ bin
 doc
 nrb
 log
+svg
 mongod
 16
 start.sh
