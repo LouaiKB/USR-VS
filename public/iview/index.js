@@ -699,7 +699,7 @@ void main()\n\
 								$('#id', output).parent().attr('href', '//zinc.docking.org/substance/' + molecule.id);
 								$('#vas', output).attr('href', '//zinc.docking.org/substance/' + molecule.id + '#vendors');
 								var hsvg = $('#hsvg', output);
-								var hsvgpath = 'svg/' + molecule.id + '.svg');
+								var hsvgpath = 'svg/' + molecule.id + '.svg';
 								hsvg.attr('src', hsvgpath);
 								hsvg.parent().attr('href', hsvgpath);
 							};
