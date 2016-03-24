@@ -568,7 +568,6 @@ int main(int argc, char* argv[])
 				const auto ts = TanimotoSimilarity(*qryFp, *hitFp);
 
 				// Find heavy atoms.
-				cout << local_time() << "Classifying atoms into subset 0" << endl;
 				vector<vector<pair<int, int>>> matchVect;
 				SubstructMatch(hitMol, *SubsetMols[0], matchVect);
 				const auto num_matches = matchVect.size();
