@@ -66,7 +66,7 @@ if (cluster.isMaster) {
 				fs.mkdir(dir, function (err) {
 					if (err) throw err;
 					fs.writeFile(dir + '/query.sdf', req.body['query'].split(/\r\n|\n|\r/).map(function (line) {
-						if (line[5] == "." && line[15] == "." && line[25] == "." && line[31] == " ") {
+						if (line[5] == '.' && line[15] == '.' && line[25] == '.' && line[31] == ' ') {
 							return line.substr(0, 31) + line.substr(33);
 						} else {
 							return line;
