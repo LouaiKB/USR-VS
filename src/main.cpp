@@ -576,6 +576,7 @@ int main(int argc, char* argv[])
 				for (size_t i = 0; i < num_matches; ++i)
 				{
 					hitHeavyAtoms[i] = matchVect[i].front().second;
+					assert(hitHeavyAtoms[i] == i); // hitHeavyAtoms can be constructed using iota(hitHeavyAtoms.begin(), hitHeavyAtoms.end(), 0); because for RDKit-generated SDF molecules, heavy atom are always the first few atoms.
 				}
 
 				// Calculate the four reference points.
