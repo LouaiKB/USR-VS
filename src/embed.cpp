@@ -16,7 +16,7 @@ int main(int argc, char* argv[])
 
 	// Pipe the line to the supplier.
 	istringstream iss(str);
-	SmilesMolSupplier sup(&iss, false, "\t", 0, -1, false);
+	SmilesMolSupplier sup(&iss, false, "\t", 0, 0, false);
 
 	// Validate the input.
 	if (!sup.length() || !sup.atEnd()) return 1;
