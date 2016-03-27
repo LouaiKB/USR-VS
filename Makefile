@@ -1,8 +1,8 @@
 CC=clang++
 
-all: bin/embed bin/encode bin/usr
+all: bin/embed_static bin/encode bin/usr
 
-bin/embed: obj/embed.o
+bin/embed_static: obj/embed_static.o
 	${CC} -o $@ $^ -static -pthread	-L${RDKIT_ROOT}/lib -lDistGeomHelpers_static -lDistGeometry_static -lFileParsers_static -lForceFieldHelpers_static -lSmilesParse_static -lSubstructMatch_static -lGraphMol_static -lForceField_static -lEigenSolvers_static -lAlignment_static -lRDGeometryLib_static -lRDGeneral_static -L${BOOST_ROOT}/lib -lboost_thread -lboost_system
 
 bin/encode: obj/encode.o
@@ -11,7 +11,7 @@ bin/encode: obj/encode.o
 bin/usr: obj/main.o obj/io_service_pool.o obj/safe_counter.o
 	${CC} -o $@ $^ -pthread -L${BOOST_ROOT}/lib -lboost_thread -lboost_system -lboost_filesystem -lboost_date_time -L${RDKIT_ROOT}/lib -lMolTransforms -lFingerprints -lFileParsers -lSmilesParse -lSubstructMatch -lDepictor -lGraphMol -lAlignment -lRDGeometryLib -lRDGeneral -L${MONGODBCXXDRIVER_ROOT}/sharedclient -lmongoclient
 
-obj/embed.o: src/embed.cpp
+obj/embed_static.o: src/embed.cpp
 	${CC} -o $@ $< -static -c -std=c++14 -O2 -Wall -I${RDKIT_ROOT}/include/rdkit
 
 obj/encode.o: src/encode.cpp
