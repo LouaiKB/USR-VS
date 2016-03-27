@@ -36,5 +36,5 @@ int main(int argc, char* argv[])
 
 	// Create output streams.
 	SDWriter writer(&cout);
-	writer.write(mol);
+	writer.write(mol, confId);
 }
