@@ -56,9 +56,23 @@
 			<ul>
 				<li><a href="https://zinc.docking.org">ZINC</a> is a free database of over 35 million purchasable compounds in 3D formats, including SDF.</li>
 				<li><a href="https://pubchem.ncbi.nlm.nih.gov">PubChem</a> contains more than 79 million unique structures.</li>
-				<li><a href="https://www.ebi.ac.uk/chembl">ChEMBL</a> contains nearly 2 million compound records.</li>
 			</ul>
-			<p>Users can search these third-party websites for their desired molecules using the compound name or the SMILES string, and then download the SDF file for the structure. In case of no available SDF for download, users may use our in-house program <a href="embed">embed</a> on Linux to generate an energy-minimized conformer from a given SMILES string. It reads SMILES from standard input and writes SDF to standard output. Here is an example usage: embed &lt;&lt;&lt; Cc1ccccc1</p>
+			<p>Users can search these third-party websites for their desired molecules using the compound name or the SMILES string, and then download the SDF file for the structure.</p>
+			<p>In case of no available SDF for download, users may hereby provide a SMILES string to quickly generate an energy-minimized 3D conformer on the fly:</p>
+			<div class="row">
+				<div class="col-md-11">
+					<div class="form-group">
+						<input type="text" class="form-control" id="embed_in" placeholder="Cc1ccccc1">
+					</div>
+				</div>
+				<div class="col-md-1">
+					<div class="form-group">
+						<button class="btn btn-primary" id="submit"><span class="glyphicon glyphicon-cloud-upload"></span> Submit</button>
+					</div>
+				</div>
+			</div>
+			<p><textarea id="embed_out" class="form-control"></textarea></p>
+			<p>Alternatively, users may use our in-house standalone program <a href="embed">embed</a> on Linux to generate an energy-minimized 3D conformer from a given SMILES string. It reads SMILES from standard input and writes SDF to standard output. Here is an example usage: embed &lt;&lt;&lt; Cc1ccccc1</p>
 		</section>
 		<section>
 			<div class="page-header">
@@ -107,5 +121,6 @@
 	</footer>
 	<script src="../jquery-2.2.2.min.js"></script>
 	<script src="../bootstrap.min.js"></script>
+	<script src="index.js"></script>
 </body>
 </html>

@@ -26,6 +26,7 @@ if (cluster.isMaster) {
 			app.use(express.static(__dirname + '/public'));
 			var validator = require('./public/validator');
 			var fs = require('fs');
+			var cp = require('child_process');
 			app.route('/job').get(function(req, res) {
 				var v = new validator(req.query);
 				if (v
@@ -77,6 +78,31 @@ if (cluster.isMaster) {
 						res.json(v.res._id);
 					});
 				});
+			});
+			app.route('/embed').post(function(req, res) {
+				var v = new validator(req.body);
+				if (v
+					.field('smiles').message('must be provided, at most 1KB').length(1, 1000)
+					.failed()) {
+					res.json(v.err);
+					return;
+				}
+				var embed = cp.spawn(__dirname + '/bin/embed');
+				var embed_out = '';
+				embed.stdout.on('data', function (data) {
+					embed_out = embed_out + data;
+				});
+				embed.on('close', function (code, signal) {
+					if (code) {
+						res.json(code);
+					} else if (signal) {
+						res.json(signal);
+					} else {
+						res.json(embed_out);
+					}
+				});
+				embed.stdin.write(req.body['smiles']);
+				embed.stdin.end();
 			});
 			var http_port = 4000;
 			app.listen(http_port);
