@@ -650,6 +650,7 @@ void main()\n\
 				});
 				return iv;
 			});
+			var zidends = [ 10098674, 25064553, 43025312, 58434000, 67400572, 72366611, 77856386, 86453019, 92260758, 99999999 ];
 			$.ajax({
 				url: path + 'query.sdf',
 			}).done(function (qsdf) {
@@ -699,8 +700,9 @@ void main()\n\
 								});
 								$('#id', output).parent().attr('href', '//zinc.docking.org/substance/' + molecule.id);
 								$('#vas', output).attr('href', '//zinc.docking.org/substance/' + molecule.id + '#vendors');
+								for (var zid = parseInt(molecule.id), subdir = 0; zid >= zidends[subdir]; ++subdir);
 								var hsvg = $('#hsvg', output);
-								var hsvgpath = 'svg/' + molecule.id + '.svg';
+								var hsvgpath = subdir + '/' + molecule.id + '.svg';
 								hsvg.attr('src', null);
 								hsvg.attr('src', hsvgpath);
 								hsvg.parent().attr('href', hsvgpath);
