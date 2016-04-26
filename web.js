@@ -54,7 +54,7 @@ if (cluster.isMaster) {
 				var v = new validator(req.body);
 				if (v
 					.field('filename').message('must be provided, at most 20 characters').length(1, 20).xss().copy()
-					.field('query').message('must be provided, at most 100KB').length(1, 102400)
+					.field('query').message('must be provided, at most 50KB').length(1, 50000)
 					.field('usr').message('must be 0 or 1').int(0).min(0).max(1).copy()
 					.failed()) {
 					res.json(v.err);
