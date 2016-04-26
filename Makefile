@@ -1,12 +1,15 @@
 CC=clang++
 
-all: bin/embed_static bin/embed bin/encode bin/usr
+all: bin/embed_static bin/embed bin/validatesdf bin/encode bin/usr
 
 bin/embed_static: obj/embed_static.o
 	${CC} -o $@ $^ -static -pthread	-L${RDKIT_ROOT}/lib -lDistGeomHelpers_static -lDistGeometry_static -lFileParsers_static -lForceFieldHelpers_static -lSmilesParse_static -lSubstructMatch_static -lGraphMol_static -lForceField_static -lEigenSolvers_static -lAlignment_static -lRDGeometryLib_static -lRDGeneral_static -L${BOOST_ROOT}/lib -lboost_thread -lboost_system
 
 bin/embed: obj/embed.o
 	${CC} -o $@ $^ -L${RDKIT_ROOT}/lib -lDistGeomHelpers -lFileParsers -lSmilesParse -lGraphMol
+
+bin/validatesdf: obj/validatesdf.o
+	${CC} -o $@ $^ -L${RDKIT_ROOT}/lib -lFileParsers -lGraphMol
 
 bin/encode: obj/encode.o
 	${CC} -o $@ $^ -L${RDKIT_ROOT}/lib -lFileParsers -lSmilesParse -lSubstructMatch -lGraphMol -lRDGeneral
@@ -18,6 +21,9 @@ obj/embed_static.o: src/embed.cpp
 	${CC} -o $@ $< -static -c -std=c++14 -O2 -Wall -I${RDKIT_ROOT}/include/rdkit
 
 obj/embed.o: src/embed.cpp
+	${CC} -o $@ $< -c -std=c++14 -O2 -Wall -I${RDKIT_ROOT}/include/rdkit
+
+obj/validatesdf.o: src/validatesdf.cpp
 	${CC} -o $@ $< -c -std=c++14 -O2 -Wall -I${RDKIT_ROOT}/include/rdkit
 
 obj/encode.o: src/encode.cpp

@@ -60,24 +60,30 @@ if (cluster.isMaster) {
 					res.json(v.err);
 					return;
 				}
-				v.res.version = 1;
-				v.res.submitted = new Date();
-				v.res._id = new mongodb.ObjectID();
-				var dir = __dirname + '/public/jobs/' + v.res._id;
-				fs.mkdir(dir, function (err) {
-					if (err) throw err;
-					fs.writeFile(dir + '/query.sdf', req.body['query'].split(/\r\n|\n|\r/).map(function (line) {
-						if (line[5] == '.' && line[15] == '.' && line[25] == '.' && line[31] == ' ') {
-							return line.substr(0, 31) + line.substr(33);
-						} else {
-							return line;
-						}
-					}).join('\n'), function(err) {
+				var validatesdf = cp.spawn(__dirname + '/bin/validatesdf');
+				validatesdf.on('close', function (code, signal) {
+					if (code) {
+						res.json(code);
+						return;
+					} else if (signal) {
+						res.json(signal);
+						return;
+					}
+					v.res.version = 1;
+					v.res.submitted = new Date();
+					v.res._id = new mongodb.ObjectID();
+					var dir = __dirname + '/public/jobs/' + v.res._id;
+					fs.mkdir(dir, function (err) {
 						if (err) throw err;
-						usr.insert(v.res, { w: 0 });
-						res.json(v.res._id);
+						fs.writeFile(dir + '/query.sdf', req.body['query'], function(err) {
+							if (err) throw err;
+							usr.insert(v.res, { w: 0 });
+							res.json(v.res._id);
+						});
 					});
 				});
+				validatesdf.stdin.write(req.body['query']);
+				validatesdf.stdin.end();
 			});
 			app.route('/embed').post(function(req, res) {
 				var v = new validator(req.body);
