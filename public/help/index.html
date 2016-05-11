@@ -80,7 +80,7 @@
 					<img class="img-responsive text-right" id="embed_svg" src="embed.svg" alt="SVG of the embedded molecule">
 				</div>
 			</div>
-			<p>Alternatively, users may use our in-house standalone program <a href="embed">embed</a> on Linux to generate energy-minimized 3D conformers from given SMILES strings in batch. It reads SMILES from standard input and writes SDF to standard output. Here is an example usage: embed &lt;&lt;&lt; Cc1ccccc1</p>
+			<p>Alternatively, users may use our in-house standalone program <a href="embed">embed</a> on Linux to generate energy-minimized 3D conformers from given SMILES strings in batch. It reads SMILES from standard input and writes SDF to standard output. It accepts an optional argument that specifies the output file of 2D SVG drawing of the compound. Here is an example usage: embed toluene.svg &lt;&lt;&lt; Cc1ccccc1.</p>
 			<p>Note that the user takes responsibility of protonating the query molecule prior to building the 3D conformer in order to obtain a Tanimoto score of 1 for identical query and hit molecules.</p>
 		</section>
 		<section>
