@@ -3,10 +3,10 @@ CC=clang++
 all: bin/embed_static bin/embed bin/validatesdf bin/encode bin/usr
 
 bin/embed_static: obj/embed_static.o
-	${CC} -o $@ $^ -static -pthread	-L${RDKIT_ROOT}/lib -lDistGeomHelpers_static -lDistGeometry_static -lFileParsers_static -lForceFieldHelpers_static -lSmilesParse_static -lSubstructMatch_static -lGraphMol_static -lForceField_static -lEigenSolvers_static -lAlignment_static -lRDGeometryLib_static -lRDGeneral_static -L${BOOST_ROOT}/lib -lboost_thread -lboost_system
+	${CC} -o $@ $^ -static -pthread	-L${RDKIT_ROOT}/lib -lDepictor_static -lDistGeomHelpers_static -lDistGeometry_static -lFileParsers_static -lForceFieldHelpers_static -lSmilesParse_static -lSubstructMatch_static -lGraphMol_static -lForceField_static -lEigenSolvers_static -lAlignment_static -lRDGeometryLib_static -lRDGeneral_static -L${BOOST_ROOT}/lib -lboost_thread -lboost_system
 
 bin/embed: obj/embed.o
-	${CC} -o $@ $^ -L${RDKIT_ROOT}/lib -lDistGeomHelpers -lFileParsers -lSmilesParse -lGraphMol
+	${CC} -o $@ $^ -L${RDKIT_ROOT}/lib -lDepictor -lDistGeomHelpers -lFileParsers -lSmilesParse -lGraphMol -lRDGeometryLib -lRDGeneral
 
 bin/validatesdf: obj/validatesdf.o
 	${CC} -o $@ $^ -L${RDKIT_ROOT}/lib -lFileParsers -lGraphMol

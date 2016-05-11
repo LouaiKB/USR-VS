@@ -93,22 +93,47 @@ if (cluster.isMaster) {
 					res.json(v.err);
 					return;
 				}
-				var embed = cp.spawn(__dirname + '/bin/embed');
-				var embed_out = '';
-				embed.stdout.on('data', function (data) {
-					embed_out = embed_out + data;
+				var mktemp = cp.spawn('mktemp', ['-p', __dirname + '/public/help/tmp', '--suffix', '.svg', 'XXXXXXXXXX']);
+				var mktemp_out = new Buffer(0);
+				mktemp.stdout.on('data', function (data) {
+					mktemp_out = Buffer.concat([mktemp_out, data]);
 				});
-				embed.on('close', function (code, signal) {
+				mktemp.on('close', function (code, signal) {
 					if (code) {
-						res.json(code);
+						res.json({
+							code: code,
+						});
 					} else if (signal) {
-						res.json(signal);
+						res.json({
+							signal: signal,
+						});
 					} else {
-						res.json(embed_out);
+						var tmp = mktemp_out.slice(0, -1).toString();
+						var embed = cp.spawn(__dirname + '/bin/embed', [tmp]);
+						var embed_out = new Buffer(0);
+						embed.stdout.on('data', function (data) {
+							embed_out = Buffer.concat([embed_out, data]);
+						});
+						embed.on('close', function (code, signal) {
+							if (code) {
+								res.json({
+									code: code,
+								});
+							} else if (signal) {
+								res.json({
+									signal: signal,
+								});
+							} else {
+								res.json({
+									tmp: tmp.substr(tmp.length - 14),
+									embed_out: embed_out.toString(),
+								});
+							}
+						});
+						embed.stdin.write(req.body['smiles']);
+						embed.stdin.end();
 					}
 				});
-				embed.stdin.write(req.body['smiles']);
-				embed.stdin.end();
 			});
 			var http_port = 4000;
 			app.listen(http_port);
