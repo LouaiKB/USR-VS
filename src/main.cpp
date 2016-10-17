@@ -369,7 +369,7 @@ int main(int argc, char* argv[])
 			const auto num_atoms = qryMol.getNumAtoms();
 			const auto num_points = qryMol.getNumHeavyAtoms();
 			assert(num_points);
-			cout << local_time() << "Found " << num_points << " heavy atoms" << endl;
+			cout << local_time() << "Found " << num_atoms << " atoms and " << num_points << " heavy atoms" << endl;
 
 			// Create an output directory.
 			cout << local_time() << "Creating output directory" << endl;
