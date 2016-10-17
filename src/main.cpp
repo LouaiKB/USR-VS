@@ -365,7 +365,8 @@ int main(int argc, char* argv[])
 			const unique_ptr<ROMol> qry_ptr(sup.next()); // Calling next() may print "ERROR: Could not sanitize molecule on line XXXX" to stderr.
 			auto& qryMol = *qry_ptr;
 
-			// Get the number of points, excluding hydrogens.
+			// Get the number of points, including and excluding hydrogens.
+			const auto num_atoms = qryMol.getNumAtoms();
 			const auto num_points = qryMol.getNumHeavyAtoms();
 			assert(num_points);
 			cout << local_time() << "Found " << num_points << " heavy atoms" << endl;
@@ -425,7 +426,7 @@ int main(int argc, char* argv[])
 			{
 				const auto& refPoint = qryRefPoints[k];
 				auto& distp = dista[k];
-				distp.resize(num_points);
+				distp.resize(num_atoms);
 				for (size_t i = 0; i < num_points; ++i)
 				{
 					distp[subset0[i]] = sqrt(dist2(qryCnf.getAtomPos(subset0[i]), refPoint));
