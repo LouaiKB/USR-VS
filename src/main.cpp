@@ -365,11 +365,11 @@ int main(int argc, char* argv[])
 			const unique_ptr<ROMol> qry_ptr(sup.next()); // Calling next() may print "ERROR: Could not sanitize molecule on line XXXX" to stderr.
 			auto& qryMol = *qry_ptr;
 
-			// Get the number of points, including and excluding hydrogens.
+			// Get the number of atoms, including and excluding hydrogens.
 			const auto num_atoms = qryMol.getNumAtoms();
-			const auto num_points = qryMol.getNumHeavyAtoms();
-			assert(num_points);
-			cout << local_time() << "Found " << num_atoms << " atoms and " << num_points << " heavy atoms" << endl;
+			const auto num_heavy_atoms = qryMol.getNumHeavyAtoms();
+			assert(num_heavy_atoms);
+			cout << local_time() << "Found " << num_atoms << " atoms and " << num_heavy_atoms << " heavy atoms" << endl;
 
 			// Create an output directory.
 			cout << local_time() << "Creating output directory" << endl;
@@ -406,7 +406,7 @@ int main(int argc, char* argv[])
 				cout << local_time() << "Found " << num_matches << " atoms for subset " << k << endl;
 			}
 			const auto& subset0 = subsets.front();
-			assert(subset0.size() == num_points);
+			assert(subset0.size() == num_heavy_atoms);
 
 			// Calculate the four reference points.
 			cout << local_time() << "Calculating " << num_refPoints << " reference points" << endl;
@@ -420,14 +420,14 @@ int main(int argc, char* argv[])
 			}};
 
 			// Precalculate the distances of heavy atoms to the reference points, given that subsets[1 to 4] are subsets of subsets[0].
-			cout << local_time() << "Calculating " << num_points * num_refPoints << " pairwise distances" << endl;
+			cout << local_time() << "Calculating " << num_heavy_atoms * num_refPoints << " pairwise distances" << endl;
 			const auto& qryCnf = qryMol.getConformer();
 			for (size_t k = 0; k < num_refPoints; ++k)
 			{
 				const auto& refPoint = qryRefPoints[k];
 				auto& distp = dista[k];
 				distp.resize(num_atoms);
-				for (size_t i = 0; i < num_points; ++i)
+				for (size_t i = 0; i < num_heavy_atoms; ++i)
 				{
 					distp[subset0[i]] = sqrt(dist2(qryCnf.getAtomPos(subset0[i]), refPoint));
 				}
