@@ -9,7 +9,7 @@ bin/embed: obj/embed.o
 	${CC} -o $@ $^ -L${RDKIT_ROOT}/lib -lDepictor -lDistGeomHelpers -lFileParsers -lSmilesParse -lGraphMol -lRDGeometryLib -lRDGeneral
 
 bin/validatesdf: obj/validatesdf.o
-	${CC} -o $@ $^ -L${RDKIT_ROOT}/lib -lFileParsers -lGraphMol
+	${CC} -o $@ $^ -L${RDKIT_ROOT}/lib -lFileParsers -lSmilesParse -lSubstructMatch -lGraphMol
 
 bin/encode: obj/encode.o
 	${CC} -o $@ $^ -L${RDKIT_ROOT}/lib -lFileParsers -lSmilesParse -lSubstructMatch -lGraphMol -lRDGeneral
