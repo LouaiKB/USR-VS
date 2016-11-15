@@ -1,4 +1,6 @@
 #include <GraphMol/FileParsers/MolSupplier.h>
+#include <GraphMol/SmilesParse/SmilesParse.h>
+#include <GraphMol/Substruct/SubstructMatch.h>
 using namespace std;
 using namespace RDKit;
 
@@ -25,4 +27,11 @@ int main(int argc, char* argv[])
 
 	// Ensure the molecule contains some heavy atoms.
 	if (!num_points) return 1;
+
+	// Ensure the number of heavy atoms obtained by SMARTS matching equals the number of heavy atoms obtained by getNumHeavyAtoms().
+	const unique_ptr<ROMol> SubsetMol(reinterpret_cast<ROMol*>(SmartsToMol("[!#1]"))); // heavy
+	vector<vector<pair<int, int>>> matchVect;
+	SubstructMatch(qryMol, *SubsetMol, matchVect);
+	const auto num_matches = matchVect.size();
+	if (num_matches != num_points) return 1;
 }
