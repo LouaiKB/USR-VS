@@ -51,6 +51,7 @@ int main(int argc, char* argv[])
 	array<vector<double>, num_references> dista;
 
 	// Loop over the input SDF file, setting sanitize=true, removeHs=false, strictParsing=true.
+	// Note: setting removeHs=true (which is the default setting) will lead to fewer hydrogen bond acceptors being matched.
 	size_t count = 0;
 	for (SDMolSupplier sup(argv[1], true, false, true); !sup.atEnd();)
 	{

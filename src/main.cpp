@@ -348,7 +348,7 @@ int main(int argc, char* argv[])
 
 		// Read and validate the user-supplied SDF file.
 		cout << local_time() << "Reading and validating the query file" << endl;
-		SDMolSupplier sup((job_path / "query.sdf").string(), true, false, true); // sanitize, removeHs, strictParsing
+		SDMolSupplier sup((job_path / "query.sdf").string(), true, false, true); // sanitize, removeHs, strictParsing. Note: setting removeHs=true (which is the default setting) will lead to fewer hydrogen bond acceptors being matched.
 		if (!sup.length() || !sup.atEnd())
 		{
 			const auto error = 1;
