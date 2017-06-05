@@ -1,8 +1,10 @@
+#include <GraphMol/MolOps.h>
 #include <GraphMol/FileParsers/MolSupplier.h>
 #include <GraphMol/SmilesParse/SmilesParse.h>
 #include <GraphMol/Substruct/SubstructMatch.h>
 using namespace std;
 using namespace RDKit;
+using namespace RDKit::MolOps;
 
 int main(int argc, char* argv[])
 {
@@ -11,7 +13,7 @@ int main(int argc, char* argv[])
 	for (string line; getline(cin, line); ss << line << endl);
 
 	// Construct a molecule supplier.
-	SDMolSupplier sup(&ss, false, true, false, true); // sanitize, removeHs, strictParsing
+	SDMolSupplier sup(&ss, false, true, false, true); // takeOwnership, sanitize, removeHs, strictParsing
 
 	// Ensure there is at least a molecule and the cursor is at the end.
 	if (!sup.length() || !sup.atEnd()) return 1;
@@ -34,4 +36,7 @@ int main(int argc, char* argv[])
 	SubstructMatch(qryMol, *SubsetMol, matchVect);
 	const auto num_matches = matchVect.size();
 	if (num_matches != num_points) return 1;
+
+	// Ensure the removeHs() function can successfully sanitize and kekulize the molecule, avoiding "Can't kekulize mol."
+	removeHs(qryMol);
 }
