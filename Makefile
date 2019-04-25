@@ -27,10 +27,10 @@ obj/encode.o: src/encode.cpp
 	${CC} -o $@ $< -c -std=c++14 -O2 -Wall -I${RDKIT_ROOT}/include/rdkit
 
 obj/main.o: src/main.cpp
-	${CC} -o $@ $< -c -std=c++14 -O2 -Wall -Wno-unused-local-typedef -Wno-deprecated-declarations -Wno-deprecated-register -I${BOOST_ROOT} -I${RDKIT_ROOT}/include/rdkit -I${MONGODBCXXDRIVER_ROOT}/src
+	${CC} -o $@ $< -c -std=c++14 -O2 -Wall -Wno-unused-local-typedef -Wno-deprecated-declarations -Wno-deprecated-register -I${BOOST_ROOT}/include -I${RDKIT_ROOT}/include/rdkit -I${MONGODBCXXDRIVER_ROOT}/src
 
 obj/%.o: src/%.cpp
-	${CC} -o $@ $< -c -std=c++14 -O2 -Wall -I${BOOST_ROOT}
+	${CC} -o $@ $< -c -std=c++14 -O2 -Wall -I${BOOST_ROOT}/include
 
 clean:
 	rm -f bin/* obj/*
