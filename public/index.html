@@ -4,7 +4,7 @@
 	<meta charset="utf-8">
 	<meta name="viewport" content="width=device-width, initial-scale=1.0">
 	<meta name="author" content="Hongjian Li">
-	<meta name="description" content="USR-VS: a webserver for ligand-based virtual screening powered by ultrafast shape recognition techniques">
+	<meta name="description" content="USR-VS 2.0: a webserver for ligand-based virtual screening powered by ultrafast shape recognition techniques">
 	<title>USR-VS: a webserver for ligand-based virtual screening powered by ultrafast shape recognition techniques</title>
     <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/css/bootstrap.min.css" integrity="sha384-ggOyR0iXCbMQv3Xipma34MD+dH/1fQ784/j6cY/iJTQUOhcWr7x9JvoRxT2MZw1T" crossorigin="anonymous"> <!-- https://www.srihash.org/ https://hash.online-convert.com/sha384-generator -->
 	<link rel="stylesheet" href="index.css">
@@ -21,7 +21,7 @@
 	<a class="sr-only" href="#content">Skip navigation</a>
 	<div class="jumbotron" id="content" role="main">
 		<div class="container">
-			<h1><img src="logo.png" alt="" class="logo">USR-VS</h1>
+			<h1><img src="logo.png" alt="" class="logo">USR-VS 2.0</h1>
 			<p>a webserver for ligand-based virtual screening powered by ultrafast shape recognition techniques</p>
 		</div>
 	</div>
@@ -55,7 +55,7 @@
 					<div class="form-group">
 						<label><a>3) Go</a></label>
 						<div class="input-group">
-							<button class="btn btn-primary" id="submit"><span class="glyphicon glyphicon-cloud-upload"></span> Submit</button>
+							<button class="btn btn-primary" id="submit">Submit</button>
 						</div>
 					</div>
 					<p>The USR or USRCAT similarity between the query molecule and each of the 94M 3D conformers of 23M molecules will be calculated.<br>The user will be redirected to the result page with a unique URL.</p>
@@ -69,7 +69,7 @@
 			<div class="row">
 				<div class="col-md-12">
 					<ul>
-						<li>23,129,049 molecules were collected from versions 2012-04-26, 2013-01-10 and 2013-12-18 of the <a href="http://zinc.docking.org/subsets/all-clean">All Clean</a> subset of <a href="http://zinc.docking.org">ZINC</a>.</li>
+						<li>23,129,049 molecules were collected from <a href="http://zinc15.docking.org">ZINC15</a>.</li>
 						<li>93,903,333 low-energy conformers were generated from these molecules using <a href="http://rdkit.org">RDKit</a>.</li>
 					</ul>
 				</div>
