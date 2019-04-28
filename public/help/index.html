@@ -44,7 +44,7 @@
 				<li>press the submit button.</li>
 			</ol>
 			<p>Provided as two example query molecules are fluspirilene (<a href="http://zinc.docking.org/substance/00537755">ZINC ID: 00537755</a>) and vemurafenib (<a href="https://pubchem.ncbi.nlm.nih.gov/compound/42611257">PubChem CID: 42611257</a>).</p>
-			<img src="index.png" alt="" class="col-md-12">
+			<img src="index.png" alt="" class="col-lg-12">
 			<p class="text-center">Figure 1: Running a virtual screen by following the three steps highlighted in blue color.</p>
 		</section>
 		<section>
@@ -60,22 +60,22 @@
 			<p>Users can search these third-party websites for their desired molecules using the compound name or the SMILES string, and then download the SDF file for the 3D conformer of the structure.</p>
 			<p>In case of no such available SDF for download, users may hereby provide a SMILES string to quickly generate an energy-minimized 3D conformer on the fly using the <a href="http://pubs.acs.org/doi/abs/10.1021/acs.jcim.5b00654">ETKDG</a> algorithm:</p>
 			<div class="row">
-				<div class="col-md-11">
+				<div class="col-lg-11">
 					<div class="form-group">
 						<input type="text" class="form-control" id="embed_in" placeholder="Cc1ccccc1">
 					</div>
 				</div>
-				<div class="col-md-1">
+				<div class="col-lg-1">
 					<div class="form-group">
 						<button class="btn btn-primary" id="submit"><span class="glyphicon glyphicon-cloud-upload"></span> Submit</button>
 					</div>
 				</div>
 			</div>
 			<div class="row">
-				<div class="col-md-6">
+				<div class="col-lg-6">
 					<p><textarea id="embed_out" class="form-control"></textarea></p>
 				</div>
-				<div class="col-md-6">
+				<div class="col-lg-6">
 					<img class="img-responsive text-right" id="embed_svg" src="javascript:void(0)" alt="SVG of the embedded molecule">
 				</div>
 			</div>
@@ -88,7 +88,7 @@
 			</div>
 			<p>Once a virtual screen is submitted, the user will be redirected to the result webpage with a unique URL that is only available to the user. Users are suggested to bookmark the result webpage if they want to browse the result at a later time.</p>
 			<p>Figure 2 shows <a href="../iview/?56f019fb126963b618bf6f61">the result webpage of using ZINC00537755.sdf as the query molecule and choosing USR as the ranking score</a>. In this webpage, a table at the top provides a link to the input file for download and shows the results of the virtual screen, including the submission time, execution time, completion time, and screening speed (this comes from dividing the 94 million 3D conformers by the total execution time of the query, including computing their similarity scores to the query molecule, sorting the scores, aligning the top hits to the query molecule, writing the aligned top hits to the output files, and drawing a 2D chemical structure of the query molecule).</p>
-			<img src="56f019fb126963b618bf6f61.png" alt="" class="col-md-12">
+			<img src="56f019fb126963b618bf6f61.png" alt="" class="col-lg-12">
 			<p class="text-center">Figure 2: Visualizing the query (left) and hit molecules (right). By pressing he numbered buttons below the right canvas, the user can select different top hits for visualization. In this case, the most similar hit (number 0) is the actual query itself as USR identified it among the 23 million compounds in the screening library.</p>
 			<p>When the virtual screen is completed, the top 100 most similar molecules to the query molecule and their similarity scores are written to two output files for download (hits.csv and hits.sdf). Regardless of the selection of the ranking score, both USR and USRCAT similarities are calculated for the top hits. In addition, 2D Tanimoto similarity using Morgan fingerprint is also calculated, with the maximum score of 1 indicating identical molecules. This score is not only useful to detect identical molecules, but also to quantify the degree of dissimilarity between the chemical structures of the query molecule and hit molecule, which is indicative of chemical scaffold hopping.</p>
 			<p>By using the WebGL visualizer <a href="http://istar.cse.cuhk.edu.hk/iview">iview</a> [9], the query molecule is shown in the left canvas, and the hit molecules are shown in the right canvas (this may take a few seconds to load, depending on the internet bandwidth). Although neither USR nor USRCAT requires the alignments of the query molecule against each database molecule, the hit molecules are roughly aligned to the query molecule using the four reference points as an atom mapping to facilitate their interactive inspection by the user. The user can switch among the top 100 hit molecules (numbered from 0 to 99) by pressing the button below the right canvas, and interactively translate, rotate and zoom in/out the 3D structure of the selected hit molecule to match the orientation of the query molecule if needed. The latter permits to assess the degree of 3D similarity of both molecules.</p>
@@ -101,7 +101,7 @@
 				<h2>How to purchase a hit molecule</h2>
 			</div>
 			<p>To purchase the selected molecule, the user can click the ZINC ID to redirect to ZINC's substance webpage, where the latest list of Vendors along with their corresponding IDs for this compound can be found, as illustrated in Figure 3. Alternatively, the vendors & annotations link can be clicked on the USR-VS results page to go directly to this information. Furthermore, external links to known targets and other information about the molecule may be available under the Annotations heading.</p>
-			<img src="ZINC00537755.png" alt="" class="col-md-12">
+			<img src="ZINC00537755.png" alt="" class="col-lg-12">
 			<p class="text-center">Figure 3: Reviewing the vendors and annotations of hit molecules in order to purchase them for wet-lab validation.</p>
 		</section>
 		<section>
