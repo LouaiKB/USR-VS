@@ -1,6 +1,6 @@
 #pragma once
-#ifndef IGROW_UTILITY_HPP
-#define IGROW_UTILITY_HPP
+#ifndef SAFE_COUNTER_HPP
+#define SAFE_COUNTER_HPP
 
 #include <condition_variable>
 using namespace std;
