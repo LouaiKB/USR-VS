@@ -1,6 +1,6 @@
 CC=clang++
 
-all: bin/embed_static bin/embed bin/validatesdf bin/encode bin/usr
+all: bin/embed_static bin/embed bin/validatesdf bin/encode bin/usrd
 
 bin/embed_static: obj/embed.o
 	${CC} -o $@ $^ -static -pthread -L${RDKIT_ROOT}/lib -lRDKitMolDraw2D_static -lRDKitDistGeomHelpers_static -lRDKitChemReactions_static -lRDKitFileParsers_static -lRDKitDistGeometry_static -lRDKitDepictor_static -lRDKitForceFieldHelpers_static -lRDKitMolTransforms_static -lRDKitSubstructMatch_static -lRDKitSmilesParse_static -lRDKitForceField_static -lRDKitEigenSolvers_static -lRDKitAlignment_static -lRDKitcoordgenlib_static -lRDKitmaeparser_static -lRDKitGraphMol_static -lRDKitRDGeometryLib_static -lRDKitRDGeneral_static
@@ -14,7 +14,7 @@ bin/validatesdf: obj/validatesdf.o
 bin/encode: obj/encode.o
 	${CC} -o $@ $^ -L${RDKIT_ROOT}/lib -lRDKitFileParsers -lRDKitSubstructMatch -lRDKitSmilesParse -lRDKitGraphMol -lRDKitRDGeneral
 
-bin/usr: obj/main.o obj/io_service_pool.o obj/safe_counter.o
+bin/usrd: obj/main.o obj/io_service_pool.o obj/safe_counter.o
 	${CC} -o $@ $^ -pthread -L${BOOST_ROOT}/lib -lboost_thread -lboost_system -lboost_filesystem -lboost_date_time -L${RDKIT_ROOT}/lib -lRDKitMolTransforms -lRDKitFingerprints -lRDKitFileParsers -lRDKitSmilesParse -lRDKitSubstructMatch -lRDKitDepictor -lRDKitGraphMol -lRDKitAlignment -lRDKitRDGeometryLib -lRDKitRDGeneral -L${MONGODBCXXDRIVER_ROOT}/sharedclient
 
 obj/embed.o: src/embed.cpp
