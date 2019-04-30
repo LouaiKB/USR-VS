@@ -12,7 +12,7 @@ bin/validatesdf: obj/validatesdf.o
 	${CC} -o $@ $^ -L${RDKIT_ROOT}/lib -lRDKitFileParsers -lRDKitSmilesParse -lRDKitSubstructMatch -lRDKitGraphMol
 
 bin/encode: obj/encode.o
-	${CC} -o $@ $^ -L${RDKIT_ROOT}/lib -lRDKitFileParsers -lRDKitSmilesParse -lRDKitSubstructMatch -lRDKitGraphMol -lRDKitRDGeneral
+	${CC} -o $@ $^ -L${RDKIT_ROOT}/lib -lRDKitFileParsers -lRDKitSubstructMatch -lRDKitSmilesParse -lRDKitGraphMol -lRDKitRDGeneral
 
 bin/usr: obj/main.o obj/io_service_pool.o obj/safe_counter.o
 	${CC} -o $@ $^ -pthread -L${BOOST_ROOT}/lib -lboost_thread -lboost_system -lboost_filesystem -lboost_date_time -L${RDKIT_ROOT}/lib -lRDKitMolTransforms -lRDKitFingerprints -lRDKitFileParsers -lRDKitSmilesParse -lRDKitSubstructMatch -lRDKitDepictor -lRDKitGraphMol -lRDKitAlignment -lRDKitRDGeometryLib -lRDKitRDGeneral -L${MONGODBCXXDRIVER_ROOT}/sharedclient
