@@ -1,6 +1,7 @@
 #include "io_service_pool.hpp"
 
-io_service_pool::io_service_pool(const unsigned concurrency) : w(make_unique<work>(*this))
+io_service_pool::io_service_pool(const unsigned concurrency) :
+	w(make_unique<work>(*this))
 {
 	reserve(concurrency);
 	for (int i = 0; i < concurrency; ++i)
