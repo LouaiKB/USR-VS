@@ -4,12 +4,12 @@
 #include <GraphMol/SmilesParse/SmilesParse.h>
 #include <GraphMol/FragCatalog/FragFPGenerator.h>
 #include <GraphMol/DistGeomHelpers/Embedder.h>
-#include <GraphMol/MolDrawing/DrawingToSVG.h>
+#include <GraphMol/Depictor/RDDepictor.h>
+#include <GraphMol/MolDraw2D/MolDraw2DSVG.h>
 using namespace std;
 using namespace RDKit;
 using namespace RDKit::MolOps;
 using namespace RDKit::DGeomHelpers;
-using namespace RDKit::Drawing;
 using namespace RDDepict;
 
 int main(int argc, char* argv[])
@@ -37,10 +37,12 @@ int main(int argc, char* argv[])
 	// Obtain a reference to the molecule to avoid writing *mol_ptr.
 	auto& mol = *mol_ptr;
 
-	// Generate conformers with knowledge.
-	const auto confId = EmbedMolecule(mol, 0, -1, true, false, 2.0, true, 1, 0, 1e-3, false, true, true, true, false, 5.0);
+	// Generate a conformer with knowledge.
+	EmbedParameters params(ETKDGv2);
+	params.randomSeed = 209;
+	const auto confId = EmbedMolecule(mol, params); // https://github.com/rdkit/rdkit/pull/1597
 
-	// Check if conformers are generated.
+	// Check if a conformer was generated.
 	if (confId == -1) return 1;
 
 	// Create output streams.
@@ -52,6 +54,8 @@ int main(int argc, char* argv[])
 	{
 		compute2DCoords(smi);
 		ofstream ofs(argv[1]);
-		ofs << DrawingToSVG(MolToDrawing(smi));
+		MolDraw2DSVG drawer(600, 600, ofs); // width, height, output
+		drawer.drawMolecule(smi);
+		drawer.finishDrawing();
 	}
 }
