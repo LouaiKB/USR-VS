@@ -4,15 +4,6 @@ web.log
 obj
 bin
 doc
-nrb
 log
 svg
-tmp
 mongod
-16
-start.sh
-init.sh
-embed
-95465265
-*.png
-*.pdf
