@@ -2,6 +2,7 @@
 #include <iomanip>
 #include <string>
 #include <fstream>
+#include <filesystem>
 #include <vector>
 #include <array>
 #include <cmath>
@@ -12,33 +13,32 @@
 #include <thread>
 #include <GraphMol/SmilesParse/SmilesParse.h>
 #include <GraphMol/FileParsers/MolSupplier.h>
-#include <GraphMol/MolDrawing/DrawingToSVG.h>
+#include <GraphMol/MolDraw2D/MolDraw2DSVG.h>
 #include <GraphMol/Fingerprints/MorganFingerprints.h>
 #include <GraphMol/Substruct/SubstructMatch.h>
 #include <Numerics/Alignment/AlignPoints.h>
 #include <GraphMol/MolTransforms/MolTransforms.h>
 #include <GraphMol/FileParsers/MolWriters.h>
-#include <boost/filesystem/operations.hpp>
-#include <boost/filesystem/fstream.hpp>
+#include <GraphMol/Depictor/RDDepictor.h>
 #include <boost/date_time/posix_time/posix_time.hpp>
-#include <mongo/client/dbclient.h>
+#include <mongocxx/instance.hpp>
+#include <mongocxx/pool.hpp>
+#include <mongocxx/client.hpp>
+#include <bsoncxx/json.hpp>
 #include "io_service_pool.hpp"
 #include "safe_counter.hpp"
 using namespace std;
 using namespace std::chrono;
+using namespace std::filesystem;
 using namespace RDKit;
 using namespace RDKit::MolOps;
 using namespace RDDepict;
-using namespace RDKit::Drawing;
 using namespace RDKit::MorganFingerprints;
 using namespace RDGeom;
 using namespace RDNumeric::Alignments;
 using namespace MolTransforms;
-using namespace boost::filesystem;
-using namespace boost::gregorian;
 using namespace boost::posix_time;
-using namespace mongo;
-using namespace bson;
+using bsoncxx::builder::basic::kvp;
 
 inline static auto local_time()
 {
@@ -47,13 +47,13 @@ inline static auto local_time()
 
 inline static auto milliseconds_since_epoch()
 {
-	return Date_t(duration_cast<chrono::milliseconds>(system_clock::now().time_since_epoch()).count());
+	return /*Date_t*/(duration_cast<std::chrono::milliseconds>(system_clock::now().time_since_epoch()).count());
 }
 
 template <typename T>
 inline vector<T> read(const path src)
 {
-	boost::filesystem::ifstream ifs(src, ios::binary | ios::ate);
+	ifstream ifs(src, ios::binary | ios::ate);
 	const size_t num_bytes = ifs.tellg();
 	cout << local_time() << "Reading " << src << " of " << num_bytes << " bytes" << endl;
 	vector<T> buf;
@@ -70,7 +70,7 @@ public:
 	explicit header_array(path src)
 	{
 		src.replace_extension(".ftr");
-		boost::filesystem::ifstream ifs(src, ios::binary | ios::ate);
+		ifstream ifs(src, ios::binary | ios::ate);
 		const size_t num_bytes = ifs.tellg();
 		cout << local_time() << "Reading " << src << " of " << num_bytes << " bytes" << endl;
 		hdr.resize(1 + num_bytes / sizeof(size_type));
@@ -94,7 +94,7 @@ class string_array : public header_array<size_type>
 public:
 	explicit string_array(const path src) : header_array<size_type>(src)
 	{
-		boost::filesystem::ifstream ifs(src, ios::binary | ios::ate);
+		ifstream ifs(src, ios::binary | ios::ate);
 		const size_t num_bytes = ifs.tellg();
 		cout << local_time() << "Reading " << src << " of " << num_bytes << " bytes" << endl;
 		buf.resize(num_bytes);
@@ -133,7 +133,7 @@ public:
 	}
 
 protected:
-	boost::filesystem::ifstream ifs;
+	ifstream ifs;
 };
 
 template<typename T>
@@ -213,21 +213,17 @@ int main(int argc, char* argv[])
 	const auto pwd = argv[3];
 	const path jobs_path = argv[4];
 
-	DBClientConnection conn;
-	{
-		// Connect to host and authenticate user.
-		cout << local_time() << "Connecting to " << host << " and authenticating " << user << endl;
-		string errmsg;
-		if ((!conn.connect(host, errmsg)) || (!conn.auth("istar", user, pwd, errmsg)))
-		{
-			cerr << local_time() << errmsg << endl;
-			return 1;
-		}
-	}
+	// Connect to host and authenticate user.
+	cout << local_time() << "Connecting to " << host << " and authenticating " << user << endl;
+	const mongocxx::instance inst;
+	const mongocxx::uri uri("mongodb://localhost:27017/?minPoolSize=0&maxPoolSize=2"); // When connecting to a replica set, it is much more efficient to use a pool as opposed to manually constructing client objects.
+	mongocxx::pool pool(uri);
+	const auto client = pool.acquire(); // Return value of acquire() is an instance of entry. An entry is a handle on a client object acquired via the pool.
+	const auto db = client->database("jstar");
+	auto coll = db.collection("usr2");
 
 	// Initialize constants.
 	cout << local_time() << "Initializing" << endl;
-	const auto collection = "istar.usr2";
 	const size_t num_usrs = 2;
 	const array<string, 2> usr_names{{ "USR", "USRCAT" }};
 	constexpr array<size_t, num_usrs> qn{{ 12, 60 }};
@@ -321,26 +317,27 @@ int main(int argc, char* argv[])
 	{
 		// Fetch an incompleted job in a first-come-first-served manner.
 		if (!sleeping) cout << local_time() << "Fetching an incompleted job" << endl;
-		BSONObj info;
 		const auto started = milliseconds_since_epoch();
-		conn.runCommand("istar", BSON("findandmodify" << "usr2" << "query" << BSON("started" << BSON("$exists" << false)) << "sort" << BSON("submitted" << 1) << "update" << BSON("$set" << BSON("started" << started))), info); // conn.findAndModify() is available since MongoDB C++ Driver legacy-1.0.0
-		const auto value = info["value"];
-		if (value.isNull())
+		const auto jobid_filter = bsoncxx::from_json(R"({ "started" : { "$exists" : false }})");
+		const auto jobid_update = bsoncxx::from_json(R"({ "$set" : { "started": )" + to_string(started) + R"(1 } })");
+		const auto jobid_foau_options = mongocxx::options::find_one_and_update().sort(bsoncxx::from_json(R"({ "submitted" : 1 })")).projection(bsoncxx::from_json(R"({ "_id" : 1 })")); // By default, the original document is returned
+		const auto jobid_document = coll.find_one_and_update(jobid_filter.view(), jobid_update.view(), jobid_foau_options);
+		if (!jobid_document)
 		{
 			// No incompleted jobs. Sleep for a while.
 			if (!sleeping) cout << local_time() << "Sleeping" << endl;
 			sleeping = true;
-			this_thread::sleep_for(chrono::seconds(2));
+			this_thread::sleep_for(std::chrono::seconds(2));
 			continue;
 		}
 		sleeping = false;
-		const auto job = value.Obj();
+		const auto jobid_view = jobid_document->view();
 
 		// Obtain job properties.
-		const auto _id = job["_id"].OID();
-		cout << local_time() << "Executing job " << _id.str() << endl;
-		const auto job_path = jobs_path / _id.str();
-		const size_t usr0 = job["usr"].Int(); // Specify the primary sorting score. 0: USR; 1: USRCAT.
+		const auto _id = jobid_view["_id"].get_oid().value;
+		cout << local_time() << "Executing job " << _id.to_string() << endl;
+		const auto job_path = jobs_path / _id.to_string();
+		const size_t usr0 = jobid_view["usr"].get_int32(); // Specify the primary sorting score. 0: USR; 1: USRCAT.
 		assert(usr0 == 0 || usr0 == 1);
 		const auto usr1 = usr0 ^ 1;
 		const auto qnu0 = qn[usr0];
@@ -353,7 +350,17 @@ int main(int argc, char* argv[])
 		{
 			const auto error = 1;
 			cout << local_time() << "Failed to parse the query file, error code = " << error << endl;
-			conn.update(collection, BSON("_id" << _id), BSON("$set" << BSON("completed" << milliseconds_since_epoch() << "error" << error)));
+			bsoncxx::builder::basic::document compt_update_builder;
+			compt_update_builder.append(
+				kvp("$set", [=](bsoncxx::builder::basic::sub_document set_subdoc) {
+					set_subdoc.append(kvp("completed", milliseconds_since_epoch())); // TODO: Date_t bsoncxx::types::b_date(std::chrono::system_clock::now())
+					set_subdoc.append(kvp("error", error));
+				})
+			);
+			const auto compt_update = coll.update_one(bsoncxx::builder::basic::make_document(kvp("_id", _id)), compt_update_builder.extract(), mongocxx::options::update()); // stdx::optional<result::update>. options: write_concern
+			assert(compt_update);
+			assert(compt_update->matched_count() == 1);
+			assert(compt_update->modified_count() == 1);
 			continue;
 		}
 
@@ -382,8 +389,10 @@ int main(int argc, char* argv[])
 				const unique_ptr<ROMol> qrz_ptr(removeHs(qryMol));
 				auto& qrzMol = *qrz_ptr;
 				compute2DCoords(qrzMol);
-				boost::filesystem::ofstream ofs(output_dir / "query.svg");
-				ofs << DrawingToSVG(MolToDrawing(qrzMol));
+				ofstream ofs(output_dir / "query.svg");
+				MolDraw2DSVG drawer(600, 600, ofs); // width, height, output
+				drawer.drawMolecule(qrzMol);
+				drawer.finishDrawing();
 			}
 
 			// Calculate Morgan fingerprint.
@@ -542,7 +551,7 @@ int main(int argc, char* argv[])
 			// Create output directory and write output files.
 			cout << local_time() << "Writing output files" << endl;
 			SDWriter hits_sdf((output_dir / "hits.sdf").string());
-			boost::filesystem::ofstream hits_csv(output_dir / "hits.csv");
+			ofstream hits_csv(output_dir / "hits.csv");
 			hits_csv.setf(ios::fixed, ios::floatfield);
 			hits_csv << "ZINC ID,USR score,USRCAT score,2D Tanimoto score,Molecular weight (g/mol),Partition coefficient xlogP,Apolar desolvation (kcal/mol),Polar desolvation (kcal/mol),Hydrogen bond donors,Hydrogen bond acceptors,Polar surface area tPSA (Å^2),Net charge,Rotatable bonds,SMILES,Vendors and annotations\n";
 			for (size_t l = 0; l < num_hits; ++l)
@@ -642,7 +651,17 @@ int main(int argc, char* argv[])
 		// Update job status.
 		cout << local_time() << "Setting completed time" << endl;
 		const auto completed = milliseconds_since_epoch();
-		conn.update(collection, BSON("_id" << _id), BSON("$set" << BSON("completed" << completed << "nqueries" << num_queries)));
+		bsoncxx::builder::basic::document compt_update_builder;
+		compt_update_builder.append(
+			kvp("$set", [=](bsoncxx::builder::basic::sub_document set_subdoc) {
+				set_subdoc.append(kvp("completed", completed)); // TODO: Date_t bsoncxx::types::b_date(std::chrono::system_clock::now())
+				set_subdoc.append(kvp("nqueries", num_queries));
+			})
+		);
+		const auto compt_update = coll.update_one(bsoncxx::builder::basic::make_document(kvp("_id", _id)), compt_update_builder.extract(), mongocxx::options::update()); // stdx::optional<result::update>. options: write_concern
+		assert(compt_update);
+		assert(compt_update->matched_count() == 1);
+		assert(compt_update->modified_count() == 1);
 
 		// Calculate runtime in seconds and screening speed in million conformers per second.
 		const auto runtime = (completed - started) * 0.001;
