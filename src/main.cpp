@@ -11,6 +11,7 @@
 #include <cassert>
 #include <chrono>
 #include <thread>
+#include <boost/date_time/posix_time/posix_time.hpp>
 #include <GraphMol/SmilesParse/SmilesParse.h>
 #include <GraphMol/FileParsers/MolSupplier.h>
 #include <GraphMol/MolDraw2D/MolDraw2DSVG.h>
@@ -20,7 +21,6 @@
 #include <GraphMol/MolTransforms/MolTransforms.h>
 #include <GraphMol/FileParsers/MolWriters.h>
 #include <GraphMol/Depictor/RDDepictor.h>
-#include <boost/date_time/posix_time/posix_time.hpp>
 #include <mongocxx/instance.hpp>
 #include <mongocxx/pool.hpp>
 #include <mongocxx/client.hpp>
@@ -43,7 +43,7 @@ using bsoncxx::builder::basic::kvp;
 
 inline static auto local_time()
 {
-	return to_simple_string(microsec_clock::local_time()) + " ";
+	return to_simple_string(microsec_clock::local_time()) + " "; // TODO: update to std::chrono::format(std::chrono::system_clock::now()) when this c++20 feature is implemented in gcc or clang
 }
 
 template <typename T>
@@ -218,7 +218,7 @@ int main(int argc, char* argv[])
 	const auto db = client->database("jstar");
 	auto coll = db.collection("usr2");
 	const auto jobid_filter = bsoncxx::from_json(R"({ "started" : { "$exists" : false }})");
-	const auto jobid_foau_options = options::find_one_and_update().sort(bsoncxx::from_json(R"({ "submitted" : 1 })")).projection(bsoncxx::from_json(R"({ "_id" : 1 })")); // By default, the original document is returned
+	const auto jobid_foau_options = options::find_one_and_update().sort(bsoncxx::from_json(R"({ "submitted" : 1 })")).projection(bsoncxx::from_json(R"({ "_id" : 1, "usr": 1 })")); // By default, the original document is returned
 
 	// Initialize constants.
 	cout << local_time() << "Initializing" << endl;
