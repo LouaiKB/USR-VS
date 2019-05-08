@@ -665,8 +665,8 @@ int main(int argc, char* argv[])
 		assert(compt_update->modified_count() == 1);
 
 		// Calculate runtime in seconds and screening speed in million conformers per second.
-		const auto runtime = (completed - started).count() * 0.001;
-		const auto speed = num_conformers * 0.000001 * num_queries / runtime;
+		const auto runtime = (completed - started).count() * 1e-9; // in seconds
+		const auto speed = num_conformers * 1e-6 * num_queries / runtime;
 		cout
 			<< local_time() << "Completed " << num_queries << " " << (num_queries == 1 ? "query" : "queries") << " in " << setprecision(3) << runtime << " seconds" << endl
 			<< local_time() << "Screening speed was " << setprecision(0) << speed << " M conformers per second" << endl
