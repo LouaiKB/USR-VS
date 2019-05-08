@@ -44,8 +44,7 @@ if (cluster.isMaster) {
 					'nqueries': 1,
 					'error': 1,
 				},
-			}).then((err, doc) => {
-				if (err) throw err;
+			}).then((doc) => {
 				res.json(doc);
 			});
 		}).post((req, res) => {
@@ -75,7 +74,7 @@ if (cluster.isMaster) {
 					if (err) throw err;
 					fs.writeFile(dir + '/query.sdf', req.body['query'], function(err) {
 						if (err) throw err;
-						usr.insert(v.res, { w: 0 });
+						usr.insertOne(v.res, { w: 0 });
 						res.json(v.res._id);
 					});
 				});
