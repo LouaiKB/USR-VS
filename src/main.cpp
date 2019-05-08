@@ -38,16 +38,12 @@ using namespace RDGeom;
 using namespace RDNumeric::Alignments;
 using namespace MolTransforms;
 using namespace boost::posix_time;
+using namespace mongocxx;
 using bsoncxx::builder::basic::kvp;
 
 inline static auto local_time()
 {
 	return to_simple_string(microsec_clock::local_time()) + " ";
-}
-
-inline static auto milliseconds_since_epoch()
-{
-	return /*Date_t*/(duration_cast<std::chrono::milliseconds>(system_clock::now().time_since_epoch()).count());
 }
 
 template <typename T>
@@ -215,12 +211,14 @@ int main(int argc, char* argv[])
 
 	// Connect to host and authenticate user.
 	cout << local_time() << "Connecting to " << host << " and authenticating " << user << endl;
-	const mongocxx::instance inst;
-	const mongocxx::uri uri("mongodb://localhost:27017/?minPoolSize=0&maxPoolSize=2"); // When connecting to a replica set, it is much more efficient to use a pool as opposed to manually constructing client objects.
-	mongocxx::pool pool(uri);
+	const instance inst;
+	const uri uri("mongodb://localhost:27017/?minPoolSize=0&maxPoolSize=2"); // When connecting to a replica set, it is much more efficient to use a pool as opposed to manually constructing client objects.
+	pool pool(uri);
 	const auto client = pool.acquire(); // Return value of acquire() is an instance of entry. An entry is a handle on a client object acquired via the pool.
 	const auto db = client->database("jstar");
 	auto coll = db.collection("usr2");
+	const auto jobid_filter = bsoncxx::from_json(R"({ "started" : { "$exists" : false }})");
+	const auto jobid_foau_options = options::find_one_and_update().sort(bsoncxx::from_json(R"({ "submitted" : 1 })")).projection(bsoncxx::from_json(R"({ "_id" : 1 })")); // By default, the original document is returned
 
 	// Initialize constants.
 	cout << local_time() << "Initializing" << endl;
@@ -317,11 +315,14 @@ int main(int argc, char* argv[])
 	{
 		// Fetch an incompleted job in a first-come-first-served manner.
 		if (!sleeping) cout << local_time() << "Fetching an incompleted job" << endl;
-		const auto started = milliseconds_since_epoch();
-		const auto jobid_filter = bsoncxx::from_json(R"({ "started" : { "$exists" : false }})");
-		const auto jobid_update = bsoncxx::from_json(R"({ "$set" : { "started": )" + to_string(started) + R"(1 } })");
-		const auto jobid_foau_options = mongocxx::options::find_one_and_update().sort(bsoncxx::from_json(R"({ "submitted" : 1 })")).projection(bsoncxx::from_json(R"({ "_id" : 1 })")); // By default, the original document is returned
-		const auto jobid_document = coll.find_one_and_update(jobid_filter.view(), jobid_update.view(), jobid_foau_options);
+		const auto started = system_clock::now();
+		bsoncxx::builder::basic::document jobid_update_builder;
+		jobid_update_builder.append(
+			kvp("$set", [=](bsoncxx::builder::basic::sub_document set_subdoc) {
+				set_subdoc.append(kvp("started", bsoncxx::types::b_date(started)));
+			})
+		);
+		const auto jobid_document = coll.find_one_and_update(jobid_filter.view(), jobid_update_builder.extract(), jobid_foau_options);
 		if (!jobid_document)
 		{
 			// No incompleted jobs. Sleep for a while.
@@ -353,11 +354,11 @@ int main(int argc, char* argv[])
 			bsoncxx::builder::basic::document compt_update_builder;
 			compt_update_builder.append(
 				kvp("$set", [=](bsoncxx::builder::basic::sub_document set_subdoc) {
-					set_subdoc.append(kvp("completed", milliseconds_since_epoch())); // TODO: Date_t bsoncxx::types::b_date(std::chrono::system_clock::now())
+					set_subdoc.append(kvp("completed", bsoncxx::types::b_date(started)));
 					set_subdoc.append(kvp("error", error));
 				})
 			);
-			const auto compt_update = coll.update_one(bsoncxx::builder::basic::make_document(kvp("_id", _id)), compt_update_builder.extract(), mongocxx::options::update()); // stdx::optional<result::update>. options: write_concern
+			const auto compt_update = coll.update_one(bsoncxx::builder::basic::make_document(kvp("_id", _id)), compt_update_builder.extract(), options::update()); // stdx::optional<result::update>. options: write_concern
 			assert(compt_update);
 			assert(compt_update->matched_count() == 1);
 			assert(compt_update->modified_count() == 1);
@@ -650,21 +651,21 @@ int main(int argc, char* argv[])
 
 		// Update job status.
 		cout << local_time() << "Setting completed time" << endl;
-		const auto completed = milliseconds_since_epoch();
+		const auto completed = system_clock::now();
 		bsoncxx::builder::basic::document compt_update_builder;
 		compt_update_builder.append(
 			kvp("$set", [=](bsoncxx::builder::basic::sub_document set_subdoc) {
-				set_subdoc.append(kvp("completed", completed)); // TODO: Date_t bsoncxx::types::b_date(std::chrono::system_clock::now())
+				set_subdoc.append(kvp("completed", bsoncxx::types::b_date(completed)));
 				set_subdoc.append(kvp("nqueries", num_queries));
 			})
 		);
-		const auto compt_update = coll.update_one(bsoncxx::builder::basic::make_document(kvp("_id", _id)), compt_update_builder.extract(), mongocxx::options::update()); // stdx::optional<result::update>. options: write_concern
+		const auto compt_update = coll.update_one(bsoncxx::builder::basic::make_document(kvp("_id", _id)), compt_update_builder.extract(), options::update()); // stdx::optional<result::update>. options: write_concern
 		assert(compt_update);
 		assert(compt_update->matched_count() == 1);
 		assert(compt_update->modified_count() == 1);
 
 		// Calculate runtime in seconds and screening speed in million conformers per second.
-		const auto runtime = (completed - started) * 0.001;
+		const auto runtime = (completed - started).count() * 0.001;
 		const auto speed = num_conformers * 0.000001 * num_queries / runtime;
 		cout
 			<< local_time() << "Completed " << num_queries << " " << (num_queries == 1 ? "query" : "queries") << " in " << setprecision(3) << runtime << " seconds" << endl
