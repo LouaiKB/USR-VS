@@ -1,8 +1,10 @@
 {
   "name": "usr",
-  "description": "USR based on istar",
-  "keywords": [ "ultrafast shape recognition, ligand-based virtual screening" ],
-  "version": "1.0.0",
+  "description": "USR based on jstar",
+  "keywords": [
+    "ultrafast shape recognition, ligand-based virtual screening"
+  ],
+  "version": "2.0.0",
   "author": {
     "name": "Hongjian Li",
     "email": "JackyLeeHongJian@Gmail.com"
@@ -10,7 +12,7 @@
   "license": "Apache-2.0",
   "dependencies": {
     "mongodb": ">= 2.0.0",
-    "express": ">= 4.0.0 < 5.0.0",
+    "express": ">= 4.0.0",
     "body-parser": ">= 1.0.0",
     "errorhandler": ">= 1.0.0",
     "utils-merge": ">= 1.0.0"
@@ -23,5 +25,7 @@
     "email": "JackyLeeHongJian@Gmail.com",
     "url": "http://github.com/HongjianLi/usr/issues"
   },
-  "engines": { "node": ">= 0.10.0 < 0.11.0" }
+  "engines": {
+    "node": ">= 10.0.0"
+  }
 }
