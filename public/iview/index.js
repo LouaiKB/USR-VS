@@ -77,7 +77,7 @@ $(function () {
 					t.html(c).hide().fadeIn('slow');
 				}
 			});
-			var path = '../jobs/' + jobid + '/';
+			const path = '../jobs/' + jobid + '/';
 			$('#filename', status).parent().attr('href', path + 'query.sdf');
 			if (!job.completed) {
 				setTimeout(tick, 1000);
@@ -86,7 +86,7 @@ $(function () {
 			if (job.error) return;
 			$('#results').removeClass('hidden');
 
-			var atomColors = { // http://jmol.sourceforge.net/jscolors
+			const atomColors = { // http://jmol.sourceforge.net/jscolors
 				 H: new THREE.Color(0xFFFFFF),
 				 C: new THREE.Color(0x909090),
 				 N: new THREE.Color(0x3050F8),
@@ -116,11 +116,11 @@ $(function () {
 				HG: new THREE.Color(0xB8B8D0),
 				 U: new THREE.Color(0x008FFF),
 			};
-			var defaultAtomColor = new THREE.Color(0xCCCCCC);
-			var defaultBackgroundColor = new THREE.Color(0x000000);
-			var sphereGeometry = new THREE.SphereGeometry(1, 64, 64);
-			var cylinderGeometry = new THREE.CylinderGeometry(1, 1, 1, 64, 1);
-			var labelVertexShader = '\
+			const defaultAtomColor = new THREE.Color(0xCCCCCC);
+			const defaultBackgroundColor = new THREE.Color(0x000000);
+			const sphereGeometry = new THREE.SphereBufferGeometry(1, 64, 64);
+			const cylinderGeometry = new THREE.CylinderBufferGeometry(1, 1, 1, 64, 1);
+			const labelVertexShader = '\
 uniform float width, height;\n\
 varying vec2 vUv;\n\
 void main()\n\
@@ -136,7 +136,7 @@ void main()\n\
 	gl_Position += vec4(uv.x * width * 1e-3, uv.y * height * aspect * 1e-3, 0.0, 0.0);\n\
 	gl_Position.z = -0.9;\n\
 }';
-			var labelFragmentShader = '\
+			const labelFragmentShader = '\
 uniform sampler2D map;\n\
 varying vec2 vUv;\n\
 void main()\n\
@@ -144,7 +144,7 @@ void main()\n\
 	gl_FragColor = texture2D(map, vec2(vUv.x, 1.0 - vUv.y));\n\
 	if (gl_FragColor.a < 0.5) discard;\n\
 }';
-			var labelGeo = new THREE.Geometry();
+			const labelGeo = new THREE.Geometry();
 			for (var i = 0; i < 6; ++i) {
 				labelGeo.vertices.push(new THREE.Vector3(0, 0, 0));
 			}
@@ -161,9 +161,9 @@ void main()\n\
 			var createCylinder = function (p0, p1, radius, color) {
 				var mesh = new THREE.Mesh(cylinderGeometry, new THREE.MeshLambertMaterial({ color: color }));
 				mesh.position.copy(p0).add(p1).multiplyScalar(0.5);
-				mesh.matrixAutoUpdate = false;
 				mesh.lookAt(p0);
 				mesh.updateMatrix();
+				mesh.matrixAutoUpdate = false;
 				mesh.matrix.multiply(new THREE.Matrix4().makeScale(radius, radius, p0.distanceTo(p1))).multiply(new THREE.Matrix4().makeRotationX(Math.PI * 0.5));
 				return mesh;
 			};
@@ -233,6 +233,7 @@ void main()\n\
 				this.canvas.heightInv = 1 / this.canvas.height();
 				this.renderer = new THREE.WebGLRenderer({
 					canvas: this.canvas.get(0),
+//					context: canvas.getContext('webgl2'),
 					antialias: true,
 				});
 				this.renderer.setSize(this.canvas.width(), this.canvas.height());
