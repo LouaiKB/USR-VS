@@ -5,25 +5,30 @@
     "ultrafast shape recognition, ligand-based virtual screening"
   ],
   "version": "2.0.0",
+  "main": "web.js",
+  "scripts": {
+    "start": "forever start -a -l ~/USR-VS/web.log web.js",
+    "test": "node web.js"
+  },
   "author": {
     "name": "Hongjian Li",
     "email": "JackyLeeHongJian@Gmail.com"
   },
   "license": "Apache-2.0",
   "dependencies": {
-    "mongodb": ">= 2.0.0",
-    "express": ">= 4.0.0",
     "body-parser": ">= 1.0.0",
     "errorhandler": ">= 1.0.0",
+    "mongodb": ">= 3.2.4",
+    "express": ">= 4.0.0",
     "utils-merge": ">= 1.0.0"
   },
   "repository": {
     "type": "git",
-    "url": "git://github.com/HongjianLi/usr.git"
+    "url": "git://github.com/HongjianLi/USR-VS.git"
   },
   "bugs": {
     "email": "JackyLeeHongJian@Gmail.com",
-    "url": "http://github.com/HongjianLi/usr/issues"
+    "url": "http://github.com/HongjianLi/USR-VS/issues"
   },
   "engines": {
     "node": ">= 10.0.0"
