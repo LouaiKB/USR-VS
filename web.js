@@ -132,7 +132,7 @@ if (cluster.isMaster) {
 				}
 			});
 		});
-		var http_port = 4000;
+		var http_port = 4001;
 		app.listen(http_port);
 		console.log('Worker %d listening on HTTP port %d in %s mode', process.pid, http_port, app.settings.env);
 	});
