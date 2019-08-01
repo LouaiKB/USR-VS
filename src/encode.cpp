@@ -128,11 +128,12 @@ int main(int argc, char* argv[])
 		}
 
 		// Precalculate the distances of heavy atoms to the reference points, given that subsets[1 to 4] are subsets of subsets[0].
+		const auto num_atoms = mol.getNumAtoms(); // Get the number of atoms, including hydrogens.
 		for (size_t k = 0; k < num_references; ++k)
 		{
 			const auto& reference = references[k];
 			auto& distp = dista[k];
-			distp.resize(num_points);
+			distp.reserve(num_atoms); // Here use the number of all atoms instead of just heavy atoms because subset0[0] does not necessarily start from 0. In other words, hydrogens could appear before heavy atoms in the sdf file.
 			for (size_t i = 0; i < num_points; ++i)
 			{
 				distp[subset0[i]] = sqrt(dist2(conf.getAtomPos(subset0[i]), reference));
