@@ -11,7 +11,7 @@ using namespace RDKit;
 using namespace RDGeom;
 
 template<typename T>
-double dist2(const T& p0, const T& p1)
+float dist2(const T& p0, const T& p1)
 {
 	const auto d0 = p0[0] - p1[0];
 	const auto d1 = p0[1] - p1[1];
@@ -48,7 +48,7 @@ int main(int argc, char* argv[])
 	// Initialize variables.
 	array<vector<int>, num_subsets> subsets;
 	array<Point3D, num_references> references;
-	array<vector<double>, num_references> dista;
+	array<vector<float>, num_references> dista;
 
 	// Loop over the input SDF file, setting sanitize=true, removeHs=false, strictParsing=true.
 	// Note: setting removeHs=true (which is the default setting) will lead to fewer hydrogen bond acceptors being matched.
@@ -98,9 +98,9 @@ int main(int argc, char* argv[])
 			ctd += a;
 		}
 		ctd /= num_points;
-		double cst_dist = numeric_limits<double>::max();
-		double fct_dist = numeric_limits<double>::lowest();
-		double ftf_dist = numeric_limits<double>::lowest();
+		float cst_dist = numeric_limits<float>::max();
+		float fct_dist = numeric_limits<float>::lowest();
+		float ftf_dist = numeric_limits<float>::lowest();
 		for (const auto i : subset0)
 		{
 			const auto& a = conf.getAtomPos(i);
@@ -148,14 +148,14 @@ int main(int argc, char* argv[])
 			{
 				// Load distances from precalculated ones.
 				const auto& distp = dista[k];
-				vector<double> dists(n);
+				vector<float> dists(n);
 				for (size_t i = 0; i < n; ++i)
 				{
 					dists[i] = distp[subset[i]];
 				}
 
 				// Compute moments.
-				array<double, 3> m{};
+				array<float, 3> m{};
 				if (n > 2)
 				{
 					const auto v = 1.0 / n;
