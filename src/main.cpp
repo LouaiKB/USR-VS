@@ -250,20 +250,6 @@ int main(int argc, char* argv[])
 	const auto num_ligands = zincids.size();
 	cout << local_time() << "Found " << num_ligands << " database molecules" << endl;
 
-	// Read SMILES file.
-	const string_array<size_t> smileses("16/smiles.txt");
-	assert(smileses.size() == num_ligands);
-
-	// Read supplier file.
-	const string_array<size_t> suppliers("16/supplier.txt");
-	assert(suppliers.size() == num_ligands);
-
-	// Read property files of floating point types and integer types.
-	const auto zfproperties = read<array<float, 4>>("16/zfprop.f32");
-	assert(zfproperties.size() == num_ligands);
-	const auto ziproperties = read<array<int16_t, 5>>("16/ziprop.i16");
-	assert(ziproperties.size() == num_ligands);
-
 	// Read cumulative number of conformers file.
 	const auto mconfss = read<size_t>("16/mconfs.u64");
 	const auto num_conformers = mconfss.back();
@@ -622,28 +608,12 @@ int main(int argc, char* argv[])
 				const auto u0score = 1 / (1 + scores[k] * qv[usr0]); // Primary score of the current molecule.
 				const auto u1score = 1 / (1 + s         * qv[usr1]); // Secondary score of the current molecule.
 				const auto zincid = zincids[k].substr(0, 8); // Take another substr() to get rid of the trailing newline.
-				const auto zfp = zfproperties[k];
-				const auto zip = ziproperties[k];
-				const auto smiles = smileses[k];    // A newline is already included in smileses[k].
-				const auto supplier = suppliers[k]; // A newline is already included in suppliers[k].
 				hits_csv
 					<< zincid
 					<< setprecision(8)
 					<< ',' << (usr1 ? u0score : u1score)
 					<< ',' << (usr1 ? u1score : u0score)
 					<< ',' << ts
-					<< setprecision(3)
-					<< ',' << zfp[0]
-					<< ',' << zfp[1]
-					<< ',' << zfp[2]
-					<< ',' << zfp[3]
-					<< ',' << zip[0]
-					<< ',' << zip[1]
-					<< ',' << zip[2]
-					<< ',' << zip[3]
-					<< ',' << zip[4]
-					<< ',' << smiles.substr(0, smiles.length() - 1)     // Get rid of the trailing newline.
-					<< ',' << supplier.substr(0, supplier.length() - 1) // Get rid of the trailing newline.
 					<< '\n'
 				;
 			}
