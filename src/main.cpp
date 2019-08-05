@@ -133,7 +133,7 @@ protected:
 };
 
 template<typename T>
-double dist2(const T& p0, const T& p1)
+auto dist2(const T& p0, const T& p1)
 {
 	const auto d0 = p0[0] - p1[0];
 	const auto d1 = p0[1] - p1[1];
@@ -163,9 +163,9 @@ array<Point3D, 4> calcRefPoints(const ROMol& mol, const vector<int>& heavyAtoms)
 		ctd += a;
 	}
 	ctd /= num_points;
-	double cst_dist = numeric_limits<double>::max();
-	double fct_dist = numeric_limits<double>::lowest();
-	double ftf_dist = numeric_limits<double>::lowest();
+	auto cst_dist = numeric_limits<double>::max();
+	auto fct_dist = numeric_limits<double>::lowest();
+	auto ftf_dist = numeric_limits<double>::lowest();
 	for (const auto i : heavyAtoms)
 	{
 		const auto& a = conf.getAtomPos(i);
