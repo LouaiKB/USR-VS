@@ -109,29 +109,6 @@ protected:
 	string buf;
 };
 
-template <typename size_type>
-class stream_array : public header_array<size_type>
-{
-public:
-	explicit stream_array(const path src) : header_array<size_type>(src), ifs(src, ios::binary)
-	{
-	}
-
-	string operator[](const size_t index)
-	{
-		const auto pos = this->hdr[index];
-		const auto len = this->hdr[index + 1] - pos;
-		string buf;
-		buf.resize(len);
-		ifs.seekg(pos);
-		ifs.read(const_cast<char*>(buf.data()), len);
-		return buf;
-	}
-
-protected:
-	ifstream ifs;
-};
-
 template<typename T>
 auto dist2(const T& p0, const T& p1)
 {
@@ -257,10 +234,6 @@ int main(int argc, char* argv[])
 	// Read feature file.
 	const auto features = read<array<double, qn.back()>>("16/usrcat.f64");
 	assert(features.size() == num_conformers);
-
-	// Read ligand footer file and open ligand SDF file for seeking and reading.
-	stream_array<size_t> ligands("16/ligand.sdf");
-	assert(ligands.size() == num_conformers);
 
 	// Initialize variables.
 	array<vector<int>, num_subsets> subsets;
@@ -544,7 +517,8 @@ int main(int argc, char* argv[])
 				const auto j = cnfids[k];
 
 				// Read SDF content of the hit conformer.
-				const auto lig = ligands[j];
+				// TODO: query the SDF conformer from MongoDB using _id, which is zincids[k]
+				const auto lig = "";
 
 				// Construct a RDKit ROMol object.
 				istringstream iss(lig);
