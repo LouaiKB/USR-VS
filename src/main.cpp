@@ -59,56 +59,6 @@ inline vector<T> read(const path src)
 	return buf;
 }
 
-template <typename size_type>
-class header_array
-{
-public:
-	explicit header_array(path src)
-	{
-		src.replace_extension(".ftr");
-		ifstream ifs(src, ios::binary | ios::ate);
-		const size_t num_bytes = ifs.tellg();
-		cout << local_time() << "Reading " << src << " of " << num_bytes << " bytes" << endl;
-		hdr.resize(1 + num_bytes / sizeof(size_type));
-		hdr.front() = 0;
-		ifs.seekg(0);
-		ifs.read(reinterpret_cast<char*>(hdr.data() + 1), num_bytes);
-	}
-
-	size_t size() const
-	{
-		return hdr.size() - 1;
-	}
-
-protected:
-	vector<size_type> hdr;
-};
-
-template <typename size_type>
-class string_array : public header_array<size_type>
-{
-public:
-	explicit string_array(const path src) : header_array<size_type>(src)
-	{
-		ifstream ifs(src, ios::binary | ios::ate);
-		const size_t num_bytes = ifs.tellg();
-		cout << local_time() << "Reading " << src << " of " << num_bytes << " bytes" << endl;
-		buf.resize(num_bytes);
-		ifs.seekg(0);
-		ifs.read(const_cast<char*>(buf.data()), num_bytes);
-	}
-
-	string operator[](const size_t index) const
-	{
-		const auto pos = this->hdr[index];
-		const auto len = this->hdr[index + 1] - pos;
-		return buf.substr(pos, len);
-	}
-
-protected:
-	string buf;
-};
-
 template<typename T>
 auto dist2(const T& p0, const T& p1)
 {
@@ -223,7 +173,7 @@ int main(int argc, char* argv[])
 	}
 
 	// Read ZINC ID file.
-	const string_array<size_t> zincids("16/zincid.txt");
+	const auto zincids = read<unsigned int>("16/zincid.i32");
 	const auto num_ligands = zincids.size();
 	cout << local_time() << "Found " << num_ligands << " database molecules" << endl;
 
@@ -577,7 +527,7 @@ int main(int argc, char* argv[])
 
 				const auto u0score = 1 / (1 + scores[k] * qv[usr0]); // Primary score of the current molecule.
 				const auto u1score = 1 / (1 + s         * qv[usr1]); // Secondary score of the current molecule.
-				const auto zincid = zincids[k].substr(0, 8); // Take another substr() to get rid of the trailing newline.
+				const auto zincid = zincids[k]; // TODO: prepend "ZINC" and zeroes to recover the original ZINC ID.
 				hits_csv
 					<< zincid
 					<< setprecision(8)
