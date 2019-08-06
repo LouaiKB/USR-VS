@@ -342,7 +342,7 @@ int main(int argc, char* argv[])
 			{
 				const auto& refPoint = qryRefPoints[k];
 				auto& distp = dista[k];
-				distp.resize(num_atoms);
+				distp.reserve(num_atoms);
 				for (size_t i = 0; i < num_heavy_atoms; ++i)
 				{
 					distp[subset0[i]] = sqrt(dist2(qryCnf.getAtomPos(subset0[i]), refPoint));
