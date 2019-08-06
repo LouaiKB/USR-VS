@@ -250,11 +250,8 @@ int main(int argc, char* argv[])
 	const auto num_ligands = zincids.size();
 	cout << local_time() << "Found " << num_ligands << " database molecules" << endl;
 
-	// Read cumulative number of conformers file.
-	const auto mconfss = read<size_t>("16/mconfs.u64");
-	const auto num_conformers = mconfss.back();
-	assert(mconfss.size() == num_ligands);
-	assert(num_conformers >= num_ligands);
+	// Calculate number of conformers.
+	const auto num_conformers = num_ligands << 2;
 	cout << local_time() << "Found " << num_conformers << " database conformers" << endl;
 
 	// Read feature file.
@@ -502,8 +499,7 @@ int main(int argc, char* argv[])
 					{
 						// Loop over conformers of the current molecule and calculate their primary score.
 						auto& scorek = scores[k];
-						size_t j = k ? mconfss[k - 1] : 0;
-						for (const auto mconfs = mconfss[k]; j < mconfs; ++j)
+						for (size_t j = k << 2; j < (k + 1) << 2; ++j)
 						{
 							const auto& d = features[j];
 							double s = 0;
