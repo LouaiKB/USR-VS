@@ -52,6 +52,7 @@ int main(int argc, char* argv[])
 
 	// Loop over the input SDF file, setting sanitize=true, removeHs=false, strictParsing=true.
 	// Note: setting removeHs=true (which is the default setting) will lead to fewer hydrogen bond acceptors being matched.
+	cout << setprecision(15);
 	size_t count = 0;
 	for (SDMolSupplier sup(argv[1], true, false, true); !sup.atEnd();)
 	{
@@ -189,12 +190,13 @@ int main(int argc, char* argv[])
 				}
 
 				// Write moments.
-				array<float, 3> f{
-					static_cast<float>(m[0]),
-					static_cast<float>(m[1]),
-					static_cast<float>(m[2]),
-				};
-				cout.write(reinterpret_cast<char*>(f.data()), sizeof(f));
+				cout << m[0] << endl << m[1] << endl << m[2] << endl;
+//				array<float, 3> f{
+//					static_cast<float>(m[0]),
+//					static_cast<float>(m[1]),
+//					static_cast<float>(m[2]),
+//				};
+//				cout.write(reinterpret_cast<char*>(f.data()), sizeof(f));
 			}
 		}
 	}
