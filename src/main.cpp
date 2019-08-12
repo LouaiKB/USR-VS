@@ -186,10 +186,6 @@ int main(int argc, char* argv[])
 	cout << local_time() << "Found " << num_conformers << " conformers from SuperDRUG" << endl;
 	assert(num_conformers == num_compounds << 2);
 
-	// Read feature file.
-	const auto features = read<array<double, qn.back()>>("16/usrcat.f64");
-	assert(features.size() == num_conformers);
-
 	// Initialize variables.
 	array<vector<int>, num_subsets> subsets;
 	array<vector<double>, num_refPoints> dista;
@@ -425,15 +421,16 @@ int main(int argc, char* argv[])
 					const auto chunk_end = min(chunk_beg + chunk_size, num_compounds);
 					for (size_t k = chunk_beg; k < chunk_end; ++k)
 					{
+						// TODO: iterate the cursor to query usrcat feature vector from MongoDB
 						// Loop over conformers of the current compound and calculate their primary score.
 						auto& scorek = scores[k];
 						for (size_t j = k << 2; j < (k + 1) << 2; ++j)
 						{
-							const auto& d = features[j];
+//							const auto& d = features[j];
 							double s = 0;
 							for (size_t i = 0; i < qnu0; ++i)
 							{
-								s += abs(q[i] - d[i]);
+//								s += abs(q[i] - d[i]);
 								if (s >= scorek) break;
 							}
 							if (s < scorek)
@@ -523,11 +520,12 @@ int main(int argc, char* argv[])
 				hits_sdf.write(hitMol);
 
 				// Calculate the secondary score of the saved conformer, which has the best primary score.
-				const auto& d = features[j];
+				// TODO: query MongoDB again to fetch the USRCAT feature vector.
+//				const auto& d = features[j];
 				double s = 0;
 				for (size_t i = 0; i < qnu1; ++i)
 				{
-					s += abs(q[i] - d[i]);
+//					s += abs(q[i] - d[i]);
 				}
 
 				const auto u0score = 1 / (1 + scores[k] * qv[usr0]); // Primary score of the current compound.
