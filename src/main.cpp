@@ -126,7 +126,7 @@ int main(int argc, char* argv[])
 	// Check the required number of command line arguments.
 	if (argc != 5)
 	{
-		cout << "usr host user pwd jobs_path" << endl;
+		cout << "jlbvs host user pwd jobs_path" << endl;
 		return 0;
 	}
 
@@ -144,7 +144,7 @@ int main(int argc, char* argv[])
 	const auto client = pool.acquire(); // Return value of acquire() is an instance of entry. An entry is a handle on a client object acquired via the pool.
 	const auto db = client->database("jstar");
 	auto superdrug = db.collection("SuperDRUG");
-	auto coll = db.collection("usr2");
+	auto jlbvs = db.collection("jlbvs");
 	const auto jobid_filter = bsoncxx::from_json(R"({ "started" : { "$exists" : false }})");
 	const auto jobid_foau_options = options::find_one_and_update().sort(bsoncxx::from_json(R"({ "submitted" : 1 })")).projection(bsoncxx::from_json(R"({ "_id" : 1, "usr": 1 })")); // By default, the original document is returned
 
@@ -233,7 +233,7 @@ int main(int argc, char* argv[])
 				set_subdoc.append(kvp("started", bsoncxx::types::b_date(started)));
 			})
 		);
-		const auto jobid_document = coll.find_one_and_update(jobid_filter.view(), jobid_update_builder.extract(), jobid_foau_options);
+		const auto jobid_document = jlbvs.find_one_and_update(jobid_filter.view(), jobid_update_builder.extract(), jobid_foau_options);
 		if (!jobid_document)
 		{
 			// No incompleted jobs. Sleep for a while.
@@ -269,7 +269,7 @@ int main(int argc, char* argv[])
 					set_subdoc.append(kvp("error", error));
 				})
 			);
-			const auto compt_update = coll.update_one(bsoncxx::builder::basic::make_document(kvp("_id", _id)), compt_update_builder.extract(), options::update()); // stdx::optional<result::update>. options: write_concern
+			const auto compt_update = jlbvs.update_one(bsoncxx::builder::basic::make_document(kvp("_id", _id)), compt_update_builder.extract(), options::update()); // stdx::optional<result::update>. options: write_concern
 			assert(compt_update);
 			assert(compt_update->matched_count() == 1);
 			assert(compt_update->modified_count() == 1);
@@ -554,7 +554,7 @@ int main(int argc, char* argv[])
 				set_subdoc.append(kvp("nqueries", num_queries));
 			})
 		);
-		const auto compt_update = coll.update_one(bsoncxx::builder::basic::make_document(kvp("_id", _id)), compt_update_builder.extract(), options::update()); // stdx::optional<result::update>. options: write_concern
+		const auto compt_update = jlbvs.update_one(bsoncxx::builder::basic::make_document(kvp("_id", _id)), compt_update_builder.extract(), options::update()); // stdx::optional<result::update>. options: write_concern
 		assert(compt_update);
 		assert(compt_update->matched_count() == 1);
 		assert(compt_update->modified_count() == 1);
