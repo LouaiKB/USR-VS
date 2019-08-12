@@ -174,11 +174,12 @@ int main(int argc, char* argv[])
 	}
 
 	// Read ID file.
-	const size_t num_ligands = superdrug.count_documents(bsoncxx::from_json("{}")); // count_documents() returns int64_t. Here convert to size_t.
-	cout << local_time() << "Found " << num_ligands << " database molecules" << endl;
+	cout << local_time() << "Finding the number of compounds from SuperDRUG" << endl;
+	const size_t num_compounds = superdrug.count_documents(bsoncxx::from_json("{}")); // count_documents() returns int64_t. Here convert to size_t.
+	cout << local_time() << "Found " << num_compounds << " compounds from SuperDRUG" << endl;
 
 	// Calculate number of conformers.
-	const auto num_conformers = num_ligands << 2;
+	const auto num_conformers = num_compounds << 2;
 	cout << local_time() << "Found " << num_conformers << " database conformers" << endl;
 
 	// Read feature file.
@@ -191,8 +192,8 @@ int main(int argc, char* argv[])
 	alignas(32) array<double, qn.back()> q;
 
 	// Initialize vectors to store compounds' primary score and their corresponding conformer.
-	vector<double> scores(num_ligands); // Primary score of molecules.
-	vector<size_t> cnfids(num_ligands); // ID of conformer with the best primary score.
+	vector<double> scores(num_compounds); // Primary score of compounds.
+	vector<size_t> cnfids(num_compounds); // ID of conformer with the best primary score.
 	const auto compare = [&](const size_t val0, const size_t val1) // Sort by the primary score.
 	{
 		return scores[val0] < scores[val1];
@@ -204,14 +205,14 @@ int main(int argc, char* argv[])
 	io_service_pool io(num_threads);
 	safe_counter<size_t> cnt;
 
-	// Initialize the number of chunks and the number of molecules per chunk.
+	// Initialize the number of chunks and the number of compounds per chunk.
 	const auto num_chunks = num_threads << 4;
-	const auto chunk_size = 1 + (num_ligands - 1) / num_chunks;
-	assert(chunk_size * num_chunks >= num_ligands);
+	const auto chunk_size = 1 + (num_compounds - 1) / num_chunks;
+	assert(chunk_size * num_chunks >= num_compounds);
 	assert(chunk_size >= num_hits);
 	cout << local_time() << "Using " << num_chunks << " chunks and a chunk size of " << chunk_size << endl;
-	vector<size_t> scase(num_ligands);
-	vector<size_t> zcase(num_hits * (num_chunks - 1) + min(num_hits, num_ligands - chunk_size * (num_chunks - 1))); // The last chunk might have fewer than num_hits records.
+	vector<size_t> scase(num_compounds);
+	vector<size_t> zcase(num_hits * (num_chunks - 1) + min(num_hits, num_compounds - chunk_size * (num_chunks - 1))); // The last chunk might have fewer than num_hits records.
 
 	// Enter event loop.
 	cout << local_time() << "Entering event loop" << endl;
@@ -271,12 +272,12 @@ int main(int argc, char* argv[])
 			continue;
 		}
 
-		// Process each of the query molecules sequentially.
-		const auto num_queries = 1; // Restrict the number of query molecules to 1. Setting num_queries = sup.length() to execute any number of query molecules.
+		// Process each of the query compounds sequentially.
+		const auto num_queries = 1; // Restrict the number of query compounds to 1. Setting num_queries = sup.length() to execute any number of query compounds.
 		for (unsigned int query_number = 0; query_number < num_queries; ++query_number)
 		{
-			cout << local_time() << "Parsing query molecule " << query_number << endl;
-			const unique_ptr<ROMol> qry_ptr(sup.next()); // Calling next() may print "ERROR: Could not sanitize molecule on line XXXX" to stderr.
+			cout << local_time() << "Parsing query compound " << query_number << endl;
+			const unique_ptr<ROMol> qry_ptr(sup.next()); // Calling next() may print "ERROR: Could not sanitize compound on line XXXX" to stderr.
 			auto& qryMol = *qry_ptr;
 
 			// Get the number of atoms, including and excluding hydrogens.
@@ -407,7 +408,7 @@ int main(int argc, char* argv[])
 			assert(qo == qn.back());
 
 			// Compute USR and USRCAT scores.
-			cout << local_time() << "Calculating " << num_ligands << " " << usr_names[usr0] << " scores" << endl;
+			cout << local_time() << "Calculating " << num_compounds << " " << usr_names[usr0] << " scores" << endl;
 			scores.assign(scores.size(), numeric_limits<double>::max());
 			iota(scase.begin(), scase.end(), 0);
 			cnt.init(num_chunks);
@@ -415,12 +416,12 @@ int main(int argc, char* argv[])
 			{
 				io.post([&,l]()
 				{
-					// Loop over molecules of the current chunk.
+					// Loop over compounds of the current chunk.
 					const auto chunk_beg = chunk_size * l;
-					const auto chunk_end = min(chunk_beg + chunk_size, num_ligands);
+					const auto chunk_end = min(chunk_beg + chunk_size, num_compounds);
 					for (size_t k = chunk_beg; k < chunk_end; ++k)
 					{
-						// Loop over conformers of the current molecule and calculate their primary score.
+						// Loop over conformers of the current compound and calculate their primary score.
 						auto& scorek = scores[k];
 						for (size_t j = k << 2; j < (k + 1) << 2; ++j)
 						{
@@ -439,7 +440,7 @@ int main(int argc, char* argv[])
 						}
 					}
 
-					// Sort the scores of molecules of the current chunk.
+					// Sort the scores of compounds of the current chunk.
 					sort(scase.begin() + chunk_beg, scase.begin() + chunk_end, compare);
 
 					// Copy the indexes of top hits of the current chunk to a global vector for final sorting.
@@ -462,7 +463,7 @@ int main(int argc, char* argv[])
 			hits_csv << "ID,SMILES,Database,USR score,USRCAT score,2D Tanimoto score,subsets,canonicalSMILES,molFormula,numAtoms,numHBD,numHBA,numRotatableBonds,numRings,exactMW,tPSA,clogP\n";
 			for (size_t l = 0; l < num_hits; ++l)
 			{
-				// Obtain indexes to the hit molecule and the hit conformer.
+				// Obtain indexes to the hit compound and the hit conformer.
 				const auto k = zcase[l];
 				const auto j = cnfids[k];
 
@@ -493,7 +494,7 @@ int main(int argc, char* argv[])
 				for (size_t i = 0; i < num_matches; ++i)
 				{
 					hitHeavyAtoms[i] = matchVect[i].front().second;
-					assert(hitHeavyAtoms[i] == i); // hitHeavyAtoms can be constructed using iota(hitHeavyAtoms.begin(), hitHeavyAtoms.end(), 0); because for RDKit-generated SDF molecules, heavy atom are always the first few atoms.
+					assert(hitHeavyAtoms[i] == i); // hitHeavyAtoms can be constructed using iota(hitHeavyAtoms.begin(), hitHeavyAtoms.end(), 0); because for RDKit-generated SDF compounds, heavy atom are always the first few atoms.
 				}
 
 				// Calculate the four reference points.
@@ -506,7 +507,7 @@ int main(int argc, char* argv[])
 					&hitRefPoints[3],
 				}};
 
-				// Calculate a 3D transform from the four reference points of the hit conformer to those of the query molecule.
+				// Calculate a 3D transform from the four reference points of the hit conformer to those of the query compound.
 				Transform3D trans;
 				AlignPoints(qryRefPointv, hitRefPointv, trans);
 
@@ -525,8 +526,8 @@ int main(int argc, char* argv[])
 					s += abs(q[i] - d[i]);
 				}
 
-				const auto u0score = 1 / (1 + scores[k] * qv[usr0]); // Primary score of the current molecule.
-				const auto u1score = 1 / (1 + s         * qv[usr1]); // Secondary score of the current molecule.
+				const auto u0score = 1 / (1 + scores[k] * qv[usr0]); // Primary score of the current compound.
+				const auto u1score = 1 / (1 + s         * qv[usr1]); // Secondary score of the current compound.
 //				const auto zincid = zincids[k];
 				hits_csv
 //					<< zincid
