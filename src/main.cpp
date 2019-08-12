@@ -47,7 +47,7 @@ inline static auto local_time()
 }
 
 template <typename T>
-inline vector<T> read(const path src)
+inline vector<T> read(const path src) // Sequential read can be very fast when using SSD
 {
 	ifstream ifs(src, ios::binary | ios::ate);
 	const size_t num_bytes = ifs.tellg();
@@ -138,7 +138,7 @@ int main(int argc, char* argv[])
 
 	// Connect to host and authenticate user.
 	cout << local_time() << "Connecting to " << host << " and authenticating " << user << endl;
-	const instance inst;
+	const instance inst; // The constructor and destructor initialize and shut down the driver. http://mongocxx.org/api/current/classmongocxx_1_1instance.html
 	const uri uri("mongodb://localhost:27017/?minPoolSize=0&maxPoolSize=2"); // When connecting to a replica set, it is much more efficient to use a pool as opposed to manually constructing client objects.
 	pool pool(uri);
 	const auto client = pool.acquire(); // Return value of acquire() is an instance of entry. An entry is a handle on a client object acquired via the pool.
@@ -459,7 +459,7 @@ int main(int argc, char* argv[])
 			SDWriter hits_sdf((output_dir / "hits.sdf").string());
 			ofstream hits_csv(output_dir / "hits.csv");
 			hits_csv.setf(ios::fixed, ios::floatfield);
-			hits_csv << "ZINC ID,USR score,USRCAT score,2D Tanimoto score,Molecular weight (g/mol),Partition coefficient xlogP,Apolar desolvation (kcal/mol),Polar desolvation (kcal/mol),Hydrogen bond donors,Hydrogen bond acceptors,Polar surface area tPSA (Å^2),Net charge,Rotatable bonds,SMILES,Vendors and annotations\n";
+			hits_csv << "ID,SMILES,Database,USR score,USRCAT score,2D Tanimoto score,subsets,canonicalSMILES,molFormula,numAtoms,numHBD,numHBA,numRotatableBonds,numRings,exactMW,tPSA,clogP\n";
 			for (size_t l = 0; l < num_hits; ++l)
 			{
 				// Obtain indexes to the hit molecule and the hit conformer.
