@@ -143,6 +143,7 @@ int main(int argc, char* argv[])
 	pool pool(uri);
 	const auto client = pool.acquire(); // Return value of acquire() is an instance of entry. An entry is a handle on a client object acquired via the pool.
 	const auto db = client->database("jstar");
+	auto superdrug = db.collection("SuperDRUG");
 	auto coll = db.collection("usr2");
 	const auto jobid_filter = bsoncxx::from_json(R"({ "started" : { "$exists" : false }})");
 	const auto jobid_foau_options = options::find_one_and_update().sort(bsoncxx::from_json(R"({ "submitted" : 1 })")).projection(bsoncxx::from_json(R"({ "_id" : 1, "usr": 1 })")); // By default, the original document is returned
@@ -172,9 +173,8 @@ int main(int argc, char* argv[])
 		SubsetMols[k].reset(reinterpret_cast<ROMol*>(SmartsToMol(SubsetSMARTS[k])));
 	}
 
-	// Read ZINC ID file.
-	const auto zincids = read<unsigned int>("16/zincid.i32");
-	const auto num_ligands = zincids.size();
+	// Read ID file.
+	const size_t num_ligands = superdrug.count_documents(bsoncxx::from_json("{}")); // count_documents() returns int64_t. Here convert to size_t.
 	cout << local_time() << "Found " << num_ligands << " database molecules" << endl;
 
 	// Calculate number of conformers.
@@ -527,9 +527,9 @@ int main(int argc, char* argv[])
 
 				const auto u0score = 1 / (1 + scores[k] * qv[usr0]); // Primary score of the current molecule.
 				const auto u1score = 1 / (1 + s         * qv[usr1]); // Secondary score of the current molecule.
-				const auto zincid = zincids[k]; // TODO: prepend "ZINC" and zeroes to recover the original ZINC ID.
+//				const auto zincid = zincids[k];
 				hits_csv
-					<< zincid
+//					<< zincid
 					<< setprecision(8)
 					<< ',' << (usr1 ? u0score : u1score)
 					<< ',' << (usr1 ? u1score : u0score)
