@@ -173,14 +173,18 @@ int main(int argc, char* argv[])
 		SubsetMols[k].reset(reinterpret_cast<ROMol*>(SmartsToMol(SubsetSMARTS[k])));
 	}
 
-	// Read ID file.
-	cout << local_time() << "Finding the number of compounds from SuperDRUG" << endl;
+	// Count the number of compounds.
+	cout << local_time() << "Counting the number of compounds from SuperDRUG" << endl;
 	const size_t num_compounds = superdrug.count_documents(bsoncxx::from_json("{}")); // count_documents() returns int64_t. Here convert to size_t.
 	cout << local_time() << "Found " << num_compounds << " compounds from SuperDRUG" << endl;
 
-	// Calculate number of conformers.
-	const auto num_conformers = num_compounds << 2;
-	cout << local_time() << "Found " << num_conformers << " database conformers" << endl;
+	// Count the number of conformers.
+	cout << local_time() << "Counting the number of conformers from SuperDRUG" << endl;
+	pipeline count_conformers;
+	count_conformers.project(bsoncxx::from_json(R"({"numConformers":{"$size":"$jstar.conformers"}})")).group(bsoncxx::from_json(R"({"_id":"","numConformers":{"$sum":"$numConformers"}})"));
+	const size_t num_conformers = (*superdrug.aggregate(count_conformers).begin())["numConformers"].get_int32().value;
+	cout << local_time() << "Found " << num_conformers << " conformers from SuperDRUG" << endl;
+	assert(num_conformers == num_compounds << 2);
 
 	// Read feature file.
 	const auto features = read<array<double, qn.back()>>("16/usrcat.f64");
