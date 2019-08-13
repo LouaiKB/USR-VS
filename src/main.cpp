@@ -451,6 +451,21 @@ int main(int argc, char* argv[])
 				});
 			}
 			cnt.wait();
+			const auto feats_find_options = options::find().projection(bsoncxx::from_json(R"({
+				"_id" : 1,
+				"jstar.conformers.usrcat" : 1
+			})"));
+			auto cursor = superdrug.find(bsoncxx::from_json(R"({"jstar.subsets":{"$in":[""]}})"), feats_find_options);
+			size_t count = 0;
+			for (const auto view : cursor) {
+				// TODO: io.post(view);
+				const auto conformers = view["jstar"]["conformers"].get_array().value;
+				const auto conformer0usrcat = conformers[0]["usrcat"].get_array().value;
+				const auto conformer0usrcat0 = conformer0usrcat[0].get_double().value;
+				cout << view["_id"].get_utf8().value << '	' << conformer0usrcat0 << endl;
+				++count;
+			}
+			cout << count << endl;
 
 			// Sort the top hits from chunks.
 			cout << local_time() << "Sorting " << zcase.size() << " hits by " << usr_names[usr0] << " score" << endl;
