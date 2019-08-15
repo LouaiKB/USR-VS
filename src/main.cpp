@@ -51,7 +51,7 @@ inline vector<T> read(const path src) // Sequential read can be very fast when u
 {
 	ifstream ifs(src, ios::binary | ios::ate);
 	const size_t num_bytes = ifs.tellg();
-	cout << local_time() << "Reading " << src << " of " << num_bytes << " bytes" << endl;
+	cout << local_time() << "Reading " << src.filename() << " of " << num_bytes << " bytes" << endl;
 	vector<T> buf;
 	buf.resize(num_bytes / sizeof(T));
 	ifs.seekg(0);
@@ -124,27 +124,27 @@ array<Point3D, 4> calcRefPoints(const ROMol& mol, const vector<int>& heavyAtoms)
 int main(int argc, char* argv[])
 {
 	// Check the required number of command line arguments.
-	if (argc != 5)
+	if (argc != 6)
 	{
-		cout << "jlbvs host user pwd jobs_path" << endl;
+		cout << "jlbvs host port user pwd jobs_path" << endl;
 		return 0;
 	}
 
 	// Fetch command line arguments.
 	const auto host = argv[1];
-	const auto user = argv[2];
-	const auto pwd = argv[3];
-	const path jobs_path = argv[4];
+	const auto port = argv[2];
+	const auto user = argv[3];
+	const auto pwd = argv[4];
+	const path jobs_path = argv[5];
 
 	// Connect to host and authenticate user.
-	cout << local_time() << "Connecting to " << host << " and authenticating " << user << endl;
+	cout << local_time() << "Connecting to " << host << ':' << port << " and authenticating " << user << endl;
 	const instance inst; // The constructor and destructor initialize and shut down the driver. http://mongocxx.org/api/current/classmongocxx_1_1instance.html
 	const uri uri("mongodb://localhost:27017/?minPoolSize=0&maxPoolSize=2"); // When connecting to a replica set, it is much more efficient to use a pool as opposed to manually constructing client objects.
 	pool pool(uri);
 	const auto client = pool.acquire(); // Return value of acquire() is an instance of entry. An entry is a handle on a client object acquired via the pool.
 	const auto db = client->database("jstar");
-	auto superdrug = db.collection("SuperDRUG");
-	auto jlbvs = db.collection("jlbvs");
+	auto coll = db.collection("jlbvs");
 	const auto jobid_filter = bsoncxx::from_json(R"({ "started" : { "$exists" : false }})");
 	const auto jobid_foau_options = options::find_one_and_update().sort(bsoncxx::from_json(R"({ "submitted" : 1 })")).projection(bsoncxx::from_json(R"({ "_id" : 1, "usr": 1 })")); // By default, the original document is returned
 
@@ -173,18 +173,33 @@ int main(int argc, char* argv[])
 		SubsetMols[k].reset(reinterpret_cast<ROMol*>(SmartsToMol(SubsetSMARTS[k])));
 	}
 
-	// Count the number of compounds.
-	cout << local_time() << "Counting the number of compounds from SuperDRUG" << endl;
-	const size_t num_compounds = superdrug.count_documents(bsoncxx::from_json("{}")); // count_documents() returns int64_t. Here convert to size_t.
-	cout << local_time() << "Found " << num_compounds << " compounds from SuperDRUG" << endl;
+	// Read id file.
+	const path dbPath = "databases";
+	const string collName = "SCUBIDOO";
+	const path collPath = dbPath / collName;
+	cout << local_time() << "Reading " << collName << endl;
+	const auto id_u32 = read<uint32_t>(collPath / "id.u32");
+	const auto num_compounds = id_u32.size();
+	cout << local_time() << "Found " << num_compounds << " compounds from " << collName << endl;
 
-	// Count the number of conformers.
-	cout << local_time() << "Counting the number of conformers from SuperDRUG" << endl;
-	pipeline count_conformers;
-	count_conformers.project(bsoncxx::from_json(R"({"numConformers":{"$size":"$jstar.conformers"}})")).group(bsoncxx::from_json(R"({"_id":"","numConformers":{"$sum":"$numConformers"}})"));
-	const size_t num_conformers = (*superdrug.aggregate(count_conformers).begin())["numConformers"].get_int32().value;
-	cout << local_time() << "Found " << num_conformers << " conformers from SuperDRUG" << endl;
-	assert(num_conformers == num_compounds << 2);
+	// Read property files.
+	const auto numAtoms_u16 = read<uint16_t>(collPath / "numAtoms.u16");
+	assert(numAtoms_u16.size() == num_compounds);
+	const auto numHBD_u16 = read<uint16_t>(collPath / "numHBD.u16");
+	assert(numHBD_u16.size() == num_compounds);
+	const auto numHBA_u16 = read<uint16_t>(collPath / "numHBA.u16");
+	assert(numHBA_u16.size() == num_compounds);
+	const auto numRotatableBonds_u16 = read<uint16_t>(collPath / "numRotatableBonds.u16");
+	assert(numRotatableBonds_u16.size() == num_compounds);
+	const auto numRings_u16 = read<uint16_t>(collPath / "numRings.u16");
+	assert(numRings_u16.size() == num_compounds);
+	const auto exactMW_f32 = read<float>(collPath / "exactMW.f32");
+	assert(exactMW_f32.size() == num_compounds);
+	const auto tPSA_f32 = read<float>(collPath / "tPSA.f32");
+	assert(tPSA_f32.size() == num_compounds);
+	const auto clogP_f32 = read<float>(collPath / "clogP.f32");
+	assert(clogP_f32.size() == num_compounds);
+	const auto num_conformers = num_compounds << 2;
 
 	// Initialize variables.
 	array<vector<int>, num_subsets> subsets;
@@ -229,7 +244,7 @@ int main(int argc, char* argv[])
 				set_subdoc.append(kvp("started", bsoncxx::types::b_date(started)));
 			})
 		);
-		const auto jobid_document = jlbvs.find_one_and_update(jobid_filter.view(), jobid_update_builder.extract(), jobid_foau_options);
+		const auto jobid_document = coll.find_one_and_update(jobid_filter.view(), jobid_update_builder.extract(), jobid_foau_options);
 		if (!jobid_document)
 		{
 			// No incompleted jobs. Sleep for a while.
@@ -265,7 +280,7 @@ int main(int argc, char* argv[])
 					set_subdoc.append(kvp("error", error));
 				})
 			);
-			const auto compt_update = jlbvs.update_one(bsoncxx::builder::basic::make_document(kvp("_id", _id)), compt_update_builder.extract(), options::update()); // stdx::optional<result::update>. options: write_concern
+			const auto compt_update = coll.update_one(bsoncxx::builder::basic::make_document(kvp("_id", _id)), compt_update_builder.extract(), options::update()); // stdx::optional<result::update>. options: write_concern
 			assert(compt_update);
 			assert(compt_update->matched_count() == 1);
 			assert(compt_update->modified_count() == 1);
@@ -451,21 +466,6 @@ int main(int argc, char* argv[])
 				});
 			}
 			cnt.wait();
-			const auto feats_find_options = options::find().projection(bsoncxx::from_json(R"({
-				"_id" : 1,
-				"jstar.conformers.usrcat" : 1
-			})"));
-			auto cursor = superdrug.find(bsoncxx::from_json(R"({"jstar.subsets":{"$in":[""]}})"), feats_find_options);
-			size_t count = 0;
-			for (const auto view : cursor) {
-				// TODO: io.post(view);
-				const auto conformers = view["jstar"]["conformers"].get_array().value;
-				const auto conformer0usrcat = conformers[0]["usrcat"].get_array().value;
-				const auto conformer0usrcat0 = conformer0usrcat[0].get_double().value;
-				cout << view["_id"].get_utf8().value << '	' << conformer0usrcat0 << endl;
-				++count;
-			}
-			cout << count << endl;
 
 			// Sort the top hits from chunks.
 			cout << local_time() << "Sorting " << zcase.size() << " hits by " << usr_names[usr0] << " score" << endl;
@@ -567,7 +567,7 @@ int main(int argc, char* argv[])
 				set_subdoc.append(kvp("nqueries", num_queries));
 			})
 		);
-		const auto compt_update = jlbvs.update_one(bsoncxx::builder::basic::make_document(kvp("_id", _id)), compt_update_builder.extract(), options::update()); // stdx::optional<result::update>. options: write_concern
+		const auto compt_update = coll.update_one(bsoncxx::builder::basic::make_document(kvp("_id", _id)), compt_update_builder.extract(), options::update()); // stdx::optional<result::update>. options: write_concern
 		assert(compt_update);
 		assert(compt_update->matched_count() == 1);
 		assert(compt_update->modified_count() == 1);
