@@ -144,7 +144,7 @@ int main(int argc, char* argv[])
 	pool pool(uri);
 	const auto client = pool.acquire(); // Return value of acquire() is an instance of entry. An entry is a handle on a client object acquired via the pool.
 	const auto db = client->database("jstar");
-	auto coll = db.collection("jlbvs");
+	auto coll = db.collection("usr2");
 	const auto jobid_filter = bsoncxx::from_json(R"({ "started" : { "$exists" : false }})");
 	const auto jobid_foau_options = options::find_one_and_update().sort(bsoncxx::from_json(R"({ "submitted" : 1 })")).projection(bsoncxx::from_json(R"({ "_id" : 1, "usr": 1 })")); // By default, the original document is returned
 
@@ -266,26 +266,9 @@ int main(int argc, char* argv[])
 		const auto qnu0 = qn[usr0];
 		const auto qnu1 = qn[usr1];
 
-		// Read and validate the user-supplied SDF file.
-		cout << local_time() << "Reading and validating the query file" << endl;
+		// Read the user-supplied SDF file.
+		cout << local_time() << "Reading the query file" << endl;
 		SDMolSupplier sup((job_path / "query.sdf").string(), true, false, true); // sanitize, removeHs, strictParsing. Note: setting removeHs=true (which is the default setting) will lead to fewer hydrogen bond acceptors being matched.
-		if (!sup.length() || !sup.atEnd())
-		{
-			const auto error = 1;
-			cout << local_time() << "Failed to parse the query file, error code = " << error << endl;
-			bsoncxx::builder::basic::document compt_update_builder;
-			compt_update_builder.append(
-				kvp("$set", [=](bsoncxx::builder::basic::sub_document set_subdoc) {
-					set_subdoc.append(kvp("completed", bsoncxx::types::b_date(started)));
-					set_subdoc.append(kvp("error", error));
-				})
-			);
-			const auto compt_update = coll.update_one(bsoncxx::builder::basic::make_document(kvp("_id", _id)), compt_update_builder.extract(), options::update()); // stdx::optional<result::update>. options: write_concern
-			assert(compt_update);
-			assert(compt_update->matched_count() == 1);
-			assert(compt_update->modified_count() == 1);
-			continue;
-		}
 
 		// Process each of the query compounds sequentially.
 		const auto num_queries = 1; // Restrict the number of query compounds to 1. Setting num_queries = sup.length() to execute any number of query compounds.
