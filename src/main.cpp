@@ -181,8 +181,9 @@ int main(int argc, char* argv[])
 	const auto id_u32 = read<uint32_t>(collPath / "id.u32");
 	const auto num_compounds = id_u32.size();
 	cout << local_time() << "Found " << num_compounds << " compounds from " << collName << endl;
+	const auto num_conformers = num_compounds << 2;
 
-	// Read property files.
+/*	// Read property files.
 	const auto numAtoms_u16 = read<uint16_t>(collPath / "numAtoms.u16");
 	assert(numAtoms_u16.size() == num_compounds);
 	const auto numHBD_u16 = read<uint16_t>(collPath / "numHBD.u16");
@@ -198,8 +199,7 @@ int main(int argc, char* argv[])
 	const auto tPSA_f32 = read<float>(collPath / "tPSA.f32");
 	assert(tPSA_f32.size() == num_compounds);
 	const auto clogP_f32 = read<float>(collPath / "clogP.f32");
-	assert(clogP_f32.size() == num_compounds);
-	const auto num_conformers = num_compounds << 2;
+	assert(clogP_f32.size() == num_compounds);*/
 
 	// Initialize variables.
 	array<vector<int>, num_subsets> subsets;
