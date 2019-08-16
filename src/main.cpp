@@ -11,6 +11,7 @@
 #include <cassert>
 #include <chrono>
 #include <thread>
+#include <boost/format.hpp>
 #include <GraphMol/SmilesParse/SmilesParse.h>
 #include <GraphMol/FileParsers/MolSupplier.h>
 #include <GraphMol/MolDraw2D/MolDraw2DSVG.h>
@@ -188,7 +189,7 @@ int main(int argc, char* argv[])
 	assert(num_conformers == num_compounds << 2);
 
 	// Read ligand footer file and open ligand SDF file for seeking and reading.
-	stream_vector<size_t> conformers(collPath / "all.sdf");
+	stream_vector<size_t> conformers(collPath / "conformers.sdf");
 	assert(conformers.size() == num_conformers);
 
 	// Initialize variables.
@@ -448,7 +449,7 @@ int main(int argc, char* argv[])
 			SDWriter hits_sdf((output_dir / "hits.sdf").string());
 			ofstream hits_csv(output_dir / "hits.csv");
 			hits_csv.setf(ios::fixed, ios::floatfield);
-			hits_csv << "ID,SMILES,Database,USR score,USRCAT score,2D Tanimoto score,subsets,canonicalSMILES,molFormula,numAtoms,numHBD,numHBA,numRotatableBonds,numRings,exactMW,tPSA,clogP\n";
+			hits_csv << setprecision(8) << "ID,SMILES,Database,USR score,USRCAT score,2D Tanimoto score,subsets,canonicalSMILES,molFormula,numAtoms,numHBD,numHBA,numRotatableBonds,numRings,exactMW,tPSA,clogP\n";
 			for (size_t l = 0; l < num_hits; ++l)
 			{
 				// Obtain indexes to the hit compound and the hit conformer.
@@ -456,11 +457,10 @@ int main(int argc, char* argv[])
 				const auto j = cnfids[k];
 
 				// Read SDF content of the hit conformer.
-				// TODO: query the SDF conformer from MongoDB using _id, which is zincids[k]
-				const auto lig = "";
+				const auto hitSdf = conformers[j];
 
 				// Construct a RDKit ROMol object.
-				istringstream iss(lig);
+				istringstream iss(hitSdf);
 				SDMolSupplier sup(&iss, false, true, false, true);
 				assert(sup.length() == 1);
 				assert(sup.atEnd());
@@ -507,7 +507,6 @@ int main(int argc, char* argv[])
 				hits_sdf.write(hitMol);
 
 				// Calculate the secondary score of the saved conformer, which has the best primary score.
-				// TODO: query MongoDB again to fetch the USRCAT feature vector.
 				const auto& d = usrcat_f32[j];
 				double s = 0;
 				for (size_t i = 0; i < qnu1; ++i)
@@ -517,10 +516,11 @@ int main(int argc, char* argv[])
 
 				const auto u0score = 1 / (1 + scores[k] * qv[usr0]); // Primary score of the current compound.
 				const auto u1score = 1 / (1 + s         * qv[usr1]); // Secondary score of the current compound.
-//				const auto zincid = zincids[k];
+				const auto id = id_u32[k]; // id is of uint32_t. Preppend a prefix and zeros.
 				hits_csv
-//					<< zincid
-					<< setprecision(8)
+					<< boost::format("%08d") % id
+					<< ',' << "SMILES" // TODO: retrieve SMILES
+					<< ',' << collName
 					<< ',' << (usr1 ? u0score : u1score)
 					<< ',' << (usr1 ? u1score : u0score)
 					<< ',' << ts
