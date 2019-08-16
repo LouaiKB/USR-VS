@@ -11,7 +11,6 @@
 #include <cassert>
 #include <chrono>
 #include <thread>
-#include <boost/date_time/posix_time/posix_time.hpp>
 #include <GraphMol/SmilesParse/SmilesParse.h>
 #include <GraphMol/FileParsers/MolSupplier.h>
 #include <GraphMol/MolDraw2D/MolDraw2DSVG.h>
@@ -26,6 +25,7 @@
 #include <mongocxx/client.hpp>
 #include <bsoncxx/json.hpp>
 #include "io_service_pool.hpp"
+#include "vector_reader.hpp"
 #include "safe_counter.hpp"
 using namespace std;
 using namespace std::chrono;
@@ -37,27 +37,8 @@ using namespace RDKit::MorganFingerprints;
 using namespace RDGeom;
 using namespace RDNumeric::Alignments;
 using namespace MolTransforms;
-using namespace boost::posix_time;
 using namespace mongocxx;
 using bsoncxx::builder::basic::kvp;
-
-inline static auto local_time()
-{
-	return to_simple_string(microsec_clock::local_time()) + " "; // TODO: update to std::chrono::format(std::chrono::system_clock::now()) when this c++20 feature is implemented in gcc or clang
-}
-
-template <typename T>
-inline vector<T> read(const path src) // Sequential read can be very fast when using SSD
-{
-	ifstream ifs(src, ios::binary | ios::ate);
-	const size_t num_bytes = ifs.tellg();
-	cout << local_time() << "Reading " << src.filename() << " of " << num_bytes << " bytes" << endl;
-	vector<T> buf;
-	buf.resize(num_bytes / sizeof(T));
-	ifs.seekg(0);
-	ifs.read(reinterpret_cast<char*>(buf.data()), num_bytes);
-	return buf;
-}
 
 template<typename T>
 auto dist2(const T& p0, const T& p1)
@@ -181,7 +162,6 @@ int main(int argc, char* argv[])
 	const auto id_u32 = read<uint32_t>(collPath / "id.u32");
 	const auto num_compounds = id_u32.size();
 	cout << local_time() << "Found " << num_compounds << " compounds from " << collName << endl;
-	const auto num_conformers = num_compounds << 2;
 
 /*	// Read property files.
 	const auto numAtoms_u16 = read<uint16_t>(collPath / "numAtoms.u16");
@@ -200,6 +180,16 @@ int main(int argc, char* argv[])
 	assert(tPSA_f32.size() == num_compounds);
 	const auto clogP_f32 = read<float>(collPath / "clogP.f32");
 	assert(clogP_f32.size() == num_compounds);*/
+
+	// Read usrcat feature file.
+	const auto usrcat_f32 = read<array<float, qn.back()>>(collPath / "usrcat.f32");
+	const auto num_conformers = usrcat_f32.size();
+	cout << local_time() << "Found " << num_conformers << " conformers from " << collName << endl;
+	assert(num_conformers == num_compounds << 2);
+
+	// Read ligand footer file and open ligand SDF file for seeking and reading.
+	stream_vector<size_t> conformers(collPath / "all.sdf");
+	assert(conformers.size() == num_conformers);
 
 	// Initialize variables.
 	array<vector<int>, num_subsets> subsets;
@@ -419,16 +409,15 @@ int main(int argc, char* argv[])
 					const auto chunk_end = min(chunk_beg + chunk_size, num_compounds);
 					for (size_t k = chunk_beg; k < chunk_end; ++k)
 					{
-						// TODO: iterate the cursor to query usrcat feature vector from MongoDB
 						// Loop over conformers of the current compound and calculate their primary score.
 						auto& scorek = scores[k];
 						for (size_t j = k << 2; j < (k + 1) << 2; ++j)
 						{
-//							const auto& d = features[j];
+							const auto& d = usrcat_f32[j];
 							double s = 0;
 							for (size_t i = 0; i < qnu0; ++i)
 							{
-//								s += abs(q[i] - d[i]);
+								s += abs(q[i] - d[i]);
 								if (s >= scorek) break;
 							}
 							if (s < scorek)
@@ -519,11 +508,11 @@ int main(int argc, char* argv[])
 
 				// Calculate the secondary score of the saved conformer, which has the best primary score.
 				// TODO: query MongoDB again to fetch the USRCAT feature vector.
-//				const auto& d = features[j];
+				const auto& d = usrcat_f32[j];
 				double s = 0;
 				for (size_t i = 0; i < qnu1; ++i)
 				{
-//					s += abs(q[i] - d[i]);
+					s += abs(q[i] - d[i]);
 				}
 
 				const auto u0score = 1 / (1 + scores[k] * qv[usr0]); // Primary score of the current compound.
