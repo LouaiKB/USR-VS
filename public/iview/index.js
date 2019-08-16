@@ -463,12 +463,6 @@ void main()\n\
 									t.text(molecule[t.attr('id')]);
 								});
 								$('#id', output).parent().attr('href', '//zinc.docking.org/substance/' + molecule.id);
-								for (var zid = parseInt(molecule.id), subdir = 0; zid >= zidends[subdir]; ++subdir);
-								var hsvg = $('#hsvg', output);
-								var hsvgpath = subdir + '/' + molecule.id + '.svg';
-								hsvg.attr('src', null);
-								hsvg.attr('src', hsvgpath);
-								hsvg.parent().attr('href', hsvgpath);
 							};
 							var hids = $('#hids');
 							hids.html(hmolecules.map(function (molecule, index) {
