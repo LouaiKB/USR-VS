@@ -414,7 +414,6 @@ void main()\n\
 				});
 				return iv;
 			});
-			var zidends = [ 10098674, 25064553, 43025312, 58434000, 67400572, 72366611, 77856386, 86453019, 92260758, 99999999 ];
 			$.ajax({
 				url: path + 'query.sdf',
 			}).done(function (qsdf) {
