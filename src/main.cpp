@@ -537,6 +537,7 @@ int main(int argc, char* argv[])
 			kvp("$set", [=](bsoncxx::builder::basic::sub_document set_subdoc) {
 				set_subdoc.append(kvp("completed", bsoncxx::types::b_date(completed)));
 				set_subdoc.append(kvp("nqueries", num_queries));
+				set_subdoc.append(kvp("numConformers", num_conformers));
 			})
 		);
 		const auto compt_update = coll.update_one(bsoncxx::builder::basic::make_document(kvp("_id", _id)), compt_update_builder.extract(), options::update()); // stdx::optional<result::update>. options: write_concern
