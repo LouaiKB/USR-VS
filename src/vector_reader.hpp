@@ -27,12 +27,12 @@ inline vector<T> read(const path src) // Sequential read can be very fast when u
 	return buf;
 }
 
-//! Represents a vector of headers, which are the positions of the first character of each entity in a concatenanted file.
-template <typename size_type> // Size type of the encoded binary representation of the footer file. This is usually size_t in order to support seeking vector files with >4GB filesize.
+//! Represents a vector of headers, which are the positions of the first character of each entity in a vector file.
+template <typename size_type> // Size type of the encoded binary representation of the footer file. This is usually size_t in order to support seeking vector files of >4GB.
 class header_vector
 {
 public:
-	//! Reads the footer file for the concatenanted file.
+	//! Reads the footer file for the vector file.
 	explicit header_vector(path src) :
 		ftr(read<size_t>(src.replace_extension(".ftr")))
 	{
