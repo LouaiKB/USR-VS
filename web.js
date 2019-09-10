@@ -66,7 +66,6 @@ if (cluster.isMaster) {
 					res.json(signal);
 					return;
 				}
-				v.res.version = 1;
 				v.res.submitted = new Date();
 				v.res._id = new mongodb.ObjectID();
 				var dir = __dirname + '/public/jobs/' + v.res._id;
