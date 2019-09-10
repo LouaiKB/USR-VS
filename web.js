@@ -42,6 +42,7 @@ if (cluster.isMaster) {
 					'started': 1,
 					'completed': 1,
 					'nqueries': 1,
+					'numConformers': 1,
 				},
 			}).then((doc) => {
 				res.json(doc);
