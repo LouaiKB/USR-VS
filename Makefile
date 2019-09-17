@@ -1,9 +1,6 @@
 CC=clang++
 
-all: bin/embed_static bin/embed bin/validatesdf bin/encode bin/usrd
-
-bin/embed_static: obj/embed.o
-	${CC} -o $@ $^ -static -pthread -L${RDKIT_ROOT}/lib -lRDKitMolDraw2D_static -lRDKitDistGeomHelpers_static -lRDKitChemReactions_static -lRDKitFileParsers_static -lRDKitDistGeometry_static -lRDKitDepictor_static -lRDKitForceFieldHelpers_static -lRDKitMolTransforms_static -lRDKitSubstructMatch_static -lRDKitSmilesParse_static -lRDKitForceField_static -lRDKitEigenSolvers_static -lRDKitAlignment_static -lRDKitcoordgenlib_static -lRDKitmaeparser_static -lRDKitGraphMol_static -lRDKitRDGeometryLib_static -lRDKitRDGeneral_static
+all: bin/embed bin/validatesdf bin/encode bin/usrd
 
 bin/embed: obj/embed.o
 	${CC} -o $@ $^ -L${RDKIT_ROOT}/lib -lRDKitMolDraw2D -lRDKitDistGeomHelpers -lRDKitFileParsers -lRDKitDepictor -lRDKitGraphMol -lRDKitRDGeneral
