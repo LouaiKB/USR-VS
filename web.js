@@ -12,7 +12,7 @@ if (cluster.isMaster) {
 	});
 } else {
 	const mongodb = require('mongodb');
-	mongodb.MongoClient.connect('mongodb://localhost:27017', { useNewUrlParser: true }).then((mongoClient) => { // poolSize is 5 by default
+	mongodb.MongoClient.connect('mongodb://localhost:27017', { useNewUrlParser: true, useUnifiedTopology: true }).then((mongoClient) => { // poolSize is 5 by default
 		const jstar = mongoClient.db('jstar');
 		const usr = jstar.collection('usr2');
 		var express = require('express');
