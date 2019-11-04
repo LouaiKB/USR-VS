@@ -121,7 +121,6 @@
 				</div>
 				<div class="col-lg-3">
 					<p>Chemical structure of the query molecule</p>
-					<a><img class="img-responsive" id="qsvg" src="javascript:void(0)" alt="SVG of the query molecule"></a>
 				</div>
 				<div class="col-lg-3">
 					<p>Chemical structure of the hit molecule</p>
@@ -143,6 +142,14 @@
 				</div>
 			</div>
 			<div class="row">
+				<div class="col-lg-6">
+					<canvas id="qdrawer" style="background: #000000"></canvas>
+				</div>
+				<div class="col-lg-6">
+					<canvas id="hdrawer" style="background: #000000"></canvas>
+				</div>
+			</div>
+			<div class="row">
 				<div class="col-lg-12">
 					<p class="text-center">Hongjian Li, Kwong-Sak Leung, Takanori Nakane and Man-Hon Wong. iview: an interactive WebGL visualizer for protein-ligand complex. <em>BMC Bioinformatics</em>, 15(1):56, 2014. <a href="http://doi.org/10.1186/1471-2105-15-56">DOI: 10.1186/1471-2105-15-56</a></p>
 				</div>
@@ -159,6 +166,7 @@
     <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/js/bootstrap.min.js" integrity="sha384-JjSmVgyd0p3pXB1rRibZUAYoIIy6OrQ6VrjIEaFf/nJGzIxFDsf4x0xIM+B07jRM" crossorigin="anonymous"></script>
 	<script src="https://cdnjs.cloudflare.com/ajax/libs/jquery-dateFormat/1.0/jquery.dateFormat.js" integrity="sha384-WNSQOHmezg0/SrVhVlOSQjMzZFw5Nsf5cDDW7wgt87+V06OWZM2skNsxCuulWQQS" crossorigin="anonymous"></script>
 	<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/109/three.min.js" integrity="sha384-cyVf+4sm4rU+8f2g+9XsTm6e9qtSgW62OFjFvr3xH770Qozm9vsRq25WrdxNZk+B" crossorigin="anonymous"></script>
+	<script src="https://unpkg.com/smiles-drawer@1.1.22/dist/smiles-drawer.min.js" integrity="sha384-ZTpUqd4lWhPDAuRWv9VjofbZ5kfDWr4B7uDVA1oAWR9//hfsjEAU9M64xPY1KMf0" crossorigin="anonymous"></script>
 	<script src="index.js"></script>
 </body>
 </html>

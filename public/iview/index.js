@@ -407,12 +407,16 @@ void main()\n\
 				iv.render();
 			};
 
-			var iviews = $('canvas').map(function (index) {
+			var iviews = $('canvas').slice(0, 2).map(function (index) {
 				var iv = new iview(this);
 				$('#exportButton' + index).click(function (e) {
 					iv.exportCanvas();
 				});
 				return iv;
+			});
+			const smilesDrawer = new SmilesDrawer.Drawer({
+				width: 540,
+				height: 540,
 			});
 			$.ajax({
 				url: path + 'query.sdf',
@@ -429,11 +433,11 @@ void main()\n\
 						var t = $(this);
 						t.attr('href', qpath + t.text());
 					});
-					var qsvg = $('#qsvg', output);
-					var qsvgpath = qpath + 'query.svg';
-					qsvg.attr('src', null);
-					qsvg.attr('src', qsvgpath);
-					qsvg.parent().attr('href', qsvgpath);
+					// TODO: parse SMILES from query.sdf.
+					const qsmiles = "ClC(c1ccccc1)=C(c2ccc(OCCN(CC)CC)cc2)c3ccccc3";
+					SmilesDrawer.parse(qsmiles, (qtree) => { // SmilesDrawer.parse() is a static function.
+	                    smilesDrawer.draw(qtree, 'qdrawer', 'dark');
+	                });
 					$.ajax({
 						url: qpath + 'hits.sdf',
 					}).done(function (hsdf) {
@@ -462,6 +466,11 @@ void main()\n\
 									t.text(molecule[t.attr('id')]);
 								});
 								$('#id', output).parent().attr('href', '//zinc.docking.org/substance/' + molecule.id);
+								// TODO: parse SMILES from hits.sdf.
+								const hsmiles = "ClC(c1ccccc1)=C(c2ccc(OCCN(CC)CC)cc2)c3ccccc3";
+								SmilesDrawer.parse(hsmiles, (htree) => { // SmilesDrawer.parse() is a static function.
+				                    smilesDrawer.draw(htree, 'hdrawer', 'dark');
+				                });
 							};
 							var hids = $('#hids');
 							hids.html(hmolecules.map(function (molecule, index) {
