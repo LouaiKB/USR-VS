@@ -220,6 +220,7 @@ void main()\n\
 				var obj = new THREE.Object3D();
 				for (var i in atoms) {
 					var atom = atoms[i];
+					if (atom.elem === 'C') continue;
 					var bb = createLabel(atom.elem, 64, '#EEEEEE');
 					bb.position.copy(atom.coord);
 					obj.add(bb);
