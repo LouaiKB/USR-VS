@@ -12,6 +12,7 @@
 #include <chrono>
 #include <thread>
 #include <boost/format.hpp>
+#include <boost/algorithm/string.hpp>
 #include <GraphMol/SmilesParse/SmilesParse.h>
 #include <GraphMol/FileParsers/MolSupplier.h>
 #include <GraphMol/MolDraw2D/MolDraw2DSVG.h>
@@ -108,7 +109,7 @@ int main(int argc, char* argv[])
 	// Check the required number of command line arguments.
 	if (argc != 6)
 	{
-		cout << "jlbvs host port user pwd jobs_path" << endl;
+		cout << "jusrd host port user pwd jobs_path" << endl;
 		return 0;
 	}
 
@@ -157,11 +158,13 @@ int main(int argc, char* argv[])
 
 	// Read id file.
 	const path dbPath = "databases";
-	const string collName = "SCUBIDOO";
+	const string collName = "Selleckchem";
 	const path collPath = dbPath / collName;
 	cout << local_time() << "Reading " << collName << endl;
-	const auto id_u32 = read<uint32_t>(collPath / "id.u32");
-	const auto num_compounds = id_u32.size();
+//	const auto id_u32 = read<uint32_t>(collPath / "id.u32");
+	const auto id_str = readLines(collPath / "id.txt");
+//	const auto num_compounds = id_u32.size();
+	const auto num_compounds = id_str.size();
 	cout << local_time() << "Found " << num_compounds << " compounds from " << collName << endl;
 
 /*	// Read property files.
@@ -189,6 +192,8 @@ int main(int argc, char* argv[])
 	assert(num_conformers == num_compounds << 2);
 
 	// Read ligand footer file and open ligand SDF file for seeking and reading.
+	stream_vector<size_t> descriptors(collPath / "descriptors.tsv");
+	assert(descriptors.size() == num_compounds);
 	stream_vector<size_t> conformers(collPath / "conformers.sdf");
 	assert(conformers.size() == num_conformers);
 
@@ -211,8 +216,8 @@ int main(int argc, char* argv[])
 	io_service_pool io(num_threads);
 	safe_counter<size_t> cnt;
 
-	// Initialize the number of chunks and the number of compounds per chunk.
-	const auto num_chunks = num_threads << 4;
+	// Initialize the number of chunks and the number of compounds per chunk. TODO: the choice of num_chunks depends on num_compounds.
+	const auto num_chunks = num_threads << 2;
 	const auto chunk_size = 1 + (num_compounds - 1) / num_chunks;
 	assert(chunk_size * num_chunks >= num_compounds);
 	assert(chunk_size >= num_hits);
@@ -516,14 +521,29 @@ int main(int argc, char* argv[])
 
 				const auto u0score = 1 / (1 + scores[k] * qv[usr0]); // Primary score of the current compound.
 				const auto u1score = 1 / (1 + s         * qv[usr1]); // Secondary score of the current compound.
-				const auto id = id_u32[k]; // id is of uint32_t. Preppend a prefix and zeros.
+				const auto id = id_str[k];
+				vector<string> descs;
+				split(descs, descriptors[k], boost::is_any_of("	")); // Split the descriptor line into columns, which are [ID	canonicalSMILES	molFormula	numAtoms	numHBD	numHBA	numRotatableBonds	numRings	exactMW	tPSA	clogP	subset]
 				hits_csv
-					<< boost::format("%08d") % id
-					<< ',' << "SMILES" // TODO: retrieve SMILES
+//					<< boost::format("%08d") % id // SCUBIDOO
+//					<< boost::format("S%d") % id // Selleckchem
+					<< id
+					<< ',' << descs[1]
 					<< ',' << collName
 					<< ',' << (usr1 ? u0score : u1score)
 					<< ',' << (usr1 ? u1score : u0score)
 					<< ',' << ts
+					<< ','
+					<< ',' << descs[1]
+					<< ',' << descs[2]
+					<< ',' << descs[3]
+					<< ',' << descs[4]
+					<< ',' << descs[5]
+					<< ',' << descs[6]
+					<< ',' << descs[7]
+					<< ',' << descs[8]
+					<< ',' << descs[9]
+					<< ',' << descs[10]
 					<< '\n'
 				;
 			}

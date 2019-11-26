@@ -27,6 +27,21 @@ inline vector<T> read(const path src) // Sequential read can be very fast when u
 	return buf;
 }
 
+inline vector<string> readLines(const path src) // Sequential read can be very fast when using SSD
+{
+	ifstream ifs(src, ios::binary | ios::ate);
+	const size_t num_bytes = ifs.tellg();
+	cout << local_time() << "Reading " << src.filename() << " of " << num_bytes << " bytes" << endl;
+	vector<string> vec;
+	vec.reserve(num_bytes / 6); // An average line size is 6 bytes.
+	ifs.seekg(0);
+	string line;
+	while (getline(ifs, line)) {
+		vec.push_back(move(line));
+	}
+	return vec;
+}
+
 //! Represents a vector of headers, which are the positions of the first character of each entity in a vector file.
 template <typename size_type> // Size type of the encoded binary representation of the footer file. This is usually size_t in order to support seeking vector files of >4GB.
 class header_vector
@@ -34,7 +49,7 @@ class header_vector
 public:
 	//! Reads the footer file for the vector file.
 	explicit header_vector(path src) :
-		ftr(read<size_t>(src.replace_extension(".ftr")))
+		ftr(read<size_t>(src.replace_extension(src.extension().string() + ".ftr")))
 	{
 	}
 
