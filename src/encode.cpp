@@ -65,7 +65,7 @@ int main(int argc, char* argv[])
 		auto& mol = *mol_ptr;
 
 		// Get the number of points, excluding hydrogens.
-		const auto num_points = mol.getNumHeavyAtoms();
+		const auto num_points = mol.getNumHeavyAtoms(); // For Specs's AT-819_OC12264.sdf, getNumHeavyAtoms() resulted in a segmentation fault.
 
 		// Categorize atoms into pharmacophoric subsets.
 		for (size_t k = 0; k < num_subsets; ++k)
