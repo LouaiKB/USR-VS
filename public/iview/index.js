@@ -480,11 +480,14 @@ void main()\n\
 									t.text(molecule[t.attr('id')]);
 								});
 								$('#id', output).parent().attr('href', '//zinc.docking.org/substance/' + molecule.id);
-								SmilesDrawer.parse(molecule['canonicalSMILES'], (htree) => { // SmilesDrawer.parse() is a static function.
-				                    smilesDrawer.draw(htree, 'hdrawer', 'dark');
-				                }, (err) => {
-									// TODO: noty()
-								});
+								if (!molecule['canonicalSmilesTree']) {
+									SmilesDrawer.parse(molecule['canonicalSMILES'], (htree) => { // SmilesDrawer.parse() is a static function.
+										molecule['canonicalSmilesTree'] = htree;
+					                }, (err) => {
+										// TODO: noty()
+									});
+								}
+								smilesDrawer.draw(molecule['canonicalSmilesTree'], 'hdrawer', 'dark');
 							};
 							var hids = $('#hids');
 							hids.html(hmolecules.map((molecule, index) => {
