@@ -58,7 +58,7 @@ if (cluster.isMaster) {
 				return;
 			}
 			var validatesdf = cp.spawn(__dirname + '/bin/validatesdf');
-			validatesdf.on('close', function (code, signal) {
+			validatesdf.on('close', (code, signal) => {
 				if (code) {
 					res.json(code);
 					return;
@@ -71,7 +71,7 @@ if (cluster.isMaster) {
 				var dir = __dirname + '/public/jobs/' + v.res._id;
 				fs.mkdir(dir, (err) => {
 					if (err) throw err;
-					fs.writeFile(dir + '/query.sdf', req.body['query'], function(err) {
+					fs.writeFile(dir + '/query.sdf', req.body['query'], (err) => {
 						if (err) throw err;
 						usr.insertOne(v.res, { w: 0 });
 						res.json(v.res._id);
@@ -107,7 +107,7 @@ if (cluster.isMaster) {
 					var tmp = mktemp_out.slice(0, -1).toString();
 					var embed = cp.spawn(__dirname + '/bin/embed', [tmp]);
 					var embed_out = new Buffer(0);
-					embed.stdout.on('data', function (data) {
+					embed.stdout.on('data', (data) => {
 						embed_out = Buffer.concat([embed_out, data]);
 					});
 					embed.on('close', (code, signal) => {
