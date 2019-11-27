@@ -99,7 +99,7 @@
 				</div>
 			</div>
 			<div class="row" id="output">
-				<div class="col-lg-3">
+				<div class="col-lg-6">
 					<p>Output files of the hit molecules for download</p>
 					<ul id="downloads">
 						<li><a><img src="excel.png" alt="">hits.csv</a></li>
@@ -119,25 +119,20 @@
 						<li>Ctrl + shift: slab</li>
 					</ul>
 				</div>
-				<div class="col-lg-3">
-					<p>Chemical structure of the query molecule</p>
-				</div>
-				<div class="col-lg-3">
-					<p>Chemical structure of the hit molecule</p>
-				</div>
-				<div class="col-lg-3">
-					<p>11 chemical properties of the hit molecule</p>
+				<div class="col-lg-6">
+					<p>Chemical properties of the hit molecule</p>
 					<ul>
 						<li>ID: <a target="_blank"><span id="id"></span></a></li>
-						<li>Heavy atoms: <span id="nha"></span></li>
-						<li>Molecular weight (g/mol): <span id="mwt"></span></li>
-						<li>Partition coefficient xlogP: <span id="lgp"></span></li>
-						<li>Rotatable bonds: <span id="nrb"></span></li>
-						<li>Hydrogen bond donors: <span id="hbd"></span></li>
-						<li>Hydrogen bond acceptors: <span id="hba"></span></li>
-						<li>Net charge: <span id="chg"></span></li>
-						<li>Polar surface area tPSA (&Aring;<sup>2</sup>): <span id="psa"></span></li>
-						<li>SMILES: <span id="smiles"></span></li>
+						<li>Molecular formula: <span id="molFormula"></span></li>
+						<li>Heavy atoms: <span id="numAtoms"></span></li>
+						<li>Molecular weight (g/mol): <span id="exactMW"></span></li>
+						<li>Partition coefficient clogP: <span id="clogP"></span></li>
+						<li>Rotatable bonds: <span id="numRotatableBonds"></span></li>
+						<li>Rings: <span id="numRings"></span></li>
+						<li>Hydrogen bond donors: <span id="numHBD"></span></li>
+						<li>Hydrogen bond acceptors: <span id="numHBA"></span></li>
+						<li>Polar surface area tPSA (&Aring;<sup>2</sup>): <span id="tPSA"></span></li>
+						<li>SMILES: <span id="canonicalSMILES"></span></li>
 					</ul>
 				</div>
 			</div>

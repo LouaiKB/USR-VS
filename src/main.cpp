@@ -454,7 +454,7 @@ int main(int argc, char* argv[])
 			SDWriter hits_sdf((output_dir / "hits.sdf").string());
 			ofstream hits_csv(output_dir / "hits.csv");
 			hits_csv.setf(ios::fixed, ios::floatfield);
-			hits_csv << setprecision(8) << "ID,SMILES,Database,USR score,USRCAT score,2D Tanimoto score,subsets,canonicalSMILES,molFormula,numAtoms,numHBD,numHBA,numRotatableBonds,numRings,exactMW,tPSA,clogP\n";
+			hits_csv << setprecision(8) << "ID,USR score,USRCAT score,2D Tanimoto score,canonicalSMILES,molFormula,numAtoms,numHBD,numHBA,numRotatableBonds,numRings,exactMW,tPSA,clogP\n";
 			for (size_t l = 0; l < num_hits; ++l)
 			{
 				// Obtain indexes to the hit compound and the hit conformer.
@@ -528,12 +528,12 @@ int main(int argc, char* argv[])
 //					<< boost::format("%08d") % id // SCUBIDOO
 //					<< boost::format("S%d") % id // Selleckchem
 					<< id
-					<< ',' << descs[1]
-					<< ',' << collName
+//					<< ',' << descs[1]
+//					<< ',' << collName
 					<< ',' << (usr1 ? u0score : u1score)
 					<< ',' << (usr1 ? u1score : u0score)
 					<< ',' << ts
-					<< ','
+//					<< ',' // subset
 					<< ',' << descs[1]
 					<< ',' << descs[2]
 					<< ',' << descs[3]
