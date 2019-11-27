@@ -56,21 +56,21 @@
  * WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
  */
 
-$(function () {
+$(() => {
 
 	// Get the latest job status
 	var status = $('#status');
 	var jobid = location.search.substr(1);
-	var tick = function () {
-		$.get('../job', { id: jobid }, function (job) {
+	var tick = () => {
+		$.get('../job', { id: jobid }, (job) => {
 			job.usrF = ['USR', 'USRCAT'][job.usr];
-			['submitted', 'started', 'completed'].forEach(function (key) {
+			['submitted', 'started', 'completed'].forEach((key) => {
 				if (job[key] === undefined) return;
 				job[key] = new Date(job[key]);
 				job[key+'F'] = $.format.date(job[key], 'yyyy/MM/dd HH:mm:ss.SSS');
 			});
 			job.info = job.completed ? (job.error ? ["", "Failed to parse the query file. Please choose a file in SDF format."][parseInt(job.error)] : 'Completed ' + job.nqueries + ' ' + (job.nqueries == 1 ? 'query' : 'queries') + ' in ' + (runtime=((job['completed']-job['started'])*0.001)).toFixed(3) + ' seconds.<br>Screening speed was ' + (job.numConformers*0.001*parseInt(job.nqueries)/runtime).toFixed(0) + 'K 3D conformers per second.') : (job.started ? 'Execution in progress <img src="loading.gif" style="width: 16px; height: 16px;">' : 'Queued for execution');
-			$('span', status).each(function (d) {
+			$('span', status).each(function (d) { // 'this' binding is used.
 				var t = $(this);
 				var c = job[t.attr('id')];
 				if (t.html() !== c) {
@@ -152,13 +152,18 @@ void main()\n\
 			labelGeo.faces.push(new THREE.Face3(0, 2, 3));
 			labelGeo.faceVertexUvs[0].push([new THREE.Vector2(0, 0), new THREE.Vector2(1, 1), new THREE.Vector2(0, 1)]);
 			labelGeo.faceVertexUvs[0].push([new THREE.Vector2(0, 0), new THREE.Vector2(1, 0), new THREE.Vector2(1, 1)]);
-			var createSphere = function (atom, radius) {
+			var fontLoader = new THREE.FontLoader();
+			var helvetiker_regular;
+			fontLoader.load('helvetiker_regular.typeface.json', (font) => {
+				helvetiker_regular = font;
+			});
+			var createSphere = (atom, radius) => {
 				var mesh = new THREE.Mesh(sphereGeometry, new THREE.MeshLambertMaterial({ color: atom.color }));
 				mesh.scale.x = mesh.scale.y = mesh.scale.z = radius;
 				mesh.position.copy(atom.coord);
 				return mesh;
 			};
-			var createCylinder = function (p0, p1, radius, color) {
+			var createCylinder = (p0, p1, radius, color) => {
 				var mesh = new THREE.Mesh(cylinderGeometry, new THREE.MeshLambertMaterial({ color: color }));
 				mesh.position.copy(p0).add(p1).multiplyScalar(0.5);
 				mesh.lookAt(p0);
@@ -167,7 +172,13 @@ void main()\n\
 				mesh.matrix.multiply(new THREE.Matrix4().makeScale(radius, radius, p0.distanceTo(p1))).multiply(new THREE.Matrix4().makeRotationX(Math.PI * 0.5));
 				return mesh;
 			};
-			var createLabel = function (text, size, color) {
+			var createLabel = (text, size, color) => {
+				var mesh = new THREE.Mesh(new THREE.TextBufferGeometry(text, {
+					font: helvetiker_regular,
+					size: 0.6,
+					height: 0.1,
+				}), new THREE.MeshBasicMaterial({ color: color }));
+//				return mesh;
 				var canvas = document.createElement('canvas');
 				canvas.width = size;
 				canvas.height = size;
@@ -197,7 +208,7 @@ void main()\n\
 					},
 				}));
 			};
-			var createStickRepresentation = function (atoms, atomR, bondR) {
+			var createStickRepresentation = (atoms, atomR, bondR) => {
 				var obj = new THREE.Object3D();
 				for (var i in atoms) {
 					var atom0 = atoms[i];
@@ -216,18 +227,18 @@ void main()\n\
 				}
 				return obj;
 			};
-			var createLabelRepresentation = function (atoms) {
+			var createLabelRepresentation = (atoms) => {
 				var obj = new THREE.Object3D();
 				for (var i in atoms) {
 					var atom = atoms[i];
 					if (atom.elem === 'C') continue;
 					var bb = createLabel(atom.elem, 64, '#EEEEEE');
-					bb.position.copy(atom.coord);
+					bb.position.copy(atom.coord.clone().add(new THREE.Vector3(0.2, 0.2, 0.2)));
 					obj.add(bb);
 				}
 				return obj;
 			};
-			var iview = function (canvas) {
+			var iview = function (canvas) { // 'this' binding is used.
 				this.canvas = $(canvas);
 				this.canvas.height(this.canvas.width());
 				this.canvas.widthInv  = 1 / this.canvas.width();
@@ -254,13 +265,13 @@ void main()\n\
 				this.camera.position.set(0, 0, -150);
 				this.camera.lookAt(new THREE.Vector3(0, 0, 0));
 				var me = this;
-				this.canvas.bind('contextmenu', function (e) {
+				this.canvas.bind('contextmenu', (e) => {
 					e.preventDefault();
 				});
-				this.canvas.bind('mouseup touchend', function (e) {
+				this.canvas.bind('mouseup touchend', (e) => {
 					me.dg = false;
 				});
-				this.canvas.bind('mousedown touchstart', function (e) {
+				this.canvas.bind('mousedown touchstart', (e) => {
 					e.preventDefault();
 					var x = e.pageX;
 					var y = e.pageY;
@@ -278,7 +289,7 @@ void main()\n\
 					me.cn = me.sn;
 					me.cf = me.sf;
 				});
-				this.canvas.bind('mousemove touchmove', function (e) {
+				this.canvas.bind('mousemove touchmove', (e) => {
 					e.preventDefault();
 					if (!me.dg) return;
 					var x = e.pageX;
@@ -306,12 +317,12 @@ void main()\n\
 					}
 					me.render();
 				});
-				this.canvas.bind('mousewheel', function (e) {
+				this.canvas.bind('mousewheel', (e) => {
 					e.preventDefault();
 					me.rot.position.z -= e.originalEvent.wheelDelta * 0.025;
 					me.render();
 				});
-				this.canvas.bind('DOMMouseScroll', function (e) {
+				this.canvas.bind('DOMMouseScroll', (e) => {
 					e.preventDefault();
 					me.rot.position.z += e.originalEvent.detail;
 					me.render();
@@ -319,7 +330,7 @@ void main()\n\
 			};
 			iview.prototype = {
 				constructor: iview,
-				reset: function (molecule) {
+				reset: function (molecule) { // 'this' binding is used.
 					var maxD = molecule.maxD;
 					if (maxD === undefined) {
 						var cmin = new THREE.Vector3( 10000, 10000, 10000);
@@ -340,7 +351,7 @@ void main()\n\
 					this.mdl.position.copy(molecule.ctrV);
 					this.rot.position.z = maxD * 0.35 / Math.tan(Math.PI / 180.0 * 10) - 140;
 				},
-				render: function () {
+				render: function () { // 'this' binding is used.
 					var center = this.rot.position.z - this.camera.position.z;
 					if (center < 1) center = 1;
 					this.camera.near = center + this.sn;
@@ -352,12 +363,12 @@ void main()\n\
 					this.scene.fog.far = this.camera.far;
 					this.renderer.render(this.scene, this.camera);
 				},
-				exportCanvas: function () {
+				exportCanvas: function () { // 'this' binding is used.
 					this.render();
 					window.open(this.renderer.domElement.toDataURL('image/png'));
 				},
 			};
-			var parseSDF = function (src) {
+			var parseSDF = (src) => {
 				var molecules = [];
 				for (var lines = src.split(/\r\n|\n|\r/), l = lines.length - 1, offset = 0; offset < l;) {
 					var molecule = {
@@ -394,7 +405,7 @@ void main()\n\
 				}
 				return molecules;
 			};
-			var refreshMolecule = function (molecule, iv) {
+			var refreshMolecule = (molecule, iv) => {
 				if (molecule.representations === undefined) {
 					molecule.representations = {
 						stick: createStickRepresentation(molecule.atoms, 0.3, 0.3),
@@ -408,7 +419,7 @@ void main()\n\
 				iv.render();
 			};
 
-			var iviews = $('canvas').slice(0, 2).map(function (index) {
+			var iviews = $('canvas').slice(0, 2).map(function (index) { // 'this' binding is used.
 				var iv = new iview(this);
 				$('#exportButton' + index).click(function (e) {
 					iv.exportCanvas();
@@ -421,60 +432,64 @@ void main()\n\
 			});
 			$.ajax({
 				url: path + 'query.sdf',
-			}).done(function (qsdf) {
+			}).done((qsdf) => {
 				var qmolecules = parseSDF(qsdf).slice(0, 1);
 				if (qmolecules.length !== job.nqueries) throw Error("qmolecules.length !== job.nqueries");
 				$('#qids_label').text(qmolecules.length + ' query molecule' + (qmolecules.length == 1 ? '' : 's'));
 				var qindex;
-				var refreshQuery = function (qidx) {
+				var refreshQuery = (qidx) => {
 					refreshMolecule(qmolecules[qindex = qidx], iviews[0]);
 					var qpath = path + qindex + '/';
 					var output = $('#output');
-					$('#downloads a', output).each(function () {
+					$('#downloads a', output).each(function () { // 'this' binding is used.
 						var t = $(this);
 						t.attr('href', qpath + t.text());
 					});
-					// TODO: parse SMILES from query.sdf.
+					// TODO: parse SMILES from hits.csv
 					const qsmiles = "ClC(c1ccccc1)=C(c2ccc(OCCN(CC)CC)cc2)c3ccccc3";
 					SmilesDrawer.parse(qsmiles, (qtree) => { // SmilesDrawer.parse() is a static function.
 	                    smilesDrawer.draw(qtree, 'qdrawer', 'dark');
-	                });
+	                }, (err) => {
+						// TODO: noty()
+					});
 					$.ajax({
 						url: qpath + 'hits.sdf',
-					}).done(function (hsdf) {
+					}).done((hsdf) => {
 						var hmolecules = parseSDF(hsdf);
 						if (hmolecules.length !== 100) throw Error("hmolecules.length !== 100");
 						$.ajax({
 							url: qpath + 'hits.csv',
-						}).done(function (hcsv) {
+						}).done((hcsv) => {
 							var logs = hcsv.split(/\r?\n/).slice(1, 101);
 							if (logs.length !== hmolecules.length) throw Error("logs.length !== hmolecules.length");
-							var propNames = [ 'usr_score', 'usrcat_score', 'tanimoto_score', 'canonicalSMILES', 'numAtoms', 'numHBD', 'numHBA', 'numRotatableBonds', 'numRings', 'exactMW', 'tPSA', 'clogP' ];
-							$.each(hmolecules, function (i, molecule) {
+							var propNames = [ 'usr_score', 'usrcat_score', 'tanimoto_score', 'canonicalSMILES', 'molFormula', 'numAtoms', 'numHBD', 'numHBA', 'numRotatableBonds', 'numRings', 'exactMW', 'tPSA', 'clogP' ];
+							$.each(hmolecules, (i, molecule) => {
 								var properties = logs[i].split(',');
 								if (molecule.id !== properties[0]) throw Error("molecule.id !== properties[0]");
-								$.each(propNames, function (j, propName) {
+								$.each(propNames, (j, propName) => {
 									molecule[propName] = properties[1+j];
 								});
 							});
 							$('#hids_label').text(hmolecules.length + ' hit molecules sorted by ' + job.usrF + ' score');
 							var hindex;
-							var refreshHit = function (hidx) {
+							var refreshHit = (hidx) => {
 								var molecule = hmolecules[hindex = hidx];
 								refreshMolecule(molecule, iviews[1]);
-								$('span', output).each(function () {
+								$('span', output).each(function () { // 'this' binding is used.
 									var t = $(this);
 									t.text(molecule[t.attr('id')]);
 								});
 								$('#id', output).parent().attr('href', '//zinc.docking.org/substance/' + molecule.id);
-								// TODO: parse SMILES from hits.sdf.
+								// TODO: parse SMILES from hits.csv
 								const hsmiles = "ClC(c1ccccc1)=C(c2ccc(OCCN(CC)CC)cc2)c3ccccc3";
 								SmilesDrawer.parse(hsmiles, (htree) => { // SmilesDrawer.parse() is a static function.
 				                    smilesDrawer.draw(htree, 'hdrawer', 'dark');
-				                });
+				                }, (err) => {
+									// TODO: noty()
+								});
 							};
 							var hids = $('#hids');
-							hids.html(hmolecules.map(function (molecule, index) {
+							hids.html(hmolecules.map((molecule, index) => {
 								return '<label class="btn btn-primary"><input type="radio">' + index + '</label>';
 							}).join(''));
 							$('> .btn', hids).click(function (e) {
@@ -488,7 +503,7 @@ void main()\n\
 					});
 				};
 				var qids = $('#qids');
-				qids.html(Array.apply(0, Array(qmolecules.length)).map(function (value, index) {
+				qids.html(Array.apply(0, Array(qmolecules.length)).map((value, index) => {
 					return '<label class="btn btn-primary"><input type="radio">' + index + '</label>';
 				}).join(''));
 				$('> .btn', qids).click(function (e) {
