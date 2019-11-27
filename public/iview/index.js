@@ -480,9 +480,7 @@ void main()\n\
 									t.text(molecule[t.attr('id')]);
 								});
 								$('#id', output).parent().attr('href', '//zinc.docking.org/substance/' + molecule.id);
-								// TODO: parse SMILES from hits.csv
-								const hsmiles = "ClC(c1ccccc1)=C(c2ccc(OCCN(CC)CC)cc2)c3ccccc3";
-								SmilesDrawer.parse(hsmiles, (htree) => { // SmilesDrawer.parse() is a static function.
+								SmilesDrawer.parse(molecule['canonicalSMILES'], (htree) => { // SmilesDrawer.parse() is a static function.
 				                    smilesDrawer.draw(htree, 'hdrawer', 'dark');
 				                }, (err) => {
 									// TODO: noty()
