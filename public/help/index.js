@@ -1,27 +1,31 @@
-$(function() {
+$(() => {
 	var embed_in = $('#embed_in');
 	var embed_out = $('#embed_out');
-	var embed_svg = $('#embed_svg');
 	embed_out.hide();
-	embed_svg.hide();
+	const smilesDrawer = new SmilesDrawer.Drawer({
+		width: 540,
+		height: 540,
+	});
 	var submit = $('#submit');
-	submit.click(function() {
+	submit.click(() => {
 		submit.prop('disabled', true);
 		$.post('/embed', {
 			smiles: embed_in.val(),
-		}, function(res) {
-			if (res.tmp) {
+		}, (res) => {
+			if (res.embed_out) { // embed exited normally.
 				embed_out.attr('rows', res.embed_out.split(/\n/).length);
 				embed_out.text(res.embed_out);
-				embed_svg.attr('src', 'tmp/' + res.tmp);
-				embed_svg.show();
-			} else {
-				embed_svg.hide();
+				SmilesDrawer.parse(embed_in.val(), (tree) => { // SmilesDrawer.parse() is a static function.
+					smilesDrawer.draw(tree, 'drawer');
+				}, (err) => {
+					// TODO: noty()
+				});
+			} else { // embed did not run normally and exited with either a code or a signal.
 				embed_out.attr('rows', 1);
 				embed_out.text(JSON.stringify(res));
 			}
 			embed_out.show();
-		}).always(function() {
+		}).always(() => {
 			submit.prop('disabled', false);
 		});
 	});
