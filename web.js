@@ -58,7 +58,7 @@ if (cluster.isMaster) {
 				return;
 			}
 			var validatesdf = cp.spawn(__dirname + '/bin/validatesdf');
-			var validatesdf_out = new Buffer(0);
+			var validatesdf_out = Buffer.alloc(0);
 			validatesdf.stdout.on('data', (data) => {
 				validatesdf_out = Buffer.concat([validatesdf_out, data]);
 			});
@@ -94,7 +94,7 @@ if (cluster.isMaster) {
 				return;
 			}
 			var embed = cp.spawn(__dirname + '/bin/embed');
-			var embed_out = new Buffer(0);
+			var embed_out = Buffer.alloc(0);
 			embed.stdout.on('data', (data) => {
 				embed_out = Buffer.concat([embed_out, data]);
 			});
