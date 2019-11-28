@@ -1,10 +1,14 @@
 #include <GraphMol/MolOps.h>
 #include <GraphMol/FileParsers/MolSupplier.h>
+#include <GraphMol/FileParsers/MolWriters.h>
 #include <GraphMol/SmilesParse/SmilesParse.h>
 #include <GraphMol/Substruct/SubstructMatch.h>
+#include <GraphMol/FragCatalog/FragFPGenerator.h>
+#include <GraphMol/Descriptors/MolDescriptors.h>
 using namespace std;
 using namespace RDKit;
 using namespace RDKit::MolOps;
+using namespace RDKit::Descriptors;
 
 int main(int argc, char* argv[])
 {
@@ -38,5 +42,21 @@ int main(int argc, char* argv[])
 	if (num_matches != num_points) return 1;
 
 	// Ensure the removeHs() function can successfully sanitize and kekulize the molecule, avoiding "Can't kekulize mol."
-	removeHs(qryMol);
+	const unique_ptr<ROMol> qryMolNoH(removeHs(qryMol));
+
+	// Calculate canonical SMILES.
+	qryMol.setProp<string>("canonicalSMILES", MolToSmiles(*qryMolNoH)); // Default parameters are: const ROMol& mol, bool doIsomericSmiles = true, bool doKekule = false, int rootedAtAtom = -1, bool canonical = true, bool allBondsExplicit = false, bool allHsExplicit = false, bool doRandom = false. https://www.rdkit.org/docs/cppapi/namespaceRDKit.html#a3636828cca83a233d7816f3652a9eb6b
+	qryMol.setProp<string>("molFormula", calcMolFormula(qryMol));
+	qryMol.setProp<unsigned int>("numAtoms", num_points);
+	qryMol.setProp<unsigned int>("numHBD", calcNumHBD(qryMol));
+	qryMol.setProp<unsigned int>("numHBA", calcNumHBA(qryMol));
+	qryMol.setProp<unsigned int>("numRotatableBonds", calcNumRotatableBonds(qryMol));
+	qryMol.setProp<unsigned int>("numRings", calcNumRings(qryMol));
+	qryMol.setProp<double>("exactMW", calcExactMW(qryMol));
+	qryMol.setProp<double>("tPSA", calcTPSA(qryMol));
+	qryMol.setProp<double>("clogP", calcClogP(qryMol));
+
+	// Create output streams.
+	SDWriter writer(&cout);
+	writer.write(qryMol);
 }

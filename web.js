@@ -58,6 +58,10 @@ if (cluster.isMaster) {
 				return;
 			}
 			var validatesdf = cp.spawn(__dirname + '/bin/validatesdf');
+			var validatesdf_out = new Buffer(0);
+			validatesdf.stdout.on('data', (data) => {
+				validatesdf_out = Buffer.concat([validatesdf_out, data]);
+			});
 			validatesdf.on('close', (code, signal) => {
 				if (code) {
 					res.json(code);
@@ -71,7 +75,7 @@ if (cluster.isMaster) {
 				var dir = __dirname + '/public/jobs/' + v.res._id;
 				fs.mkdir(dir, (err) => {
 					if (err) throw err;
-					fs.writeFile(dir + '/query.sdf', req.body['query'], (err) => {
+					fs.writeFile(dir + '/query.sdf', validatesdf_out.toString(), (err) => {
 						if (err) throw err;
 						usr.insertOne(v.res, { w: 0 });
 						res.json(v.res._id);

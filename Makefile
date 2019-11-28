@@ -6,7 +6,7 @@ bin/embed: obj/embed.o
 	${CC} -o $@ $^ -L${RDKIT_ROOT}/lib -lRDKitMolDraw2D -lRDKitDistGeomHelpers -lRDKitFileParsers -lRDKitDepictor -lRDKitGraphMol -lRDKitRDGeneral
 
 bin/validatesdf: obj/validatesdf.o
-	${CC} -o $@ $^ -L${RDKIT_ROOT}/lib -lRDKitFileParsers -lRDKitSubstructMatch -lRDKitSmilesParse -lRDKitGraphMol
+	${CC} -o $@ $^ -L${RDKIT_ROOT}/lib -lRDKitDescriptors -lRDKitFileParsers -lRDKitSubstructMatch -lRDKitSmilesParse -lRDKitGraphMol
 
 bin/encode: obj/encode.o
 	${CC} -o $@ $^ -L${RDKIT_ROOT}/lib -lRDKitFileParsers -lRDKitSubstructMatch -lRDKitSmilesParse -lRDKitGraphMol -lRDKitRDGeneral

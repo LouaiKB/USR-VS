@@ -400,7 +400,17 @@ void main()\n\
 						atom0.bonds.push(atom1);
 						atom1.bonds.push(atom0);
 					}
-					while (lines[offset++] !== "$$$$");
+					for (var line = lines[offset++]; line !== '$$$$'; line = lines[offset++]) {
+						if (line[0] === '>') {
+							const prop = line.split('<')[1].split('>')[0];
+							molecule[prop] = lines[offset++];
+							if (prop.startsWith('num')) {
+								molecule[prop] = parseInt(molecule[prop]);
+							} else if (['exactMW', 'clogP', 'tPSA'].includes(prop)) {
+								molecule[prop] = parseFloat(molecule[prop]);
+							}
+						}
+					}
 					molecules.push(molecule);
 				}
 				return molecules;
@@ -433,25 +443,38 @@ void main()\n\
 			$.ajax({
 				url: path + 'query.sdf',
 			}).done((qsdf) => {
-				var qmolecules = parseSDF(qsdf).slice(0, 1);
+				var qmolecules = parseSDF(qsdf).slice(0, 1); // Take out only the first query molecule and discard subsequent query molecules, if any.
 				if (qmolecules.length !== job.nqueries) throw Error("qmolecules.length !== job.nqueries");
 				$('#qids_label').text(qmolecules.length + ' query molecule' + (qmolecules.length == 1 ? '' : 's'));
 				var qindex;
 				var refreshQuery = (qidx) => {
-					refreshMolecule(qmolecules[qindex = qidx], iviews[0]);
+					const qmolecule = qmolecules[qindex = qidx];
+					refreshMolecule(qmolecule, iviews[0]);
 					var qpath = path + qindex + '/';
 					var output = $('#output');
 					$('#downloads a', output).each(function () { // 'this' binding is used.
 						var t = $(this);
 						t.attr('href', qpath + t.text());
 					});
-					// TODO: parse SMILES from hits.csv
-					const qsmiles = "ClC(c1ccccc1)=C(c2ccc(OCCN(CC)CC)cc2)c3ccccc3";
-					SmilesDrawer.parse(qsmiles, (qtree) => { // SmilesDrawer.parse() is a static function.
-	                    smilesDrawer.draw(qtree, 'qdrawer', 'dark');
-	                }, (err) => {
-						// TODO: noty()
+					var qproperties = $('#qproperties');
+					$('span', qproperties).each(function () { // 'this' binding is used.
+						var t = $(this);
+						var prop = t.attr('id');
+						var idx = ['tPSA', 'exactMW', 'clogP'].indexOf(prop);
+						if (idx === -1) {
+							t.text(qmolecule[prop]);
+						} else {
+							t.text(qmolecule[prop].toFixed(2 + idx)); // Display tPSA with 2 digits. Display exactMW with 3 digits. Display clogP with 4 digits.
+						}
 					});
+					if (!qmolecule['canonicalSmilesTree']) {
+						SmilesDrawer.parse(qmolecule['canonicalSMILES'], (qtree) => { // SmilesDrawer.parse() is a static function.
+							qmolecule['canonicalSmilesTree'] = qtree;
+		                }, (err) => {
+							// TODO: noty()
+						});
+					}
+					smilesDrawer.draw(qmolecule['canonicalSmilesTree'], 'qdrawer', 'dark');
 					$.ajax({
 						url: qpath + 'hits.sdf',
 					}).done((hsdf) => {
@@ -479,7 +502,12 @@ void main()\n\
 									var t = $(this);
 									t.text(molecule[t.attr('id')]);
 								});
-								$('#id', output).parent().attr('href', '//zinc.docking.org/substance/' + molecule.id);
+								var hproperties = $('#hproperties');
+								$('span', hproperties).each(function () { // 'this' binding is used.
+									var t = $(this);
+									t.text(molecule[t.attr('id')]);
+								});
+								$('#id', hproperties).parent().attr('href', '//zinc.docking.org/substance/' + molecule.id);
 								if (!molecule['canonicalSmilesTree']) {
 									SmilesDrawer.parse(molecule['canonicalSMILES'], (htree) => { // SmilesDrawer.parse() is a static function.
 										molecule['canonicalSmilesTree'] = htree;
