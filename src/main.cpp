@@ -15,7 +15,6 @@
 #include <boost/algorithm/string.hpp>
 #include <GraphMol/SmilesParse/SmilesParse.h>
 #include <GraphMol/FileParsers/MolSupplier.h>
-#include <GraphMol/MolDraw2D/MolDraw2DSVG.h>
 #include <GraphMol/Fingerprints/MorganFingerprints.h>
 #include <GraphMol/Substruct/SubstructMatch.h>
 #include <Numerics/Alignment/AlignPoints.h>
@@ -284,18 +283,6 @@ int main(int argc, char* argv[])
 			cout << local_time() << "Creating output directory" << endl;
 			const auto output_dir = job_path / to_string(query_number);
 			create_directory(output_dir);
-
-			// Draw a SVG.
-			cout << local_time() << "Drawing a SVG" << endl;
-			{
-				const unique_ptr<ROMol> qrz_ptr(removeHs(qryMol));
-				auto& qrzMol = *qrz_ptr;
-				compute2DCoords(qrzMol);
-				ofstream ofs(output_dir / "query.svg");
-				MolDraw2DSVG drawer(600, 600, ofs); // width, height, output
-				drawer.drawMolecule(qrzMol);
-				drawer.finishDrawing();
-			}
 
 			// Calculate Morgan fingerprint.
 			cout << local_time() << "Calculating Morgan fingerprint" << endl;
