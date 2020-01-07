@@ -85,6 +85,45 @@ $(() => {
 			}
 			if (job.error) return;
 			$('#results').removeClass('hidden');
+			const gaugeScreeningSpeed = echarts.init(document.getElementById('gaugeScreeningSpeed'));
+			gaugeScreeningSpeed.setOption({
+				series: [{
+					name: 'Screening speed',
+					type: 'gauge',
+					min: 0,
+					max: 60,
+					splitNumber: 12,
+//					radius: '100%',
+					axisLine: {
+						lineStyle: {
+							color: [[1/6, '#91c7ae'], [5/6, '#63869e'], [1, '#c23531']],
+							width: 8,
+						},
+					},
+					axisTick: {
+						length: 15,
+					},
+					splitLine: {
+						length: 20,
+						lineStyle: {
+							color: 'auto',
+						},
+					},
+					title: {
+						fontWeight: 'bold',
+					},
+					detail: {
+						formatter: (value) => {
+							return value.toFixed(2);
+						},
+						fontWeight: 'bold',
+					},
+					data: [{
+						value: job.numConformers*(10**-6)*parseInt(job.nqueries)/runtime,
+						name: 'Million\nconformers / s',
+					}],
+				}],
+			});
 
 			const atomColors = { // http://jmol.sourceforge.net/jscolors
 				 H: new THREE.Color(0xFFFFFF),
@@ -429,7 +468,7 @@ void main()\n\
 				iv.render();
 			};
 
-			var iviews = $('canvas').slice(0, 2).map(function (index) { // 'this' binding is used.
+			var iviews = $('canvas.three').map(function (index) { // 'this' binding is used.
 				var iv = new iview(this);
 				$('#exportButton' + index).click(function (e) {
 					iv.exportCanvas();
@@ -519,11 +558,12 @@ void main()\n\
 							};
 							var hids = $('#hids');
 							hids.html(hmolecules.map((molecule, index) => {
-								return '<label class="btn btn-primary"><input type="radio">' + index + '</label>';
+								return `<button type="button" class="btn btn-primary" id="h${index}">${index}</button>`;
 							}).join(''));
 							$('> .btn', hids).click(function (e) {
 								var hidx = $(e.target).text();
 								if (hidx == hindex) return;
+								$(`> #h${hindex}`, hids).removeClass('active');
 								refreshHit(hidx);
 							});
 							$(':first', hids).addClass('active');
@@ -533,11 +573,12 @@ void main()\n\
 				};
 				var qids = $('#qids');
 				qids.html(Array.apply(0, Array(qmolecules.length)).map((value, index) => {
-					return '<label class="btn btn-primary"><input type="radio">' + index + '</label>';
+					return `<button type="button" class="btn btn-primary" id="q${index}">${index}</button>`;
 				}).join(''));
 				$('> .btn', qids).click(function (e) {
 					var qidx = $(e.target).text();
 					if (qidx == qindex) return;
+					$(`> #q${hindex}`, qids).removeClass('active');
 					refreshQuery(qidx);
 				});
 				$(':first', qids).addClass('active');
