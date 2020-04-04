@@ -558,12 +558,12 @@ void main()\n\
 							};
 							var hids = $('#hids');
 							hids.html(hmolecules.map((molecule, index) => {
-								return `<button type="button" class="btn btn-primary" id="h${index}">${index}</button>`;
+								return `<button type="button" class="btn btn-primary">${index}</button>`;
 							}).join(''));
-							$('> .btn', hids).click(function (e) {
+							$('> button', hids).click((e) => {
 								var hidx = $(e.target).text();
 								if (hidx == hindex) return;
-								$(`> #h${hindex}`, hids).removeClass('active');
+								$('> button.active', hids).removeClass('active');
 								refreshHit(hidx);
 							});
 							$(':first', hids).addClass('active');
@@ -573,12 +573,12 @@ void main()\n\
 				};
 				var qids = $('#qids');
 				qids.html(Array.apply(0, Array(qmolecules.length)).map((value, index) => {
-					return `<button type="button" class="btn btn-primary" id="q${index}">${index}</button>`;
+					return `<button type="button" class="btn btn-primary">${index}</button>`;
 				}).join(''));
-				$('> .btn', qids).click(function (e) {
+				$('> .btn', qids).click((e) => {
 					var qidx = $(e.target).text();
 					if (qidx == qindex) return;
-					$(`> #q${hindex}`, qids).removeClass('active');
+					$('> button.active', qids).removeClass('active');
 					refreshQuery(qidx);
 				});
 				$(':first', qids).addClass('active');
