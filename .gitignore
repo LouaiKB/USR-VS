@@ -1,7 +1,7 @@
+.vs
 node_modules
 jobs
 web.log
 doc
 log
-svg
 mongod
