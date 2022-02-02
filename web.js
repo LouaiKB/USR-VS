@@ -12,7 +12,7 @@ if (cluster.isMaster) {
 	});
 } else {
 	var mongodb = require('mongodb');
-	new mongodb.MongoClient.connect('mongodb://' + process.argv[2] + '/istar', function(err, db) {
+	mongodb.MongoClient.connect('mongodb://' + process.argv[2] + '/istar', function(err, db) {
 		if (err) throw err;
 		db.authenticate(process.argv[3], process.argv[4], function(err, authenticated) {
 			if (err) throw err;
