@@ -5,6 +5,7 @@
 #include <GraphMol/FragCatalog/FragFPGenerator.h>
 #include <GraphMol/DistGeomHelpers/Embedder.h>
 #include <GraphMol/MolDrawing/DrawingToSVG.h>
+
 using namespace std;
 using namespace RDKit;
 using namespace RDKit::MolOps;
