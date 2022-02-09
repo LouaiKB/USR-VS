@@ -18,17 +18,13 @@
 #include <Numerics/Alignment/AlignPoints.h>
 #include <GraphMol/MolTransforms/MolTransforms.h>
 #include <GraphMol/FileParsers/MolWriters.h>
-// #define BOOST_NO_CXX11_SCOPED_ENUMS
-// #include <boost/filesystem.hpp>
 #include <boost/filesystem/operations.hpp>
 #include <boost/filesystem/fstream.hpp>
-// #undef BOOST_NO_CXX11_SCOPED_ENUMS
 #include <boost/date_time/posix_time/posix_time.hpp>
 #include <mongocxx/instance.hpp>
 #include <mongocxx/pool.hpp>
 #include <mongocxx/client.hpp>
 #include <bsoncxx/json.hpp>
-// #include <mongo/client/dbclient.h>
 #include "io_service_pool.hpp"
 #include "safe_counter.hpp"
 
@@ -45,21 +41,14 @@ using namespace MolTransforms;
 using namespace boost::filesystem;
 using namespace boost::gregorian;
 using namespace boost::posix_time;
-// using namespace mongo;
 using namespace mongocxx;
 using bsoncxx::builder::basic::kvp;
-// using namespace bson;
 
 
 inline static auto local_time()
 {
 	return to_simple_string(microsec_clock::local_time()) + " ";
 }
-
-// inline static auto milliseconds_since_epoch()
-// {
-// 	return Date_t(duration_cast<std::chrono::milliseconds>(system_clock::now().time_since_epoch()).count());
-// }
 
 template <typename T>
 inline vector<T> read(const path src)
@@ -241,19 +230,9 @@ int main(int argc, char* argv[])
 	const auto pwd = argv[3];
 	const path jobs_path = argv[4];
 
-	// DBClientConnection conn;
-	// {
-	// 	// Connect to host and authenticate user.
-	// 	cout << local_time() << "Connecting to " << host << " and authenticating " << user << endl;
-	// 	string errmsg;
-	// 	if ((!conn.connect(host, errmsg)) || (!conn.auth("istar", user, pwd, errmsg)))
-	// 	{
-	// 		cerr << local_time() << errmsg << endl;
-	// 		return 1;
-	// 	}
-	// }
-
 	cout << "Connecting to " << host << " and authenticating " << user << endl;
+	
+	// connecting to mongodb with the new mongocxx driver
 	const instance inst;
 	const uri uri("mongodb://localhost:27017/?minPoolSize=0&maxPoolSize=2");
 	pool pool(uri);
@@ -265,7 +244,7 @@ int main(int argc, char* argv[])
 
 	// Initialize constants.
 	cout << local_time() << "Initializing" << endl;
-	const auto collection = "istar.usr2";
+	// const auto collection = "istar.usr2";
 	const size_t num_usrs = 2;
 	const array<string, 2> usr_names{{ "USR", "USRCAT" }};
 	constexpr array<size_t, num_usrs> qn{{ 12, 60 }};
@@ -288,14 +267,6 @@ int main(int argc, char* argv[])
 	{
 		SubsetMols[k].reset(reinterpret_cast<ROMol*>(SmartsToMol(SubsetSMARTS[k])));
 	}
-
-	// Read id file.
-	// const path dbPath = "databases";
-	// const string collName = "Selleckchem";
-	// const path collPath = dbPath / collName;
-	// cout << local_time() << "Reading " << collName << endl;
-	// const auto id_str = readLines(collPath / "id.txt");
-
 
 	// Read ZINC ID file.
 	const string_array<size_t> zincids("usr/16/zincid.txt");
@@ -352,6 +323,7 @@ int main(int argc, char* argv[])
 
 	// Initialize the number of chunks and the number of molecules per chunk.
 	const auto num_chunks = num_threads << 4;
+	// const auto num_chunks = num_threads << 2;
 	const auto chunk_size = 1 + (num_ligands - 1) / num_chunks;
 	assert(chunk_size * num_chunks >= num_ligands);
 	assert(chunk_size >= num_hits);
@@ -367,10 +339,7 @@ int main(int argc, char* argv[])
 	{
 		// Fetch an incompleted job in a first-come-first-served manner.
 		if (!sleeping) cout << local_time() << "Fetching an incompleted job" << endl;
-		// BSONObj info;
-		// const auto started = milliseconds_since_epoch();
 		const auto started = system_clock::now();
-		// conn.runCommand("istar", BSON("findandmodify" << "usr2" << "query" << BSON("started" << BSON("$exists" << false)) << "sort" << BSON("submitted" << 1) << "update" << BSON("$set" << BSON("started" << started))), info); // conn.findAndModify() is available since MongoDB C++ Driver legacy-1.0.0
 		bsoncxx::builder::basic::document jobid_update_builder;
 		jobid_update_builder.append(
 			kvp("$set", [=](bsoncxx::builder::basic::sub_document set_subdoc) {
@@ -378,6 +347,7 @@ int main(int argc, char* argv[])
 			})
 		);
 		const auto jobid_document = coll.find_one_and_update(jobid_filter.view(), jobid_update_builder.extract(), jobid_foau_options);
+
 		if (!jobid_document)
 		{
 			// No incompleted jobs. Sleep for a while.
@@ -385,29 +355,15 @@ int main(int argc, char* argv[])
 				cout << local_time() << "Sleeping" << endl;
 			sleeping = true;
 			this_thread::sleep_for(std::chrono::seconds(2));
-			cout << "AFTER SLEEPING" << endl;
 			continue;
 		}
 		sleeping = false;
 		const auto jobid_view = jobid_document->view();
-		// const auto value = info["value"];
-		// if (value.isNull())
-		// {
-		// 	// No incompleted jobs. Sleep for a while.
-		// 	if (!sleeping) cout << local_time() << "Sleeping" << endl;
-		// 	sleeping = true;
-		// 	this_thread::sleep_for(std::chrono::seconds(2));
-		// 	continue;
-		// }
-		// sleeping = false;
-		// const auto job = value.Obj();
 
 		// Obtain job properties.
-		// const auto _id = job["_id"].OID();
 		const auto _id = jobid_view["_id"].get_oid().value;
 		cout << local_time() << "Executing job " << _id.to_string() << endl;
 		const auto job_path = jobs_path / _id.to_string();
-		// const size_t usr0 = job["usr"].Int(); // Specify the primary sorting score. 0: USR; 1: USRCAT.
 		const size_t usr0 = jobid_view["usr"].get_int32();
 		assert(usr0 == 0 || usr0 == 1);
 		const auto usr1 = usr0 ^ 1;
@@ -416,21 +372,34 @@ int main(int argc, char* argv[])
 
 		// Read and validate the user-supplied SDF file.
 		cout << local_time() << "Reading and validating the query file" << endl;
-		SDMolSupplier sup((job_path / "query.sdf").string(), true, false, true); // sanitize, removeHs, strictParsing. Note: setting removeHs=true (which is the default setting) will lead to fewer hydrogen bond acceptors being matched.
-		// if (!sup.length() || !sup.atEnd())
-		// {
-		// 	const auto error = 1;
-		// 	cout << local_time() << "Failed to parse the query file, error code = " << error << endl;
-		// 	conn.update(collection, BSON("_id" << _id), BSON("$set" << BSON("completed" << milliseconds_since_epoch() << "error" << error)));
-		// 	continue;
-		// }
+
+		string query_path = (job_path / "query.sdf").string();
+		SDMolSupplier sup(query_path, true, false, true); // sanitize, removeHs, strictParsing. Note: setting removeHs=true (which is the default setting) will lead to fewer hydrogen bond acceptors being matched.
+	
+		if (!sup.length() || !sup.atEnd())
+		{
+			const auto error = 1;
+			cout << local_time() << "Failed to parse the query file, error code = " << error << endl;
+			// conn.update(collection, BSON("_id" << _id), BSON("$set" << BSON("completed" << milliseconds_since_epoch() << "error" << error)));
+			const auto completed = system_clock::now();
+			bsoncxx::builder::basic::document compt_update_builder;
+			compt_update_builder.append(
+				kvp("$set", [=](bsoncxx::builder::basic::sub_document set_subdoc) {
+					set_subdoc.append(kvp("completed", bsoncxx::types::b_date(completed)));
+				})	
+			);
+
+			const auto compt_update = coll.update_one(bsoncxx::builder::basic::make_document(kvp("_id", _id)), compt_update_builder.extract(), options::update());
+			continue;
+		}
 
 		// Process each of the query molecules sequentially.
 		const auto num_queries = 1; // Restrict the number of query molecules to 1. Setting num_queries = sup.length() to execute any number of query molecules.
 		for (unsigned int query_number = 0; query_number < num_queries; ++query_number)
 		{
+			// parsing the molecule supplier 
 			cout << local_time() << "Parsing query molecule " << query_number << endl;
-			const unique_ptr<ROMol> qry_ptr(sup.next()); // Calling next() may print "ERROR: Could not sanitize molecule on line XXXX" to stderr.
+			const unique_ptr<ROMol> qry_ptr(sup.next());
 			auto& qryMol = *qry_ptr;
 
 			// Get the number of atoms, including and excluding hydrogens.
@@ -724,7 +693,6 @@ int main(int argc, char* argv[])
 		assert(compt_update);
 		assert(compt_update->matched_count() == 1);
 		assert(compt_update->modified_count() == 1);
-		// conn.update(collection, BSON("_id" << _id), BSON("$set" << BSON("completed" << completed << "nqueries" << num_queries)));
 
 		// Calculate runtime in seconds and screening speed in million conformers per second.
 		const auto runtime = (completed - started).count() * 1e-9; // in seconds
