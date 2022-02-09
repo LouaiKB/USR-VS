@@ -2,6 +2,7 @@
 #include <iomanip>
 #include <string>
 #include <fstream>
+#include <filesystem>
 #include <vector>
 #include <array>
 #include <cmath>
@@ -10,151 +11,38 @@
 #include <cassert>
 #include <chrono>
 #include <thread>
+#include <boost/format.hpp>
+#include <boost/algorithm/string.hpp>
 #include <GraphMol/SmilesParse/SmilesParse.h>
 #include <GraphMol/FileParsers/MolSupplier.h>
-#include <GraphMol/MolDrawing/DrawingToSVG.h>
 #include <GraphMol/Fingerprints/MorganFingerprints.h>
 #include <GraphMol/Substruct/SubstructMatch.h>
 #include <Numerics/Alignment/AlignPoints.h>
 #include <GraphMol/MolTransforms/MolTransforms.h>
 #include <GraphMol/FileParsers/MolWriters.h>
-#include <boost/filesystem/operations.hpp>
-#include <boost/filesystem/fstream.hpp>
-#include <boost/date_time/posix_time/posix_time.hpp>
+#include <GraphMol/Depictor/RDDepictor.h>
 #include <mongocxx/instance.hpp>
 #include <mongocxx/pool.hpp>
 #include <mongocxx/client.hpp>
 #include <bsoncxx/json.hpp>
 #include "io_service_pool.hpp"
+#include "vector_reader.hpp"
 #include "safe_counter.hpp"
-
 using namespace std;
 using namespace std::chrono;
+using namespace std::filesystem;
 using namespace RDKit;
 using namespace RDKit::MolOps;
 using namespace RDDepict;
-using namespace RDKit::Drawing;
 using namespace RDKit::MorganFingerprints;
 using namespace RDGeom;
 using namespace RDNumeric::Alignments;
 using namespace MolTransforms;
-using namespace boost::filesystem;
-using namespace boost::gregorian;
-using namespace boost::posix_time;
 using namespace mongocxx;
 using bsoncxx::builder::basic::kvp;
 
-
-inline static auto local_time()
-{
-	return to_simple_string(microsec_clock::local_time()) + " ";
-}
-
-template <typename T>
-inline vector<T> read(const path src)
-{
-	boost::filesystem::ifstream ifs(src, ios::binary | ios::ate);
-	const size_t num_bytes = ifs.tellg();
-	cout << local_time() << "Reading " << src << " of " << num_bytes << " bytes" << endl;
-	vector<T> buf;
-	buf.resize(num_bytes / sizeof(T));
-	ifs.seekg(0);
-	ifs.read(reinterpret_cast<char*>(buf.data()), num_bytes);
-	return buf;
-}
-
-inline vector<string> readLines(const path src) // Sequential read can be very fast when using SSD
-{
-	boost::filesystem::ifstream ifs(src, ios::binary | ios::ate);
-	const size_t num_bytes = ifs.tellg();
-	cout << local_time() << "Reading " << src.filename() << " of " << num_bytes << " bytes" << endl;
-	vector<string> vec;
-	vec.reserve(num_bytes / 6); // An average line size is 6 bytes.
-	ifs.seekg(0);
-	string line;
-	while (getline(ifs, line)) {
-		vec.push_back(move(line));
-	}
-	return vec;
-}
-
-template <typename size_type>
-class header_array
-{
-public:
-	explicit header_array(path src)
-	{
-		src.replace_extension(".ftr");
-		boost::filesystem::ifstream ifs(src, ios::binary | ios::ate);
-		const size_t num_bytes = ifs.tellg();
-		cout << local_time() << "Reading " << src << " of " << num_bytes << " bytes" << endl;
-		cout << "DEBUGGING: " << sizeof(size_type) << endl;
-		hdr.resize(1 + num_bytes / sizeof(size_type));
-		cout << "DEBUG RESIZING!" << endl;
-		hdr.front() = 0;
-		ifs.seekg(0);
-		ifs.read(reinterpret_cast<char*>(hdr.data() + 1), num_bytes);
-	}
-
-	size_t size() const
-	{
-		return hdr.size() - 1;
-	}
-
-protected:
-	vector<size_type> hdr;
-};
-
-template <typename size_type>
-class string_array : public header_array<size_type>
-{
-public:
-	explicit string_array(const path src) : header_array<size_type>(src)
-	{
-		boost::filesystem::ifstream ifs(src, ios::binary | ios::ate);
-		const size_t num_bytes = ifs.tellg();
-		cout << local_time() << "Reading " << src << " of " << num_bytes << " bytes" << endl;
-		buf.resize(num_bytes);
-		ifs.seekg(0);
-		ifs.read(const_cast<char*>(buf.data()), num_bytes);
-	}
-
-	string operator[](const size_t index) const
-	{
-		const auto pos = this->hdr[index];
-		const auto len = this->hdr[index + 1] - pos;
-		return buf.substr(pos, len);
-	}
-
-protected:
-	string buf;
-};
-
-template <typename size_type>
-class stream_array : public header_array<size_type>
-{
-public:
-	explicit stream_array(const path src) : header_array<size_type>(src), ifs(src, ios::binary)
-	{
-	}
-
-	string operator[](const size_t index)
-	{
-		const auto pos = this->hdr[index];
-		const auto len = this->hdr[index + 1] - pos;
-		string buf;
-		buf.resize(len);
-		ifs.seekg(pos);
-		ifs.read(const_cast<char*>(buf.data()), len);
-		return buf;
-	}
-
-protected:
-	boost::filesystem::ifstream ifs;
-};
-
 template<typename T>
-double dist2(const T& p0, const T& p1)
+auto dist2(const T& p0, const T& p1)
 {
 	const auto d0 = p0[0] - p1[0];
 	const auto d1 = p0[1] - p1[1];
@@ -184,9 +72,9 @@ array<Point3D, 4> calcRefPoints(const ROMol& mol, const vector<int>& heavyAtoms)
 		ctd += a;
 	}
 	ctd /= num_points;
-	double cst_dist = numeric_limits<double>::max();
-	double fct_dist = numeric_limits<double>::lowest();
-	double ftf_dist = numeric_limits<double>::lowest();
+	auto cst_dist = numeric_limits<double>::max();
+	auto fct_dist = numeric_limits<double>::lowest();
+	auto ftf_dist = numeric_limits<double>::lowest();
 	for (const auto i : heavyAtoms)
 	{
 		const auto& a = conf.getAtomPos(i);
@@ -218,33 +106,32 @@ array<Point3D, 4> calcRefPoints(const ROMol& mol, const vector<int>& heavyAtoms)
 int main(int argc, char* argv[])
 {
 	// Check the required number of command line arguments.
-	if (argc != 5)
+	if (argc != 6)
 	{
-		cout << "usr host user pwd jobs_path" << endl;
+		cout << "jusrd host port user pwd jobs_path" << endl;
 		return 0;
 	}
 
 	// Fetch command line arguments.
 	const auto host = argv[1];
-	const auto user = argv[2];
-	const auto pwd = argv[3];
-	const path jobs_path = argv[4];
+	const auto port = argv[2];
+	const auto user = argv[3];
+	const auto pwd = argv[4];
+	const path jobs_path = argv[5];
 
-	cout << "Connecting to " << host << " and authenticating " << user << endl;
-	
-	// connecting to mongodb with the new mongocxx driver
-	const instance inst;
-	const uri uri("mongodb://localhost:27017/?minPoolSize=0&maxPoolSize=2");
+	// Connect to host and authenticate user.
+	cout << local_time() << "Connecting to " << host << ':' << port << " and authenticating " << user << endl;
+	const instance inst; // The constructor and destructor initialize and shut down the driver. http://mongocxx.org/api/current/classmongocxx_1_1instance.html
+	const uri uri("mongodb://localhost:27017/?minPoolSize=0&maxPoolSize=2"); // When connecting to a replica set, it is much more efficient to use a pool as opposed to manually constructing client objects.
 	pool pool(uri);
-	const auto client = pool.acquire();
-	const auto db = client->database("istar");
+	const auto client = pool.acquire(); // Return value of acquire() is an instance of entry. An entry is a handle on a client object acquired via the pool.
+	const auto db = client->database("jstar");
 	auto coll = db.collection("usr2");
-	const auto jobid_filter = bsoncxx::from_json(R"({"started" : { "$exists" : false }})");
-	const auto jobid_foau_options = options::find_one_and_update().sort(bsoncxx::from_json(R"({ "submitted" : 1 })")).projection(bsoncxx::from_json(R"({ "_id" : 1, "usr": 1 })"));
+	const auto jobid_filter = bsoncxx::from_json(R"({ "started" : { "$exists" : false }})");
+	const auto jobid_foau_options = options::find_one_and_update().sort(bsoncxx::from_json(R"({ "submitted" : 1 })")).projection(bsoncxx::from_json(R"({ "_id" : 1, "usr": 1 })")); // By default, the original document is returned
 
 	// Initialize constants.
 	cout << local_time() << "Initializing" << endl;
-	// const auto collection = "istar.usr2";
 	const size_t num_usrs = 2;
 	const array<string, 2> usr_names{{ "USR", "USRCAT" }};
 	constexpr array<size_t, num_usrs> qn{{ 12, 60 }};
@@ -268,39 +155,46 @@ int main(int argc, char* argv[])
 		SubsetMols[k].reset(reinterpret_cast<ROMol*>(SmartsToMol(SubsetSMARTS[k])));
 	}
 
-	// Read ZINC ID file.
-	const string_array<size_t> zincids("usr/16/zincid.txt");
-	const auto num_ligands = zincids.size();
-	cout << local_time() << "Found " << num_ligands << " database molecules" << endl;
+	// Read id file.
+	const path dbPath = "databases";
+	const string collName = "Selleckchem";
+	const path collPath = dbPath / collName;
+	cout << local_time() << "Reading " << collName << endl;
+//	const auto id_u32 = read<uint32_t>(collPath / "id.u32");
+	const auto id_str = readLines(collPath / "id.txt");
+//	const auto num_compounds = id_u32.size();
+	const auto num_compounds = id_str.size();
+	cout << local_time() << "Found " << num_compounds << " compounds from " << collName << endl;
 
-	// Read SMILES file.
-	const string_array<size_t> smileses("usr/16/smiles.txt");
-	assert(smileses.size() == num_ligands);
+/*	// Read property files.
+	const auto numAtoms_u16 = read<uint16_t>(collPath / "numAtoms.u16");
+	assert(numAtoms_u16.size() == num_compounds);
+	const auto numHBD_u16 = read<uint16_t>(collPath / "numHBD.u16");
+	assert(numHBD_u16.size() == num_compounds);
+	const auto numHBA_u16 = read<uint16_t>(collPath / "numHBA.u16");
+	assert(numHBA_u16.size() == num_compounds);
+	const auto numRotatableBonds_u16 = read<uint16_t>(collPath / "numRotatableBonds.u16");
+	assert(numRotatableBonds_u16.size() == num_compounds);
+	const auto numRings_u16 = read<uint16_t>(collPath / "numRings.u16");
+	assert(numRings_u16.size() == num_compounds);
+	const auto exactMW_f32 = read<float>(collPath / "exactMW.f32");
+	assert(exactMW_f32.size() == num_compounds);
+	const auto tPSA_f32 = read<float>(collPath / "tPSA.f32");
+	assert(tPSA_f32.size() == num_compounds);
+	const auto clogP_f32 = read<float>(collPath / "clogP.f32");
+	assert(clogP_f32.size() == num_compounds);*/
 
-	// Read supplier file.
-	const string_array<size_t> suppliers("usr/16/supplier.txt");
-	assert(suppliers.size() == num_ligands);
-
-	// Read property files of floating point types and integer types.
-	const auto zfproperties = read<array<float, 4>>("usr/16/zfprop.f32");
-	assert(zfproperties.size() == num_ligands);
-	const auto ziproperties = read<array<int16_t, 5>>("usr/16/ziprop.i16");
-	assert(ziproperties.size() == num_ligands);
-
-	// Read cumulative number of conformers file.
-	const auto mconfss = read<size_t>("usr/16/mconfs.u64");
-	const auto num_conformers = mconfss.back();
-	assert(mconfss.size() == num_ligands);
-	assert(num_conformers >= num_ligands);
-	cout << local_time() << "Found " << num_conformers << " database conformers" << endl;
-
-	// Read feature file.
-	const auto features = read<array<double, qn.back()>>("usr/16/usrcat.f64");
-	assert(features.size() == num_conformers);
+	// Read usrcat feature file.
+	const auto usrcat_f32 = read<array<float, qn.back()>>(collPath / "usrcat.f32");
+	const auto num_conformers = usrcat_f32.size();
+	cout << local_time() << "Found " << num_conformers << " conformers from " << collName << endl;
+	assert(num_conformers == num_compounds << 2);
 
 	// Read ligand footer file and open ligand SDF file for seeking and reading.
-	stream_array<size_t> ligands("usr/16/ligand.sdf");
-	assert(ligands.size() == num_conformers);
+	stream_vector<size_t> descriptors(collPath / "descriptors.tsv");
+	assert(descriptors.size() == num_compounds);
+	stream_vector<size_t> conformers(collPath / "conformers.sdf");
+	assert(conformers.size() == num_conformers);
 
 	// Initialize variables.
 	array<vector<int>, num_subsets> subsets;
@@ -308,8 +202,8 @@ int main(int argc, char* argv[])
 	alignas(32) array<double, qn.back()> q;
 
 	// Initialize vectors to store compounds' primary score and their corresponding conformer.
-	vector<double> scores(num_ligands); // Primary score of molecules.
-	vector<size_t> cnfids(num_ligands); // ID of conformer with the best primary score.
+	vector<double> scores(num_compounds); // Primary score of compounds.
+	vector<size_t> cnfids(num_compounds); // ID of conformer with the best primary score.
 	const auto compare = [&](const size_t val0, const size_t val1) // Sort by the primary score.
 	{
 		return scores[val0] < scores[val1];
@@ -321,15 +215,14 @@ int main(int argc, char* argv[])
 	io_service_pool io(num_threads);
 	safe_counter<size_t> cnt;
 
-	// Initialize the number of chunks and the number of molecules per chunk.
-	const auto num_chunks = num_threads << 4;
-	// const auto num_chunks = num_threads << 2;
-	const auto chunk_size = 1 + (num_ligands - 1) / num_chunks;
-	assert(chunk_size * num_chunks >= num_ligands);
+	// Initialize the number of chunks and the number of compounds per chunk. TODO: the choice of num_chunks depends on num_compounds.
+	const auto num_chunks = num_threads << 2;
+	const auto chunk_size = 1 + (num_compounds - 1) / num_chunks;
+	assert(chunk_size * num_chunks >= num_compounds);
 	assert(chunk_size >= num_hits);
 	cout << local_time() << "Using " << num_chunks << " chunks and a chunk size of " << chunk_size << endl;
-	vector<size_t> scase(num_ligands);
-	vector<size_t> zcase(num_hits * (num_chunks - 1) + min(num_hits, num_ligands - chunk_size * (num_chunks - 1))); // The last chunk might have fewer than num_hits records.
+	vector<size_t> scase(num_compounds);
+	vector<size_t> zcase(num_hits * (num_chunks - 1) + min(num_hits, num_compounds - chunk_size * (num_chunks - 1))); // The last chunk might have fewer than num_hits records.
 
 	// Enter event loop.
 	cout << local_time() << "Entering event loop" << endl;
@@ -347,12 +240,10 @@ int main(int argc, char* argv[])
 			})
 		);
 		const auto jobid_document = coll.find_one_and_update(jobid_filter.view(), jobid_update_builder.extract(), jobid_foau_options);
-
 		if (!jobid_document)
 		{
 			// No incompleted jobs. Sleep for a while.
-			if (!sleeping) 
-				cout << local_time() << "Sleeping" << endl;
+			if (!sleeping) cout << local_time() << "Sleeping" << endl;
 			sleeping = true;
 			this_thread::sleep_for(std::chrono::seconds(2));
 			continue;
@@ -364,42 +255,22 @@ int main(int argc, char* argv[])
 		const auto _id = jobid_view["_id"].get_oid().value;
 		cout << local_time() << "Executing job " << _id.to_string() << endl;
 		const auto job_path = jobs_path / _id.to_string();
-		const size_t usr0 = jobid_view["usr"].get_int32();
+		const size_t usr0 = jobid_view["usr"].get_int32(); // Specify the primary sorting score. 0: USR; 1: USRCAT.
 		assert(usr0 == 0 || usr0 == 1);
 		const auto usr1 = usr0 ^ 1;
 		const auto qnu0 = qn[usr0];
 		const auto qnu1 = qn[usr1];
 
-		// Read and validate the user-supplied SDF file.
-		cout << local_time() << "Reading and validating the query file" << endl;
+		// Read the user-supplied SDF file.
+		cout << local_time() << "Reading the query file" << endl;
+		SDMolSupplier sup((job_path / "query.sdf").string(), true, false, true); // sanitize, removeHs, strictParsing. Note: setting removeHs=true (which is the default setting) will lead to fewer hydrogen bond acceptors being matched.
 
-		string query_path = (job_path / "query.sdf").string();
-		SDMolSupplier sup(query_path, true, false, true); // sanitize, removeHs, strictParsing. Note: setting removeHs=true (which is the default setting) will lead to fewer hydrogen bond acceptors being matched.
-	
-		if (!sup.length() || !sup.atEnd())
-		{
-			const auto error = 1;
-			cout << local_time() << "Failed to parse the query file, error code = " << error << endl;
-			// conn.update(collection, BSON("_id" << _id), BSON("$set" << BSON("completed" << milliseconds_since_epoch() << "error" << error)));
-			const auto completed = system_clock::now();
-			bsoncxx::builder::basic::document compt_update_builder;
-			compt_update_builder.append(
-				kvp("$set", [=](bsoncxx::builder::basic::sub_document set_subdoc) {
-					set_subdoc.append(kvp("completed", bsoncxx::types::b_date(completed)));
-				})	
-			);
-
-			const auto compt_update = coll.update_one(bsoncxx::builder::basic::make_document(kvp("_id", _id)), compt_update_builder.extract(), options::update());
-			continue;
-		}
-
-		// Process each of the query molecules sequentially.
-		const auto num_queries = 1; // Restrict the number of query molecules to 1. Setting num_queries = sup.length() to execute any number of query molecules.
+		// Process each of the query compounds sequentially.
+		const auto num_queries = 1; // Restrict the number of query compounds to 1. Setting num_queries = sup.length() to execute any number of query compounds.
 		for (unsigned int query_number = 0; query_number < num_queries; ++query_number)
 		{
-			// parsing the molecule supplier 
-			cout << local_time() << "Parsing query molecule " << query_number << endl;
-			const unique_ptr<ROMol> qry_ptr(sup.next());
+			cout << local_time() << "Parsing query compound " << query_number << endl;
+			const unique_ptr<ROMol> qry_ptr(sup.next()); // Calling next() may print "ERROR: Could not sanitize compound on line XXXX" to stderr.
 			auto& qryMol = *qry_ptr;
 
 			// Get the number of atoms, including and excluding hydrogens.
@@ -412,16 +283,6 @@ int main(int argc, char* argv[])
 			cout << local_time() << "Creating output directory" << endl;
 			const auto output_dir = job_path / to_string(query_number);
 			create_directory(output_dir);
-
-			// Draw a SVG.
-			cout << local_time() << "Drawing a SVG" << endl;
-			{
-				const unique_ptr<ROMol> qrz_ptr(removeHs(qryMol));
-				auto& qrzMol = *qrz_ptr;
-				compute2DCoords(qrzMol);
-				boost::filesystem::ofstream ofs(output_dir / "query.svg");
-				ofs << DrawingToSVG(MolToDrawing(qrzMol));
-			}
 
 			// Calculate Morgan fingerprint.
 			cout << local_time() << "Calculating Morgan fingerprint" << endl;
@@ -463,7 +324,7 @@ int main(int argc, char* argv[])
 			{
 				const auto& refPoint = qryRefPoints[k];
 				auto& distp = dista[k];
-				distp.resize(num_atoms);
+				distp.reserve(num_atoms);
 				for (size_t i = 0; i < num_heavy_atoms; ++i)
 				{
 					distp[subset0[i]] = sqrt(dist2(qryCnf.getAtomPos(subset0[i]), refPoint));
@@ -528,7 +389,7 @@ int main(int argc, char* argv[])
 			assert(qo == qn.back());
 
 			// Compute USR and USRCAT scores.
-			cout << local_time() << "Calculating " << num_ligands << " " << usr_names[usr0] << " scores" << endl;
+			cout << local_time() << "Calculating " << num_compounds << " " << usr_names[usr0] << " scores" << endl;
 			scores.assign(scores.size(), numeric_limits<double>::max());
 			iota(scase.begin(), scase.end(), 0);
 			cnt.init(num_chunks);
@@ -536,17 +397,16 @@ int main(int argc, char* argv[])
 			{
 				io.post([&,l]()
 				{
-					// Loop over molecules of the current chunk.
+					// Loop over compounds of the current chunk.
 					const auto chunk_beg = chunk_size * l;
-					const auto chunk_end = min(chunk_beg + chunk_size, num_ligands);
+					const auto chunk_end = min(chunk_beg + chunk_size, num_compounds);
 					for (size_t k = chunk_beg; k < chunk_end; ++k)
 					{
-						// Loop over conformers of the current molecule and calculate their primary score.
+						// Loop over conformers of the current compound and calculate their primary score.
 						auto& scorek = scores[k];
-						size_t j = k ? mconfss[k - 1] : 0;
-						for (const auto mconfs = mconfss[k]; j < mconfs; ++j)
+						for (size_t j = k << 2; j < (k + 1) << 2; ++j)
 						{
-							const auto& d = features[j];
+							const auto& d = usrcat_f32[j];
 							double s = 0;
 							for (size_t i = 0; i < qnu0; ++i)
 							{
@@ -561,7 +421,7 @@ int main(int argc, char* argv[])
 						}
 					}
 
-					// Sort the scores of molecules of the current chunk.
+					// Sort the scores of compounds of the current chunk.
 					sort(scase.begin() + chunk_beg, scase.begin() + chunk_end, compare);
 
 					// Copy the indexes of top hits of the current chunk to a global vector for final sorting.
@@ -579,20 +439,20 @@ int main(int argc, char* argv[])
 			// Create output directory and write output files.
 			cout << local_time() << "Writing output files" << endl;
 			SDWriter hits_sdf((output_dir / "hits.sdf").string());
-			boost::filesystem::ofstream hits_csv(output_dir / "hits.csv");
+			ofstream hits_csv(output_dir / "hits.csv");
 			hits_csv.setf(ios::fixed, ios::floatfield);
-			hits_csv << "ZINC ID,USR score,USRCAT score,2D Tanimoto score,Molecular weight (g/mol),Partition coefficient xlogP,Apolar desolvation (kcal/mol),Polar desolvation (kcal/mol),Hydrogen bond donors,Hydrogen bond acceptors,Polar surface area tPSA (Å^2),Net charge,Rotatable bonds,SMILES,Vendors and annotations\n";
+			hits_csv << setprecision(8) << "ID,USR score,USRCAT score,2D Tanimoto score,canonicalSMILES,molFormula,numAtoms,numHBD,numHBA,numRotatableBonds,numRings,exactMW,tPSA,clogP\n";
 			for (size_t l = 0; l < num_hits; ++l)
 			{
-				// Obtain indexes to the hit molecule and the hit conformer.
+				// Obtain indexes to the hit compound and the hit conformer.
 				const auto k = zcase[l];
 				const auto j = cnfids[k];
 
 				// Read SDF content of the hit conformer.
-				const auto lig = ligands[j];
+				const auto hitSdf = conformers[j];
 
 				// Construct a RDKit ROMol object.
-				istringstream iss(lig);
+				istringstream iss(hitSdf);
 				SDMolSupplier sup(&iss, false, true, false, true);
 				assert(sup.length() == 1);
 				assert(sup.atEnd());
@@ -614,7 +474,7 @@ int main(int argc, char* argv[])
 				for (size_t i = 0; i < num_matches; ++i)
 				{
 					hitHeavyAtoms[i] = matchVect[i].front().second;
-					assert(hitHeavyAtoms[i] == i); // hitHeavyAtoms can be constructed using iota(hitHeavyAtoms.begin(), hitHeavyAtoms.end(), 0); because for RDKit-generated SDF molecules, heavy atom are always the first few atoms.
+					assert(hitHeavyAtoms[i] == i); // hitHeavyAtoms can be constructed using iota(hitHeavyAtoms.begin(), hitHeavyAtoms.end(), 0); because for RDKit-generated SDF compounds, heavy atom are always the first few atoms.
 				}
 
 				// Calculate the four reference points.
@@ -627,7 +487,7 @@ int main(int argc, char* argv[])
 					&hitRefPoints[3],
 				}};
 
-				// Calculate a 3D transform from the four reference points of the hit conformer to those of the query molecule.
+				// Calculate a 3D transform from the four reference points of the hit conformer to those of the query compound.
 				Transform3D trans;
 				AlignPoints(qryRefPointv, hitRefPointv, trans);
 
@@ -639,38 +499,38 @@ int main(int argc, char* argv[])
 				hits_sdf.write(hitMol);
 
 				// Calculate the secondary score of the saved conformer, which has the best primary score.
-				const auto& d = features[j];
+				const auto& d = usrcat_f32[j];
 				double s = 0;
 				for (size_t i = 0; i < qnu1; ++i)
 				{
 					s += abs(q[i] - d[i]);
 				}
 
-				const auto u0score = 1 / (1 + scores[k] * qv[usr0]); // Primary score of the current molecule.
-				const auto u1score = 1 / (1 + s         * qv[usr1]); // Secondary score of the current molecule.
-				const auto zincid = zincids[k].substr(0, 8); // Take another substr() to get rid of the trailing newline.
-				const auto zfp = zfproperties[k];
-				const auto zip = ziproperties[k];
-				const auto smiles = smileses[k];    // A newline is already included in smileses[k].
-				const auto supplier = suppliers[k]; // A newline is already included in suppliers[k].
+				const auto u0score = 1 / (1 + scores[k] * qv[usr0]); // Primary score of the current compound.
+				const auto u1score = 1 / (1 + s         * qv[usr1]); // Secondary score of the current compound.
+				const auto id = id_str[k];
+				vector<string> descs;
+				split(descs, descriptors[k], boost::is_any_of("	")); // Split the descriptor line into columns, which are [ID	canonicalSMILES	molFormula	numAtoms	numHBD	numHBA	numRotatableBonds	numRings	exactMW	tPSA	clogP	subset]
 				hits_csv
-					<< zincid
-					<< setprecision(8)
+//					<< boost::format("%08d") % id // SCUBIDOO
+//					<< boost::format("S%d") % id // Selleckchem
+					<< id
+//					<< ',' << descs[1]
+//					<< ',' << collName
 					<< ',' << (usr1 ? u0score : u1score)
 					<< ',' << (usr1 ? u1score : u0score)
 					<< ',' << ts
-					<< setprecision(3)
-					<< ',' << zfp[0]
-					<< ',' << zfp[1]
-					<< ',' << zfp[2]
-					<< ',' << zfp[3]
-					<< ',' << zip[0]
-					<< ',' << zip[1]
-					<< ',' << zip[2]
-					<< ',' << zip[3]
-					<< ',' << zip[4]
-					<< ',' << smiles.substr(0, smiles.length() - 1)     // Get rid of the trailing newline.
-					<< ',' << supplier.substr(0, supplier.length() - 1) // Get rid of the trailing newline.
+//					<< ',' // subset
+					<< ',' << descs[1]
+					<< ',' << descs[2]
+					<< ',' << descs[3]
+					<< ',' << descs[4]
+					<< ',' << descs[5]
+					<< ',' << descs[6]
+					<< ',' << descs[7]
+					<< ',' << descs[8]
+					<< ',' << descs[9]
+					<< ',' << descs[10]
 					<< '\n'
 				;
 			}
@@ -678,7 +538,6 @@ int main(int argc, char* argv[])
 
 		// Update job status.
 		cout << local_time() << "Setting completed time" << endl;
-		// const auto completed = milliseconds_since_epoch();
 		const auto completed = system_clock::now();
 		bsoncxx::builder::basic::document compt_update_builder;
 		compt_update_builder.append(
@@ -686,9 +545,8 @@ int main(int argc, char* argv[])
 				set_subdoc.append(kvp("completed", bsoncxx::types::b_date(completed)));
 				set_subdoc.append(kvp("nqueries", num_queries));
 				set_subdoc.append(kvp("numConformers", static_cast<int64_t>(num_conformers)));
-			})	
+			})
 		);
-
 		const auto compt_update = coll.update_one(bsoncxx::builder::basic::make_document(kvp("_id", _id)), compt_update_builder.extract(), options::update()); // stdx::optional<result::update>. options: write_concern
 		assert(compt_update);
 		assert(compt_update->matched_count() == 1);
