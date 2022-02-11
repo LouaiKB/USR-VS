@@ -75,6 +75,7 @@ if (cluster.isMaster) {
 					var dir = __dirname + '/public/jobs/' + v.res._id;
 					fs.mkdir(dir, function (err) {
 						if (err) throw err;
+						// Asynchronously writes data to a file, replacing the file if it already exists.
 						fs.writeFile(dir + '/query.sdf', req.body['query'], function(err) {
 							if (err) throw err;
 							usr.insert(v.res, { w: 0 });
